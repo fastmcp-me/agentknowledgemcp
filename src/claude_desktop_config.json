@@ -1,13 +1,13 @@
 {
   "mcpServers": {
     "AgentKnowledgeMCP": {
-      "command": "/Users/nguyenkimchung/AgentKnowledgeMCP/.venv/bin/python",
+      "command": "./AgentKnowledgeMCP/.venv/bin/python",
       "args": [
         "-m", 
         "src"
       ],
       "env": {
-        "PYTHONPATH": "/Users/nguyenkimchung/AgentKnowledgeMCP"
+        "PYTHONPATH": "./AgentKnowledgeMCP"
       }
     }
   }

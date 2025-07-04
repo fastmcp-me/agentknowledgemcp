@@ -13,7 +13,7 @@
     "docker_image": "docker.elastic.co/kibana/kibana:8.14.1"
   },
   "security": {
-    "allowed_base_directory": "/Users/nguyenkimchung/ElasticSearch",
+    "allowed_base_directory": "/Your-Documents-Path",
     "allowed_subdirectories": [
       "documents",
       "uploads",
@@ -21,7 +21,7 @@
     ]
   },
   "server": {
-    "name": "elasticsearch-mcp",
+    "name": "AgentKnowledgeMCP",
     "version": "0.1.0",
     "max_file_size_mb": 100,
     "enable_file_operations": true,
