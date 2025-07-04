@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "elasticsearch-mcp": {
+    "AgentKnowledgeMCP": {
       "command": "/Users/nguyenkimchung/AgentKnowledgeMCP/.venv/bin/python",
       "args": [
         "-m", 

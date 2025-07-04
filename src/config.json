@@ -8,7 +8,7 @@
     "allowed_base_directory": "/Users/nguyenkimchung/ElasticSearch"
   },
   "server": {
-    "name": "elasticsearch-mcp",
+    "name": "AgentKnowledgeMCP",
     "version": "0.1.0"
   }
 }
