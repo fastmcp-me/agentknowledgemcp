@@ -62,8 +62,8 @@ include = [
 ]
 
 [project.scripts]
-agent-knowledge-mcp = "src.server:main"
-elasticsearch-mcp = "src.server:main"
+agent-knowledge-mcp = "src.server:cli_main"
+elasticsearch-mcp = "src.server:cli_main"
 
 [tool.black]
 line-length = 88

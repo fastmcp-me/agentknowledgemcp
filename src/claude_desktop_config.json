@@ -1,6 +1,27 @@
 {
   "mcpServers": {
-    "AgentKnowledgeMCP": {
+    "// ============ UV INSTALLATION (RECOMMENDED) ============": "// Easy installation using uvx",
+    
+    "agent-knowledge-uv": {
+      "// DESCRIPTION": "Install directly from GitHub using uvx (recommended)",
+      "command": "uvx",
+      "args": [
+        "--from", 
+        "git+https://github.com/itshare4u/AgentKnowledgeMCP.git", 
+        "agent-knowledge-mcp"
+      ]
+    },
+
+    "agent-knowledge-pypi": {
+      "// DESCRIPTION": "Install from PyPI using uvx (after package is published)",
+      "command": "uvx",
+      "args": ["agent-knowledge-mcp"]
+    },
+
+    "// ============ MANUAL INSTALLATION OPTIONS ============": "// Manual installation methods",
+
+    "AgentKnowledgeMCP-venv": {
+      "// DESCRIPTION": "Using virtual environment (current setup)",
       "command": "./AgentKnowledgeMCP/.venv/bin/python",
       "args": [
         "-m", 
@@ -9,6 +30,120 @@
       "env": {
         "PYTHONPATH": "./AgentKnowledgeMCP"
       }
+    },
+
+    "agent-knowledge-global": {
+      "// DESCRIPTION": "Global Python installation",
+      "command": "python3",
+      "args": ["/Users/nguyenkimchung/AgentKnowledgeMCP/src/server.py"],
+      "env": {
+        "PYTHONPATH": "/Users/nguyenkimchung/AgentKnowledgeMCP"
+      }
+    },
+
+    "agent-knowledge-relative": {
+      "// DESCRIPTION": "Relative path (if Claude runs from project directory)",
+      "command": "python3",
+      "args": ["src/server.py"],
+      "cwd": "/Users/nguyenkimchung/AgentKnowledgeMCP"
+    },
+
+    "// ============ DEVELOPMENT CONFIGURATIONS ============": "// For development and testing",
+
+    "agent-knowledge-dev": {
+      "// DESCRIPTION": "Development mode with debug output",
+      "command": "python3",
+      "args": ["/Users/nguyenkimchung/AgentKnowledgeMCP/src/server.py"],
+      "env": {
+        "PYTHONPATH": "/Users/nguyenkimchung/AgentKnowledgeMCP",
+        "DEBUG": "1",
+        "LOG_LEVEL": "DEBUG"
+      }
+    },
+
+    "agent-knowledge-test": {
+      "// DESCRIPTION": "Test configuration with specific Elasticsearch",
+      "command": "python3",
+      "args": ["/Users/nguyenkimchung/AgentKnowledgeMCP/src/server.py"],
+      "env": {
+        "PYTHONPATH": "/Users/nguyenkimchung/AgentKnowledgeMCP",
+        "ELASTICSEARCH_URL": "http://localhost:9200",
+        "KNOWLEDGE_BASE_DIR": "/tmp/test_knowledge"
+      }
+    },
+
+    "// ============ SPECIALIZED CONFIGURATIONS ============": "// For specific use cases",
+
+    "agent-knowledge-files-only": {
+      "// DESCRIPTION": "File operations only (no Elasticsearch required)",
+      "command": "uvx",
+      "args": [
+        "--from", 
+        "git+https://github.com/itshare4u/AgentKnowledgeMCP.git", 
+        "agent-knowledge-mcp"
+      ],
+      "env": {
+        "DISABLE_ELASTICSEARCH": "1",
+        "FILES_ONLY_MODE": "1"
+      }
+    },
+
+    "agent-knowledge-secure": {
+      "// DESCRIPTION": "Secure mode with restricted file access",
+      "command": "uvx",
+      "args": [
+        "--from", 
+        "git+https://github.com/itshare4u/AgentKnowledgeMCP.git", 
+        "agent-knowledge-mcp"
+      ],
+      "env": {
+        "ALLOWED_BASE_DIRECTORY": "/Users/nguyenkimchung/Documents/SafeWorkspace",
+        "RESTRICT_FILE_OPERATIONS": "1"
+      }
+    },
+
+    "// ============ TEAM CONFIGURATIONS ============": "// Generic configs for sharing",
+
+    "agent-knowledge-team": {
+      "// DESCRIPTION": "Generic team configuration (update paths)",
+      "// NOTE": "Replace /path/to/ with your actual project path",
+      "command": "python3",
+      "args": ["/path/to/AgentKnowledgeMCP/src/server.py"],
+      "env": {
+        "PYTHONPATH": "/path/to/AgentKnowledgeMCP"
+      }
+    },
+
+    "agent-knowledge-docker": {
+      "// DESCRIPTION": "Docker-based installation (if containerized)",
+      "command": "docker",
+      "args": [
+        "run", 
+        "--rm", 
+        "-i", 
+        "-v", 
+        "${HOME}/knowledge:/data",
+        "agent-knowledge-mcp:latest"
+      ]
+    }
+  },
+
+  "// ============ USAGE INSTRUCTIONS ============": {
+    "STEP_1": "Choose ONE of the configurations above",
+    "STEP_2": "Remove all other configurations and comments", 
+    "STEP_3": "Update file paths to match your system",
+    "STEP_4": "Restart Claude Desktop",
+    
+    "RECOMMENDED": "Use 'agent-knowledge-uv' for easiest setup",
+    "FOR_DEVELOPMENT": "Use 'agent-knowledge-dev' for debugging",
+    "FOR_TEAMS": "Use 'agent-knowledge-team' and update paths",
+    
+    "NOTES": {
+      "UV_BENEFITS": "uvx handles dependencies automatically",
+      "MANUAL_SETUP": "Requires python environment setup first", 
+      "ENVIRONMENT_VARS": "All env vars are optional",
+      "ELASTICSEARCH": "Optional - server works without it",
+      "PATHS": "Use absolute paths for reliability"
     }
   }
 }

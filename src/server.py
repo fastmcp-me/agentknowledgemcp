@@ -224,3 +224,13 @@ async def main():
                 ),
             ),
         )
+
+
+def cli_main():
+    """CLI entry point that handles async execution."""
+    import asyncio
+    asyncio.run(main())
+
+
+if __name__ == "__main__":
+    cli_main()

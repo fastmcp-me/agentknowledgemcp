@@ -459,6 +459,52 @@ python3 src/server.py
 - **Security First** - Validate all inputs and file operations
 - **Cross-Platform** - Ensure compatibility across operating systems
 
+## 📦 Installation Options
+
+**✨ Easy Installation with UV (Recommended):**
+```bash
+# Install directly from GitHub
+uvx --from git+https://github.com/itshare4u/AgentKnowledgeMCP.git agent-knowledge-mcp
+
+# After package is published to PyPI:
+uvx agent-knowledge-mcp
+```
+
+**🔧 Manual Installation:**
+```bash
+git clone https://github.com/itshare4u/AgentKnowledgeMCP.git
+cd AgentKnowledgeMCP
+python3 -m pip install -e .
+```
+
+**📋 Requirements:**
+- Python 3.8+
+- Elasticsearch (optional - server works without it for file operations)
+- Git (for version control features)
+
+## 🚀 Publishing to PyPI
+
+For maintainers who want to publish this package:
+
+```bash
+# Build the package
+uv build
+
+# Publish to Test PyPI first
+uv publish --repository testpypi --token <your-test-pypi-token>
+
+# Test installation from Test PyPI
+uvx --index https://test.pypi.org/simple/ agent-knowledge-mcp
+
+# Publish to main PyPI
+uv publish --token <your-pypi-token>
+```
+
+After publishing, users can install with:
+```bash
+uvx agent-knowledge-mcp
+```
+
 ## 📝 License
 
 MIT License - see [LICENSE](LICENSE) for details.
