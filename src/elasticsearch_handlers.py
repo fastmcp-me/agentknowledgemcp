@@ -11,6 +11,7 @@ from .document_schema import (
     DocumentValidationError, 
     create_document_template
 )
+from .config import load_config
 
 
 async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
@@ -73,9 +74,13 @@ async def handle_index_document(arguments: Dict[str, Any]) -> List[types.TextCon
     # Validate document structure if requested
     if validate_schema:
         try:
+            # Get base directory from config
+            config = load_config()
+            base_directory = config.get("security", {}).get("allowed_base_directory")
+            
             # Check if this looks like a knowledge base document
             if isinstance(document, dict) and "id" in document and "title" in document:
-                validated_doc = validate_document_structure(document)
+                validated_doc = validate_document_structure(document, base_directory)
                 document = validated_doc
                 
                 # Use the document ID from the validated document if not provided
@@ -257,7 +262,11 @@ async def handle_validate_document_schema(arguments: Dict[str, Any]) -> List[typ
     document = arguments.get("document")
     
     try:
-        validated_doc = validate_document_structure(document)
+        # Get base directory from config
+        config = load_config()
+        base_directory = config.get("security", {}).get("allowed_base_directory")
+        
+        validated_doc = validate_document_structure(document, base_directory)
         return [
             types.TextContent(
                 type="text",
@@ -300,6 +309,10 @@ async def handle_validate_document_schema(arguments: Dict[str, Any]) -> List[typ
 async def handle_create_document_template(arguments: Dict[str, Any]) -> List[types.TextContent]:
     """Handle create_document_template tool."""
     try:
+        # Get base directory from config
+        config = load_config()
+        base_directory = config.get("security", {}).get("allowed_base_directory")
+        
         title = arguments.get("title")
         file_path = arguments.get("file_path") 
         priority = arguments.get("priority", "medium")
@@ -317,7 +330,8 @@ async def handle_create_document_template(arguments: Dict[str, Any]) -> List[typ
             tags=tags,
             summary=summary,
             key_points=key_points,
-            related=related
+            related=related,
+            base_directory=base_directory
         )
         
         return [

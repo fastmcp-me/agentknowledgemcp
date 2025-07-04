@@ -3,6 +3,7 @@ Document schema validation for knowledge base documents.
 """
 import json
 import re
+import os
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from pathlib import Path
@@ -36,12 +37,66 @@ class DocumentValidationError(Exception):
     """Exception raised when document validation fails."""
     pass
 
-def validate_document_structure(document: Dict[str, Any]) -> Dict[str, Any]:
+def normalize_file_path(file_path: str, base_directory: str = None) -> Dict[str, str]:
+    """
+    Normalize file path to relative format and extract components.
+    
+    Args:
+        file_path: Input file path (absolute or relative)
+        base_directory: Base directory for relative paths
+        
+    Returns:
+        Dict with normalized paths
+        
+    Raises:
+        ValueError: If file_path is empty or invalid
+    """
+    if not file_path or not file_path.strip():
+        raise ValueError("File path cannot be empty")
+    
+    # Convert backslashes to forward slashes for consistency
+    file_path = file_path.replace('\\', '/')
+    path = Path(file_path)
+    
+    # If absolute path, try to make it relative to base_directory
+    if path.is_absolute() and base_directory:
+        base_path = Path(base_directory).resolve()
+        try:
+            # Try to make relative to base directory
+            relative_path = path.relative_to(base_path)
+            normalized_path = str(relative_path)
+            # Convert to forward slashes for consistency
+            normalized_path = normalized_path.replace(os.sep, '/')
+        except ValueError:
+            # If path is not under base directory, keep original but warn
+            normalized_path = str(path)
+            print(f"⚠️  Warning: Path {file_path} is outside base directory {base_directory}")
+    else:
+        # Already relative or no base directory
+        normalized_path = str(path).replace(os.sep, '/')
+        # Remove leading ./ if present
+        if normalized_path.startswith('./'):
+            normalized_path = normalized_path[2:]
+    
+    # Extract components using forward slash paths
+    path_parts = normalized_path.split('/')
+    file_name = path_parts[-1] if path_parts else ""
+    directory_parts = path_parts[:-1] if len(path_parts) > 1 else []
+    directory = '/'.join(directory_parts) if directory_parts else ""
+    
+    return {
+        "file_path": normalized_path,
+        "file_name": file_name,
+        "directory": directory
+    }
+
+def validate_document_structure(document: Dict[str, Any], base_directory: str = None) -> Dict[str, Any]:
     """
     Validate document structure against schema.
     
     Args:
         document: Document to validate
+        base_directory: Base directory for relative path conversion
         
     Returns:
         Validated and normalized document
@@ -84,22 +139,19 @@ def validate_document_structure(document: Dict[str, Any]) -> Dict[str, Any]:
         except ValueError:
             errors.append("last_modified must be in ISO 8601 format (e.g., '2025-01-04T10:30:00Z')")
     
-    # Validate file_path exists (relative to base directory)
+    # Validate file_path and normalize
     if document.get("file_path"):
-        # Convert absolute path to relative if needed
-        file_path = document["file_path"]
-        if file_path.startswith("/"):
-            # Make it relative to current working directory or base directory
-            document["file_path"] = file_path
+        # Normalize file path
+        path_info = normalize_file_path(document["file_path"], base_directory)
         
-        # Extract file_name from file_path if not provided correctly
-        path = Path(file_path)
-        if document.get("file_name") != path.name:
-            document["file_name"] = path.name
+        # Update document with normalized paths
+        document.update(path_info)
         
-        # Extract directory from file_path if not provided correctly
-        if document.get("directory") != str(path.parent):
-            document["directory"] = str(path.parent)
+        # Validate that file exists (optional warning - file might be created later)
+        if base_directory:
+            full_path = Path(base_directory) / path_info["file_path"]
+            if not full_path.exists():
+                print(f"ℹ️  Info: File {full_path} does not exist yet (will be created)")
     
     # Validate tags (must be non-empty strings)
     if document.get("tags"):
@@ -158,7 +210,8 @@ def create_document_template(
     tags: Optional[List[str]] = None,
     summary: str = "",
     key_points: Optional[List[str]] = None,
-    related: Optional[List[str]] = None
+    related: Optional[List[str]] = None,
+    base_directory: str = None
 ) -> Dict[str, Any]:
     """
     Create a document template with proper structure.
@@ -172,19 +225,21 @@ def create_document_template(
         summary: Brief description
         key_points: List of key points
         related: List of related document IDs
+        base_directory: Base directory for path normalization
         
     Returns:
         Properly structured document
     """
-    path = Path(file_path)
+    # Normalize file path first
+    path_info = normalize_file_path(file_path, base_directory)
     
     document = {
         "id": generate_document_id(title, source_type),
         "title": title,
         "summary": summary or f"Brief description of {title}",
-        "file_path": str(path),
-        "file_name": path.name,
-        "directory": str(path.parent),
+        "file_path": path_info["file_path"],
+        "file_name": path_info["file_name"],
+        "directory": path_info["directory"],
         "last_modified": datetime.now().isoformat() + "Z",
         "priority": priority,
         "tags": tags or [],
@@ -193,4 +248,4 @@ def create_document_template(
         "key_points": key_points or []
     }
     
-    return validate_document_structure(document)
+    return validate_document_structure(document, base_directory)
