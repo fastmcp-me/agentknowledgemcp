@@ -5,7 +5,7 @@
     "auto_setup": true
   },
   "security": {
-    "allowed_base_directory": "/Users/nguyenkimchung/AgentKnowledgeMCP/.knowledges/docs"
+    "allowed_base_directory": "./.knowledges/docs"
   },
   "server": {
     "name": "AgentKnowledgeMCP",
