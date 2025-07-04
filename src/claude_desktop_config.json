@@ -36,9 +36,9 @@
     "agent-knowledge-global": {
       "// DESCRIPTION": "Global Python installation (manual setup)",
       "command": "python3",
-      "args": ["/Users/nguyenkimchung/AgentKnowledgeMCP/src/server.py"],
+      "args": ["/path/to/AgentKnowledgeMCP/src/server.py"],
       "env": {
-        "PYTHONPATH": "/Users/nguyenkimchung/AgentKnowledgeMCP"
+        "PYTHONPATH": "/path/to/AgentKnowledgeMCP"
       }
     },
 
@@ -59,7 +59,7 @@
       "command": "uvx", 
       "args": ["agent-knowledge-mcp"],
       "env": {
-        "ALLOWED_BASE_DIRECTORY": "/Users/nguyenkimchung/Documents/SafeWorkspace",
+        "ALLOWED_BASE_DIRECTORY": "/path/to/secure/workspace",
         "RESTRICT_FILE_OPERATIONS": "1"
       }
     },

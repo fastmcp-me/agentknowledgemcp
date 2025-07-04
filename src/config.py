@@ -16,7 +16,7 @@ def load_config() -> Dict[str, Any]:
         # Default configuration if file doesn't exist
         return {
             "elasticsearch": {"host": "localhost", "port": 9200},
-            "security": {"allowed_base_directory": "/Users/nguyenkimchung/ElasticSearch"},
+            "security": {"allowed_base_directory": "/tmp/knowledge_base_secure"},
             "server": {"name": "elasticsearch-mcp", "version": "0.1.0"}
         }
 
