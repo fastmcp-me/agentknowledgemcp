@@ -1,0 +1,25 @@
+{
+  "elasticsearch": {
+    "host": "localhost",
+    "port": 9200,
+    "timeout": 30
+  },
+  "security": {
+    "allowed_base_directory": "/Users/nguyenkimchung/ElasticSearch",
+    "allowed_subdirectories": [
+      "documents",
+      "uploads",
+      "exports"
+    ]
+  },
+  "server": {
+    "name": "elasticsearch-mcp",
+    "version": "0.1.0",
+    "max_file_size_mb": 100,
+    "enable_file_operations": true
+  },
+  "logging": {
+    "level": "INFO",
+    "enable_debug": false
+  }
+}

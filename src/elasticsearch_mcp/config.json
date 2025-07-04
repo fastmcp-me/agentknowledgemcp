@@ -1,0 +1,13 @@
+{
+  "elasticsearch": {
+    "host": "localhost",
+    "port": 9200
+  },
+  "security": {
+    "allowed_base_directory": "/Users/nguyenkimchung/ElasticSearch"
+  },
+  "server": {
+    "name": "elasticsearch-mcp",
+    "version": "0.1.0"
+  }
+}
