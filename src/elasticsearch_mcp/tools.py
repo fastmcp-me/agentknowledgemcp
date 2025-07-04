@@ -254,6 +254,25 @@ def get_admin_tools() -> List[types.Tool]:
                 "properties": {},
             },
         ),
+        types.Tool(
+            name="setup_elasticsearch",
+            description="Auto-setup Elasticsearch using Docker if not configured",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "include_kibana": {"type": "boolean", "description": "Also setup Kibana (default: true)", "default": True},
+                    "force_recreate": {"type": "boolean", "description": "Force recreate containers even if they exist", "default": False}
+                },
+            },
+        ),
+        types.Tool(
+            name="elasticsearch_status",
+            description="Check status of Elasticsearch and Kibana containers",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+            },
+        ),
     ]
 
 

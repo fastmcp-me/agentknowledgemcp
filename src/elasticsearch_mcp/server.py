@@ -4,6 +4,7 @@ Refactored into smaller, manageable modules.
 """
 import asyncio
 import json
+from pathlib import Path
 from typing import Dict, Any, List
 
 from mcp.server.models import InitializationOptions
@@ -16,6 +17,7 @@ import mcp.server.stdio
 from .config import load_config
 from .security import init_security
 from .elasticsearch_client import init_elasticsearch, get_es_client
+from .elasticsearch_setup import auto_setup_elasticsearch
 from .tools import get_all_tools
 
 # Import handlers
@@ -32,12 +34,28 @@ from .file_handlers import (
 )
 from .admin_handlers import (
     handle_get_allowed_directory, handle_set_allowed_directory,
-    handle_reload_config
+    handle_reload_config, handle_setup_elasticsearch, handle_elasticsearch_status
 )
 
 # Load configuration and initialize components
 CONFIG = load_config()
 init_security(CONFIG["security"]["allowed_base_directory"])
+
+# Auto-setup Elasticsearch if needed
+print("🔧 Checking Elasticsearch configuration...")
+config_path = Path(__file__).parent / "config.json"
+setup_result = auto_setup_elasticsearch(config_path, CONFIG)
+
+if setup_result["status"] == "setup_completed":
+    # Reload config after setup
+    CONFIG = load_config()
+    print("✅ Elasticsearch auto-setup completed")
+elif setup_result["status"] == "already_configured":
+    print("✅ Elasticsearch already configured")
+elif setup_result["status"] == "setup_failed":
+    print(f"⚠️  Elasticsearch auto-setup failed: {setup_result.get('error', 'Unknown error')}")
+    print("📝 You can manually setup using the 'setup_elasticsearch' tool")
+
 init_elasticsearch(CONFIG)
 
 # Create server
@@ -70,6 +88,8 @@ TOOL_HANDLERS = {
     "get_allowed_directory": handle_get_allowed_directory,
     "set_allowed_directory": handle_set_allowed_directory,
     "reload_config": handle_reload_config,
+    "setup_elasticsearch": handle_setup_elasticsearch,
+    "elasticsearch_status": handle_elasticsearch_status,
 }
 
 

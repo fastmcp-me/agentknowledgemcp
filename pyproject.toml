@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "MCP server for Elasticsearch integration providing indexing, searching, and index management capabilities"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = [ "mcp>=1.10.1", "elasticsearch<7.14.0",]
+dependencies = [ "mcp>=1.10.1", "elasticsearch<7.14.0", "docker>=7.0.0", "requests>=2.32.0",]
 [[project.authors]]
 name = "nguyen kim chung"
 email = "25049282+itshare4u@users.noreply.github.com"
