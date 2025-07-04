@@ -147,7 +147,45 @@ nano src/config.json
 }
 ```
 
-## 🛠️ Capabilities
+## � Quick VS Code Installation
+
+For quick installation in VS Code, click the installation buttons below:
+
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_MCP-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=elasticsearch-knowledge&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22server_path%22%2C%22description%22%3A%22Path%20to%20AgentKnowledgeMCP%20server.py%22%2C%22default%22%3A%22%24%7BworkspaceFolder%7D%2Fsrc%2Fserver.py%22%7D%5D&config=%7B%22command%22%3A%22python3%22%2C%22args%22%3A%5B%22%24%7Binput%3Aserver_path%7D%22%5D%2C%22cwd%22%3A%22%24%7BworkspaceFolder%7D%22%7D) [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_MCP-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=elasticsearch-knowledge&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22server_path%22%2C%22description%22%3A%22Path%20to%20AgentKnowledgeMCP%20server.py%22%2C%22default%22%3A%22%24%7BworkspaceFolder%7D%2Fsrc%2Fserver.py%22%7D%5D&config=%7B%22command%22%3A%22python3%22%2C%22args%22%3A%5B%22%24%7Binput%3Aserver_path%7D%22%5D%2C%22cwd%22%3A%22%24%7BworkspaceFolder%7D%22%7D&quality=insiders)
+
+For manual installation, add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` (or `Cmd + Shift + P` on macOS) and typing `Preferences: Open Settings (JSON)`.
+
+Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace. This will allow you to share the configuration with others.
+
+> Note that the `mcp` key is needed when using the `mcp.json` file.
+
+### Manual VS Code Configuration
+
+```json
+{
+  "mcp": {
+    "inputs": [
+      {
+        "type": "promptString",
+        "id": "server_path",
+        "description": "Path to AgentKnowledgeMCP server.py",
+        "default": "${workspaceFolder}/src/server.py"
+      }
+    ],
+    "servers": {
+      "elasticsearch-knowledge": {
+        "command": "python3",
+        "args": [
+          "${input:server_path}"
+        ],
+        "cwd": "${workspaceFolder}"
+      }
+    }
+  }
+}
+```
+
+## �🛠️ Capabilities
 
 Elasticsearch MCP Server provides **28 powerful tools** across 4 categories:
 
