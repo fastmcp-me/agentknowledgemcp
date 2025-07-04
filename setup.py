@@ -70,7 +70,7 @@ def main():
     print("\n🧪 Running basic tests...")
     try:
         result = subprocess.run([
-            sys.executable, "test_file_paths.py"
+            sys.executable, "tests/test_file_paths.py"
         ], capture_output=True, text=True, cwd=".")
         
         if result.returncode == 0:
@@ -94,7 +94,10 @@ def main():
     print("\n3. Test the server:")
     print("   python3 src/server.py")
     
-    print("\n4. See README.md for detailed configuration examples")
+    print("\n4. Run tests:")
+    print("   python3 tests/run_all_tests.py")
+    
+    print("\n5. See README.md for detailed configuration examples")
     
     print("\n🎉 Setup complete! Ready to enhance your AI assistant with powerful knowledge management!")
 

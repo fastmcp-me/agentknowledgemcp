@@ -202,6 +202,36 @@ Once everything is set up, try asking your AI:
 
 ## 🏗️ Architecture
 
+```
+AgentKnowledgeMCP/
+├── src/
+│   ├── server.py                    # Main MCP server
+│   ├── config.json                  # Configuration
+│   ├── config.json.example          # Configuration template
+│   ├── tools.py                     # Tool definitions (28 tools)
+│   ├── elasticsearch_handlers.py    # Elasticsearch operations
+│   ├── file_handlers.py            # File system operations
+│   ├── admin_handlers.py           # Admin operations
+│   ├── version_control_handlers.py # VCS operations
+│   ├── document_schema.py          # Document validation
+│   ├── elasticsearch_client.py     # ES client management
+│   └── security.py                 # Security & validation
+├── tests/
+│   ├── run_all_tests.py            # Test runner
+│   ├── test_file_paths.py          # File operations tests
+│   ├── test_validation.py          # Document validation tests
+│   ├── test_version_control.py     # VCS comprehensive tests
+│   ├── test_simple_vcs.py          # VCS demo tests
+│   ├── demo_agent_workflow.py      # Complete workflow demo
+│   ├── quick_test.py               # Quick functionality check
+│   └── README.md                   # Test documentation
+├── .knowledges/                    # Knowledge base storage
+├── setup.py                       # Quick setup script
+├── requirements.txt                # Python dependencies
+├── CHANGELOG.md                    # Version history
+└── README.md                      # This file
+```
+
 ```mermaid
 graph TD
     A[AI Assistant] --> B[MCP Server]
@@ -259,18 +289,18 @@ graph TD
 **Comprehensive test suite included:**
 
 ```bash
-# Test document validation
-python3 test_document_validation.py
+# Run all tests
+python3 tests/run_all_tests.py
 
-# Test file operations
-python3 test_file_paths.py
+# Individual tests
+python3 tests/test_file_paths.py       # File operations
+python3 tests/test_validation.py       # Document validation  
+python3 tests/test_version_control.py  # Version control
+python3 tests/test_simple_vcs.py       # VCS demo
 
-# Test version control
-python3 test_version_control.py
-python3 test_simple_vcs.py
-
-# Test complete workflow
-python3 demo_agent_workflow.py
+# Demo workflows
+python3 tests/demo_agent_workflow.py   # Complete workflow
+python3 tests/quick_test.py            # Quick check
 ```
 
 **Quality Assurance:**
