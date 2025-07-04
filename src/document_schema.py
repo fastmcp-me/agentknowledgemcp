@@ -249,3 +249,90 @@ def create_document_template(
     }
     
     return validate_document_structure(document, base_directory)
+
+def format_validation_error(error: DocumentValidationError) -> str:
+    """
+    Format validation error with a clear example.
+    
+    Args:
+        error: The validation error
+        
+    Returns:
+        Formatted error message with example
+    """
+    return (
+        f"❌ Document validation failed!\n\n{str(error)}\n\n"
+        f"Expected format example:\n"
+        f"{{\n"
+        f'  "id": "auth-jwt-001",\n'
+        f'  "title": "JWT Authentication Implementation",\n'
+        f'  "summary": "Brief description of the document",\n'
+        f'  "file_path": "auth/jwt.md",\n'
+        f'  "file_name": "jwt.md",\n'
+        f'  "directory": "auth",\n'
+        f'  "last_modified": "2025-01-04T10:30:00Z",\n'
+        f'  "priority": "high",\n'
+        f'  "tags": ["tag1", "tag2"],\n'
+        f'  "related": ["related-doc-id"],\n'
+        f'  "source_type": "markdown",\n'
+        f'  "key_points": ["Key point 1", "Key point 2"]\n'
+        f"}}"
+    )
+
+
+def get_example_document() -> Dict[str, Any]:
+    """
+    Generate an example document with proper format.
+    
+    Args:
+        context: Context for the example (general, jwt, api, config, etc.)
+        
+    Returns:
+        Example document structure
+    """
+    examples = {
+            "id": "doc-example-document",
+            "title": "Example Document",
+            "summary": "Brief description of the document content",
+            "file_path": "docs/example.md",
+            "file_name": "example.md",
+            "directory": "docs",
+            "last_modified": "2025-07-04T16:00:00Z",
+            "priority": "medium",
+            "tags": ["example", "template"],
+            "related": [],
+            "source_type": "markdown",
+            "key_points": ["Key point 1", "Key point 2"]
+    }
+
+    return examples
+
+
+def format_validation_error(error: DocumentValidationError, context: str = "general") -> str:
+    """
+    Format validation error with example and requirements.
+    
+    Args:
+        error: The validation error
+        context: Context for example selection
+        
+    Returns:
+        Formatted error message with example
+    """
+    example_doc = get_example_document(context)
+    
+    error_message = f"❌ Document validation failed!\n\n{str(error)}\n\n"
+    error_message += "📋 Required fields and format:\n"
+    
+    # Show requirements
+    error_message += f"• Required fields: {', '.join(DOCUMENT_SCHEMA['required_fields'])}\n"
+    error_message += f"• Priority values: {', '.join(DOCUMENT_SCHEMA['priority_values'])}\n"
+    error_message += f"• Source types: {', '.join(DOCUMENT_SCHEMA['source_types'])}\n"
+    error_message += f"• ID format: alphanumeric, hyphens, underscores only\n"
+    error_message += f"• Timestamp format: ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)\n\n"
+    
+    # Show example
+    error_message += "📄 Example document format:\n"
+    error_message += json.dumps(example_doc, indent=2, ensure_ascii=False)
+    
+    return error_message

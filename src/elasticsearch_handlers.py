@@ -9,7 +9,8 @@ from .elasticsearch_client import get_es_client
 from .document_schema import (
     validate_document_structure, 
     DocumentValidationError, 
-    create_document_template
+    create_document_template,
+    format_validation_error
 )
 from .config import load_config
 
@@ -103,22 +104,7 @@ async def handle_index_document(arguments: Dict[str, Any]) -> List[types.TextCon
             return [
                 types.TextContent(
                     type="text",
-                    text=f"❌ Document validation failed!\n\n{str(e)}\n\n"
-                         f"Expected format example:\n"
-                         f"{{\n"
-                         f'  "id": "auth-jwt-001",\n'
-                         f'  "title": "JWT Authentication Implementation",\n'
-                         f'  "summary": "Brief description of JWT implementation with security considerations",\n'
-                         f'  "file_path": "/path/to/file.md",\n'
-                         f'  "file_name": "jwt.md",\n'
-                         f'  "directory": "backend/workflows/auth",\n'
-                         f'  "last_modified": "2025-01-04T10:30:00Z",\n'
-                         f'  "priority": "high",\n'
-                         f'  "tags": ["authentication", "JWT", "security"],\n'
-                         f'  "related": ["auth-refresh-token-002"],\n'
-                         f'  "source_type": "markdown",\n'
-                         f'  "key_points": ["Must validate tokens", "Use refresh tokens", "Secure storage"]\n'
-                         f"}}"
+                    text=format_validation_error(e)
                 )
             ]
         except Exception as e:
@@ -279,22 +265,7 @@ async def handle_validate_document_schema(arguments: Dict[str, Any]) -> List[typ
         return [
             types.TextContent(
                 type="text",
-                text=f"❌ Document validation failed!\n\n{str(e)}\n\n"
-                     f"Expected format example:\n"
-                     f"{{\n"
-                     f'  "id": "auth-jwt-001",\n'
-                     f'  "title": "JWT Authentication Implementation",\n'
-                     f'  "summary": "Brief description of JWT implementation with security considerations",\n'
-                     f'  "file_path": "/Users/nguyenkimchung/ElasticSearch/backend/workflows/auth/jwt.md",\n'
-                     f'  "file_name": "jwt.md",\n'
-                     f'  "directory": "backend/workflows/auth",\n'
-                     f'  "last_modified": "2025-01-04T10:30:00Z",\n'
-                     f'  "priority": "high",\n'
-                     f'  "tags": ["authentication", "JWT", "security"],\n'
-                     f'  "related": ["auth-refresh-token-002"],\n'
-                     f'  "source_type": "markdown",\n'
-                     f'  "key_points": ["Must validate tokens", "Use refresh tokens", "Secure storage"]\n'
-                     f"}}"
+                text=format_validation_error(e)
             )
         ]
     except Exception as e:
