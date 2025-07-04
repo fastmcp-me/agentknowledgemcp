@@ -1,0 +1,17 @@
+[project]
+name = "elasticsearch-mcp"
+version = "0.1.0"
+description = "MCP server for Elasticsearch integration providing indexing, searching, and index management capabilities"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [ "mcp>=1.10.1", "elasticsearch<7.14.0",]
+[[project.authors]]
+name = "nguyen kim chung"
+email = "25049282+itshare4u@users.noreply.github.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.scripts]
+elasticsearch-mcp = "elasticsearch_mcp:main"
