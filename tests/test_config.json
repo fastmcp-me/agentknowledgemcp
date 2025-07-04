@@ -1,0 +1,42 @@
+{
+  "test_directories": {
+    "base_dir": "/tmp/knowledge_base_test",
+    "docs_dir": "/tmp/knowledge_base_test/docs",
+    "auth_dir": "/tmp/knowledge_base_test/docs/auth",
+    "api_dir": "/tmp/knowledge_base_test/docs/api",
+    "config_dir": "/tmp/knowledge_base_test/docs/config"
+  },
+  "test_files": {
+    "jwt_absolute": "/tmp/knowledge_base_test/docs/auth/jwt.md",
+    "jwt_relative": "auth/jwt.md",
+    "readme_absolute": "/tmp/knowledge_base_test/docs/readme.md",
+    "readme_relative": "readme.md",
+    "config_absolute": "/tmp/knowledge_base_test/docs/config/database.json",
+    "config_relative": "config/database.json",
+    "api_guide_absolute": "/tmp/knowledge_base_test/docs/api/error-handling.md",
+    "api_guide_relative": "api/error-handling.md",
+    "outside_base": "/some/external/path/external-file.md"
+  },
+  "expected_results": {
+    "jwt_from_absolute": {
+      "file_path": "auth/jwt.md",
+      "file_name": "jwt.md",
+      "directory": "auth"
+    },
+    "readme_from_absolute": {
+      "file_path": "readme.md",
+      "file_name": "readme.md", 
+      "directory": ""
+    },
+    "config_from_relative": {
+      "file_path": "config/database.json",
+      "file_name": "database.json",
+      "directory": "config"
+    },
+    "outside_base_unchanged": {
+      "file_path": "/some/external/path/external-file.md",
+      "file_name": "external-file.md",
+      "directory": "/some/external/path"
+    }
+  }
+}
