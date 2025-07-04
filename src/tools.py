@@ -306,10 +306,85 @@ def get_admin_tools() -> List[types.Tool]:
     ]
 
 
+def get_version_control_tools() -> List[types.Tool]:
+    """Get list of version control tools."""
+    return [
+        types.Tool(
+            name="setup_version_control",
+            description="Setup version control (Git or SVN) in knowledge base directory",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "vcs_type": {
+                        "type": "string",
+                        "enum": ["git", "svn"],
+                        "description": "Version control system to use (git or svn)"
+                    },
+                    "force": {
+                        "type": "boolean",
+                        "description": "Force setup even if VCS already exists",
+                        "default": False
+                    },
+                    "initial_commit": {
+                        "type": "boolean", 
+                        "description": "Create initial commit with existing files",
+                        "default": True
+                    }
+                },
+                "required": []
+            },
+        ),
+        types.Tool(
+            name="commit_file",
+            description="Commit file changes to version control (Git or SVN)",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "Path to file to commit (relative to knowledge base)"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Commit message"
+                    },
+                    "add_if_new": {
+                        "type": "boolean",
+                        "description": "Add file to VCS if it's not tracked yet",
+                        "default": True
+                    }
+                },
+                "required": ["file_path", "message"]
+            },
+        ),
+        types.Tool(
+            name="get_previous_file_version",
+            description="Get content of file from previous commit",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "Path to file (relative to knowledge base)"
+                    },
+                    "commits_back": {
+                        "type": "integer",
+                        "description": "How many commits to go back (1 = previous commit)",
+                        "default": 1,
+                        "minimum": 1
+                    }
+                },
+                "required": ["file_path"]
+            },
+        ),
+    ]
+
+
 def get_all_tools() -> List[types.Tool]:
     """Get all available tools."""
     return (
         get_elasticsearch_tools() +
         get_file_system_tools() +
-        get_admin_tools()
+        get_admin_tools() +
+        get_version_control_tools()
     )

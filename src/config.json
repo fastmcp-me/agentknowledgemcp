@@ -7,6 +7,11 @@
   "security": {
     "allowed_base_directory": "./.knowledges/docs"
   },
+  "version_control": {
+    "enabled": true,
+    "type": "git",
+    "auto_commit": false
+  },
   "server": {
     "name": "AgentKnowledgeMCP",
     "version": "0.1.0"

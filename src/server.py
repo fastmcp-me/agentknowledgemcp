@@ -37,6 +37,10 @@ from .admin_handlers import (
     handle_get_allowed_directory, handle_set_allowed_directory,
     handle_reload_config, handle_setup_elasticsearch, handle_elasticsearch_status
 )
+from .version_control_handlers import (
+    handle_setup_version_control, handle_commit_file, 
+    handle_get_previous_file_version
+)
 
 # Load configuration and initialize components
 CONFIG = load_config()
@@ -93,6 +97,11 @@ TOOL_HANDLERS = {
     "reload_config": handle_reload_config,
     "setup_elasticsearch": handle_setup_elasticsearch,
     "elasticsearch_status": handle_elasticsearch_status,
+    
+    # Version control tools
+    "setup_version_control": handle_setup_version_control,
+    "commit_file": handle_commit_file,
+    "get_previous_file_version": handle_get_previous_file_version,
 }
 
 
