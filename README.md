@@ -76,20 +76,21 @@ Perfect for **developers** who want to automate knowledge management and **teams
 
 ### 1. Installation
 
-**Option 1: Install with uv (recommended)**
+**🎉 NEW: Now Available on PyPI!**
 ```bash
-# Install directly with uvx
+# Super easy installation with uvx
 uvx agent-knowledge-mcp
 
-# Or install from GitHub
-uvx --from git+https://github.com/itshare4u/AgentKnowledgeMCP.git agent-knowledge-mcp
-
-# Or install as a tool
-uv tool install git+https://github.com/itshare4u/AgentKnowledgeMCP.git
+# Or install as a tool for persistent use
+uv tool install agent-knowledge-mcp
 ```
 
-**Option 2: Traditional installation**
+**Alternative installation methods:**
 ```bash
+# Install from GitHub (latest development)
+uvx --from git+https://github.com/itshare4u/AgentKnowledgeMCP.git agent-knowledge-mcp
+
+# Traditional installation
 git clone https://github.com/itshare4u/AgentKnowledgeMCP.git
 cd AgentKnowledgeMCP
 pip install -r requirements.txt
@@ -116,14 +117,13 @@ nano src/config.json
 }
 ```
 
-**Alternative (if installed manually):**
+**Alternative configurations:**
 ```json
 {
   "mcpServers": {
-    "agent-knowledge": {
-      "command": "python3",
-      "args": ["/path/to/AgentKnowledgeMCP/src/server.py"],
-      "env": {}
+    "agent-knowledge-github": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/itshare4u/AgentKnowledgeMCP.git", "agent-knowledge-mcp"]
     }
   }
 }
