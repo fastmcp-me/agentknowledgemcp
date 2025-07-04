@@ -75,8 +75,22 @@ Perfect for **developers** who want to automate knowledge management and **teams
 ## ⚡ Quick Start
 
 ### 1. Installation
+
+**Option 1: Install with uv (recommended)**
 ```bash
-git clone https://github.com/yourusername/AgentKnowledgeMCP.git
+# Install directly with uvx
+uvx agent-knowledge-mcp
+
+# Or install from GitHub
+uvx --from git+https://github.com/itshare4u/AgentKnowledgeMCP.git agent-knowledge-mcp
+
+# Or install as a tool
+uv tool install git+https://github.com/itshare4u/AgentKnowledgeMCP.git
+```
+
+**Option 2: Traditional installation**
+```bash
+git clone https://github.com/itshare4u/AgentKnowledgeMCP.git
 cd AgentKnowledgeMCP
 pip install -r requirements.txt
 ```
@@ -94,7 +108,19 @@ nano src/config.json
 ```json
 {
   "mcpServers": {
-    "elasticsearch-knowledge": {
+    "agent-knowledge": {
+      "command": "uvx",
+      "args": ["agent-knowledge-mcp"]
+    }
+  }
+}
+```
+
+**Alternative (if installed manually):**
+```json
+{
+  "mcpServers": {
+    "agent-knowledge": {
       "command": "python3",
       "args": ["/path/to/AgentKnowledgeMCP/src/server.py"],
       "env": {}
@@ -108,7 +134,20 @@ nano src/config.json
 {
   "cursor.mcp.servers": [
     {
-      "name": "elasticsearch-knowledge",
+      "name": "agent-knowledge",
+      "command": "uvx",
+      "args": ["agent-knowledge-mcp"]
+    }
+  ]
+}
+```
+
+**Alternative (if installed manually):**
+```json
+{
+  "cursor.mcp.servers": [
+    {
+      "name": "agent-knowledge",
       "command": "python3",
       "args": ["/path/to/AgentKnowledgeMCP/src/server.py"],
       "workingDirectory": "/path/to/AgentKnowledgeMCP"
@@ -121,7 +160,19 @@ nano src/config.json
 ```json
 {
   "mcp.servers": {
-    "elasticsearch-knowledge": {
+    "agent-knowledge": {
+      "command": "uvx",
+      "args": ["agent-knowledge-mcp"]
+    }
+  }
+}
+```
+
+**Alternative (if installed manually):**
+```json
+{
+  "mcp.servers": {
+    "agent-knowledge": {
       "command": "python3",
       "args": ["/path/to/AgentKnowledgeMCP/src/server.py"],
       "cwd": "/path/to/AgentKnowledgeMCP"
@@ -135,7 +186,21 @@ nano src/config.json
 {
   "mcp": {
     "servers": {
-      "elasticsearch-knowledge": {
+      "agent-knowledge": {
+        "command": "uvx",
+        "args": ["agent-knowledge-mcp"]
+      }
+    }
+  }
+}
+```
+
+**Alternative (if installed manually):**
+```json
+{
+  "mcp": {
+    "servers": {
+      "agent-knowledge": {
         "command": "python3",
         "args": ["/path/to/AgentKnowledgeMCP/src/server.py"],
         "env": {
@@ -151,7 +216,7 @@ nano src/config.json
 
 For quick installation in VS Code, click the installation buttons below:
 
-[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_MCP-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=elasticsearch-knowledge&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22server_path%22%2C%22description%22%3A%22Path%20to%20AgentKnowledgeMCP%20server.py%22%2C%22default%22%3A%22%24%7BworkspaceFolder%7D%2Fsrc%2Fserver.py%22%7D%5D&config=%7B%22command%22%3A%22python3%22%2C%22args%22%3A%5B%22%24%7Binput%3Aserver_path%7D%22%5D%2C%22cwd%22%3A%22%24%7BworkspaceFolder%7D%22%7D) [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_MCP-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=elasticsearch-knowledge&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22server_path%22%2C%22description%22%3A%22Path%20to%20AgentKnowledgeMCP%20server.py%22%2C%22default%22%3A%22%24%7BworkspaceFolder%7D%2Fsrc%2Fserver.py%22%7D%5D&config=%7B%22command%22%3A%22python3%22%2C%22args%22%3A%5B%22%24%7Binput%3Aserver_path%7D%22%5D%2C%22cwd%22%3A%22%24%7BworkspaceFolder%7D%22%7D&quality=insiders)
+[![Install with UV in VS Code](https://img.shields.io/badge/VS_Code-UV-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=agent-knowledge&inputs=%5B%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22agent-knowledge-mcp%22%5D%7D) [![Install with UV in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-UV-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=agent-knowledge&inputs=%5B%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22agent-knowledge-mcp%22%5D%7D&quality=insiders)
 
 For manual installation, add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` (or `Cmd + Shift + P` on macOS) and typing `Preferences: Open Settings (JSON)`.
 
@@ -159,7 +224,22 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 
 > Note that the `mcp` key is needed when using the `mcp.json` file.
 
-### Manual VS Code Configuration
+### UV Installation (Recommended)
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "agent-knowledge": {
+        "command": "uvx",
+        "args": ["agent-knowledge-mcp"]
+      }
+    }
+  }
+}
+```
+
+### Manual Installation
 
 ```json
 {
@@ -173,7 +253,7 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
       }
     ],
     "servers": {
-      "elasticsearch-knowledge": {
+      "agent-knowledge": {
         "command": "python3",
         "args": [
           "${input:server_path}"
