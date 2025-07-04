@@ -5,6 +5,7 @@ A Model Context Protocol (MCP) server that provides integration with Elasticsear
 ## Features
 
 ### Tools Available:
+**Elasticsearch Tools:**
 - **search**: Search documents in an Elasticsearch index with multi-field queries
 - **index_document**: Index new documents into Elasticsearch
 - **create_index**: Create new indices with custom mapping and settings
@@ -12,6 +13,18 @@ A Model Context Protocol (MCP) server that provides integration with Elasticsear
 - **delete_document**: Delete a document by ID
 - **list_indices**: List all available Elasticsearch indices
 - **delete_index**: Delete an entire index
+
+**File System Tools:**
+- **read_file**: Read content from a file
+- **write_file**: Write content to a file (creates new or overwrites existing)
+- **append_file**: Append content to an existing file
+- **delete_file**: Delete a file
+- **move_file**: Move or rename a file
+- **copy_file**: Copy a file to a new location
+- **list_directory**: List contents of a directory (with recursive option)
+- **create_directory**: Create a new directory
+- **delete_directory**: Delete a directory (with recursive option)
+- **file_info**: Get detailed information about a file or directory
 
 ### Resources:
 - **Index Information**: Browse Elasticsearch indices as resources to view mappings, settings, and stats
@@ -62,6 +75,27 @@ List all available Elasticsearch indices
 
 ```
 Create a new index called "new_docs" with text mapping
+```
+
+### File System Operations
+```
+Read the content of README.md file
+```
+
+```
+Create a new file called "test.txt" with some content
+```
+
+```
+List all files in the current directory
+```
+
+```
+Move file from "old_name.txt" to "new_name.txt"
+```
+
+```
+Get detailed information about a specific file
 ```
 
 ## Configuration
@@ -125,10 +159,24 @@ npx @modelcontextprotocol/inspector uv --directory /Users/nguyenkimchung/AgentKn
 
 ## Example Workflows
 
+### Elasticsearch Workflows:
 1. **Document Discovery**: Use the resources feature to browse available indices
 2. **Content Search**: Use multi-field search with boosted fields (title^3, summary^2, etc.)
 3. **Document Management**: Index, update, and delete documents as needed
 4. **Index Management**: Create and configure new indices for different document types
+
+### File System Workflows:
+1. **Content Management**: Read, write, and modify text files
+2. **Directory Operations**: Create, list, and manage directory structures
+3. **File Organization**: Move, copy, and rename files as needed
+4. **File Analysis**: Get detailed information about files and directories
+5. **Batch Operations**: Combine with Elasticsearch to index file contents
+
+### Combined Workflows:
+1. **Document Indexing from Files**: Read files and automatically index their content
+2. **Content Export**: Search Elasticsearch and write results to files
+3. **Backup and Restore**: Export indices to files and restore from backups
+4. **Log Analysis**: Read log files and index them for searching
 
 ## Vietnamese Content Support
 
@@ -143,3 +191,17 @@ The server includes comprehensive error handling for:
 - Resource not found errors
 
 All errors are returned as descriptive text responses to help with debugging.
+
+## Security Features
+
+### File System Access Control
+- **Restricted Directory Access**: File operations are limited to `/Users/nguyenkimchung/ElasticSearch` directory only
+- **Path Validation**: All file paths are validated and resolved to prevent directory traversal attacks
+- **Safe Operations**: Protection against accessing files outside the allowed directory
+- **Base Directory Protection**: Cannot delete the base allowed directory itself
+
+### Security Measures:
+1. **Path Resolution**: All paths are resolved to absolute paths and checked against allowed directory
+2. **Access Validation**: Every file operation validates the path is within the allowed scope
+3. **Error Containment**: Security violations return clear error messages without exposing system details
+4. **Recursive Safety**: Recursive operations are limited to the allowed directory tree
