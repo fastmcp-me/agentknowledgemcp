@@ -24,13 +24,14 @@ def get_elasticsearch_tools() -> List[types.Tool]:
         ),
         types.Tool(
             name="index_document",
-            description="Index a document into Elasticsearch",
+            description="Index a document into Elasticsearch with optional schema validation",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "index": {"type": "string", "description": "Index name"},
                     "document": {"type": "object", "description": "Document to index"},
-                    "doc_id": {"type": "string", "description": "Document ID (optional)"}
+                    "doc_id": {"type": "string", "description": "Document ID (optional)"},
+                    "validate_schema": {"type": "boolean", "description": "Validate document structure for knowledge base format", "default": True}
                 },
                 "required": ["index", "document"],
             },
@@ -89,6 +90,35 @@ def get_elasticsearch_tools() -> List[types.Tool]:
                     "index": {"type": "string", "description": "Index name to delete"}
                 },
                 "required": ["index"],
+            },
+        ),
+        types.Tool(
+            name="validate_document_schema",
+            description="Validate document structure against knowledge base schema",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "document": {"type": "object", "description": "Document to validate"}
+                },
+                "required": ["document"],
+            },
+        ),
+        types.Tool(
+            name="create_document_template",
+            description="Create a properly structured document template for knowledge base",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Document title"},
+                    "file_path": {"type": "string", "description": "Path to the source file"},
+                    "priority": {"type": "string", "description": "Priority level: high, medium, low", "default": "medium"},
+                    "source_type": {"type": "string", "description": "Source type: markdown, code, config, documentation, tutorial", "default": "markdown"},
+                    "tags": {"type": "array", "items": {"type": "string"}, "description": "List of tags"},
+                    "summary": {"type": "string", "description": "Brief description"},
+                    "key_points": {"type": "array", "items": {"type": "string"}, "description": "List of key points"},
+                    "related": {"type": "array", "items": {"type": "string"}, "description": "List of related document IDs"}
+                },
+                "required": ["title", "file_path"],
             },
         ),
     ]

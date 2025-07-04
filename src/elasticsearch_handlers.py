@@ -6,6 +6,11 @@ from typing import List, Dict, Any, Optional
 
 import mcp.types as types
 from .elasticsearch_client import get_es_client
+from .document_schema import (
+    validate_document_structure, 
+    DocumentValidationError, 
+    create_document_template
+)
 
 
 async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
@@ -57,24 +62,88 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
 
 
 async def handle_index_document(arguments: Dict[str, Any]) -> List[types.TextContent]:
-    """Handle index_document tool."""
+    """Handle index_document tool with document validation."""
     es = get_es_client()
     
     index = arguments.get("index")
     document = arguments.get("document")
     doc_id = arguments.get("doc_id")
+    validate_schema = arguments.get("validate_schema", True)  # Default to True
     
-    if doc_id:
-        result = es.index(index=index, id=doc_id, body=document)
-    else:
-        result = es.index(index=index, body=document)
+    # Validate document structure if requested
+    if validate_schema:
+        try:
+            # Check if this looks like a knowledge base document
+            if isinstance(document, dict) and "id" in document and "title" in document:
+                validated_doc = validate_document_structure(document)
+                document = validated_doc
+                
+                # Use the document ID from the validated document if not provided
+                if not doc_id:
+                    doc_id = document.get("id")
+                    
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"✅ Document validation passed. Structure is correct.\n"
+                             f"Document ID: {doc_id}\n"
+                             f"Title: {document.get('title')}\n"
+                             f"Priority: {document.get('priority')}\n"
+                             f"Tags: {document.get('tags')}\n"
+                             f"Source Type: {document.get('source_type')}\n\n"
+                             f"Ready to index to '{index}' index."
+                    )
+                ]
+        except DocumentValidationError as e:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"❌ Document validation failed!\n\n{str(e)}\n\n"
+                         f"Expected format example:\n"
+                         f"{{\n"
+                         f'  "id": "auth-jwt-001",\n'
+                         f'  "title": "JWT Authentication Implementation",\n'
+                         f'  "summary": "Brief description of JWT implementation with security considerations",\n'
+                         f'  "file_path": "/path/to/file.md",\n'
+                         f'  "file_name": "jwt.md",\n'
+                         f'  "directory": "backend/workflows/auth",\n'
+                         f'  "last_modified": "2025-01-04T10:30:00Z",\n'
+                         f'  "priority": "high",\n'
+                         f'  "tags": ["authentication", "JWT", "security"],\n'
+                         f'  "related": ["auth-refresh-token-002"],\n'
+                         f'  "source_type": "markdown",\n'
+                         f'  "key_points": ["Must validate tokens", "Use refresh tokens", "Secure storage"]\n'
+                         f"}}"
+                )
+            ]
+        except Exception as e:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"❌ Validation error: {str(e)}"
+                )
+            ]
     
-    return [
-        types.TextContent(
-            type="text",
-            text=f"Document indexed successfully:\n{json.dumps(result, indent=2)}"
-        )
-    ]
+    # Index the document
+    try:
+        if doc_id:
+            result = es.index(index=index, id=doc_id, body=document)
+        else:
+            result = es.index(index=index, body=document)
+        
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Document indexed successfully:\n{json.dumps(result, indent=2)}"
+            )
+        ]
+    except Exception as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ Failed to index document: {str(e)}"
+            )
+        ]
 
 
 async def handle_create_index(arguments: Dict[str, Any]) -> List[types.TextContent]:
@@ -181,3 +250,88 @@ async def handle_delete_index(arguments: Dict[str, Any]) -> List[types.TextConte
             text=f"Index '{index}' deleted successfully:\n{json.dumps(result, indent=2)}"
         )
     ]
+
+
+async def handle_validate_document_schema(arguments: Dict[str, Any]) -> List[types.TextContent]:
+    """Handle validate_document_schema tool."""
+    document = arguments.get("document")
+    
+    try:
+        validated_doc = validate_document_structure(document)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"✅ Document validation successful!\n\n"
+                     f"Validated document:\n{json.dumps(validated_doc, indent=2, ensure_ascii=False)}\n\n"
+                     f"Document is ready to be indexed."
+            )
+        ]
+    except DocumentValidationError as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ Document validation failed!\n\n{str(e)}\n\n"
+                     f"Expected format example:\n"
+                     f"{{\n"
+                     f'  "id": "auth-jwt-001",\n'
+                     f'  "title": "JWT Authentication Implementation",\n'
+                     f'  "summary": "Brief description of JWT implementation with security considerations",\n'
+                     f'  "file_path": "/Users/nguyenkimchung/ElasticSearch/backend/workflows/auth/jwt.md",\n'
+                     f'  "file_name": "jwt.md",\n'
+                     f'  "directory": "backend/workflows/auth",\n'
+                     f'  "last_modified": "2025-01-04T10:30:00Z",\n'
+                     f'  "priority": "high",\n'
+                     f'  "tags": ["authentication", "JWT", "security"],\n'
+                     f'  "related": ["auth-refresh-token-002"],\n'
+                     f'  "source_type": "markdown",\n'
+                     f'  "key_points": ["Must validate tokens", "Use refresh tokens", "Secure storage"]\n'
+                     f"}}"
+            )
+        ]
+    except Exception as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ Validation error: {str(e)}"
+            )
+        ]
+
+
+async def handle_create_document_template(arguments: Dict[str, Any]) -> List[types.TextContent]:
+    """Handle create_document_template tool."""
+    try:
+        title = arguments.get("title")
+        file_path = arguments.get("file_path") 
+        priority = arguments.get("priority", "medium")
+        source_type = arguments.get("source_type", "markdown")
+        tags = arguments.get("tags", [])
+        summary = arguments.get("summary", "")
+        key_points = arguments.get("key_points", [])
+        related = arguments.get("related", [])
+        
+        template = create_document_template(
+            title=title,
+            file_path=file_path,
+            priority=priority,
+            source_type=source_type,
+            tags=tags,
+            summary=summary,
+            key_points=key_points,
+            related=related
+        )
+        
+        return [
+            types.TextContent(
+                type="text",
+                text=f"✅ Document template created successfully!\n\n"
+                     f"{json.dumps(template, indent=2, ensure_ascii=False)}\n\n"
+                     f"This template can be used with the 'index_document' tool."
+            )
+        ]
+    except Exception as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ Failed to create document template: {str(e)}"
+            )
+        ]

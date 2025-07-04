@@ -24,7 +24,8 @@ from .tools import get_all_tools
 from .elasticsearch_handlers import (
     handle_search, handle_index_document, handle_create_index,
     handle_get_document, handle_delete_document, handle_list_indices,
-    handle_delete_index
+    handle_delete_index, handle_validate_document_schema, 
+    handle_create_document_template
 )
 from .file_handlers import (
     handle_read_file, handle_write_file, handle_append_file,
@@ -71,6 +72,8 @@ TOOL_HANDLERS = {
     "delete_document": handle_delete_document,
     "list_indices": handle_list_indices,
     "delete_index": handle_delete_index,
+    "validate_document_schema": handle_validate_document_schema,
+    "create_document_template": handle_create_document_template,
     
     # File system tools
     "read_file": handle_read_file,
