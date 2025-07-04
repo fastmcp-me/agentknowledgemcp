@@ -1,6 +1,6 @@
 [project]
 name = "agent-knowledge-mcp"
-version = "1.0.0"
+version = "1.0.1"
 description = "A comprehensive MCP server for AI knowledge management with Elasticsearch, file operations, and version control"
 readme = "README.md"
 requires-python = ">=3.8"

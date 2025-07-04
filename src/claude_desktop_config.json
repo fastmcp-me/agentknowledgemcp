@@ -110,7 +110,7 @@
     
     "🎉 SUCCESS": {
       "PACKAGE_URL": "https://pypi.org/project/agent-knowledge-mcp/",
-      "VERSION": "1.0.0",
+      "VERSION": "1.0.1",
       "STATUS": "✅ PUBLISHED TO PYPI",
       "INSTALL_COMMAND": "uvx agent-knowledge-mcp",
       "NO_SETUP_REQUIRED": "uvx handles all dependencies automatically!"
