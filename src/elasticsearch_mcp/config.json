@@ -1,7 +1,8 @@
 {
   "elasticsearch": {
     "host": "localhost",
-    "port": 9200
+    "port": 9200,
+    "auto_setup": true
   },
   "security": {
     "allowed_base_directory": "/Users/nguyenkimchung/ElasticSearch"
