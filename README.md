@@ -1,4 +1,4 @@
-# Elasticsearch MCP Server 🔍
+# Agent Knowledge MCP 🔍
 
 **The complete knowledge management solution**  
 Powerful Model Context Protocol server for Elasticsearch integration with comprehensive file management and version control.
@@ -9,7 +9,7 @@ Powerful Model Context Protocol server for Elasticsearch integration with compre
 [![Buy Me Coffee](https://img.shields.io/badge/Buy%20Me%20Coffee-ffdd00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://coff.ee/itshare4u)
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-EA4AAA?style=flat&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/itshare4u)
 
-## 🚀 What is Elasticsearch MCP Server?
+## 🚀 What is Agent Knowledge MCP?
 
 The most comprehensive MCP server that transforms your AI assistant into a powerful knowledge management system. **The key advantage? It combines everything you need**—Elasticsearch search, file operations, document validation, and version control in one unified solution.
 
@@ -411,7 +411,7 @@ uvx --dry-run --upgrade agent-knowledge-mcp
 
 ## 🛠️ Capabilities
 
-Elasticsearch MCP Server provides **31 powerful tools** across 4 categories:
+Agent Knowledge MCP provides **31 powerful tools** across 4 categories:
 
 ### 🔍 Elasticsearch Operations (9 tools)
 - **Smart Search** - Multi-field queries with boosting and relevance scoring
@@ -611,7 +611,7 @@ python3 tests/demo_config_management.py    # Config management demo
 
 ## 🤝 Contributing
 
-Love to have your help making Elasticsearch MCP Server even better!
+Love to have your help making Agent Knowledge MCP even better!
 
 ### Quick Development Setup
 ```bash

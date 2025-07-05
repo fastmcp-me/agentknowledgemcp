@@ -1,6 +1,6 @@
 # Tests Directory
 
-This directory contains all test files and demo scripts for the Elasticsearch MCP Server.
+This directory contains all test files and demo scripts for the Agent Knowledge MCP.
 
 ## Test Files
 
