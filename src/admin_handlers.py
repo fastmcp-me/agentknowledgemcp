@@ -2,6 +2,7 @@
 Admin tool handlers.
 """
 import json
+import subprocess
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -440,5 +441,290 @@ async def handle_elasticsearch_status(arguments: Dict[str, Any]) -> List[types.T
             types.TextContent(
                 type="text",
                 text=f"Error checking Elasticsearch status: {str(e)}"
+            )
+        ]
+
+
+async def handle_server_status(arguments: Dict[str, Any]) -> List[types.TextContent]:
+    """Handle server_status tool - check server status, version and updates."""
+    try:
+        check_updates = arguments.get("check_updates", True)
+        
+        # Get current version
+        try:
+            from .. import __version__ as current_version
+        except ImportError:
+            # Fallback to reading from pyproject.toml or package metadata
+            current_version = "unknown"
+            try:
+                import pkg_resources
+                current_version = pkg_resources.get_distribution("agent-knowledge-mcp").version
+            except:
+                pass
+        
+        # Get server status
+        config = load_config()
+        server_status = "running"
+        
+        # Check installation method
+        installation_method = "unknown"
+        try:
+            # Check if installed via uvx
+            result = subprocess.run(
+                ["uvx", "list"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0 and "agent-knowledge-mcp" in result.stdout:
+                installation_method = "uvx"
+        except:
+            pass
+        
+        # Check for updates if requested
+        latest_version = None
+        update_available = False
+        recommendation = ""
+        
+        if check_updates and installation_method == "uvx":
+            try:
+                import requests
+                response = requests.get(
+                    "https://pypi.org/pypi/agent-knowledge-mcp/json",
+                    timeout=5
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    latest_version = data["info"]["version"]
+                    
+                    # Simple version comparison (works for semver)
+                    if latest_version != current_version:
+                        update_available = True
+                        recommendation = f"🔄 New version {latest_version} available! Use 'server_upgrade' to update."
+            except Exception as e:
+                latest_version = f"Error checking: {str(e)}"
+        
+        # Build status message
+        message = f"🖥️  Server Status Report:\n\n"
+        message += f"📍 Current Version: {current_version}\n"
+        
+        if latest_version:
+            message += f"📦 Latest Version: {latest_version}\n"
+        
+        message += f"🔧 Installation Method: {installation_method}\n"
+        message += f"⚡ Server Status: {server_status}\n"
+        message += f"🗂️  Elasticsearch: {config['elasticsearch']['host']}:{config['elasticsearch']['port']}\n"
+        
+        if update_available:
+            message += f"\n✨ {recommendation}\n"
+        elif check_updates and latest_version and not update_available:
+            message += f"\n✅ You are running the latest version!\n"
+        
+        if installation_method != "uvx":
+            message += f"\n💡 Note: Server management tools only work with uvx installation.\n"
+            message += f"   Install via: uvx install agent-knowledge-mcp\n"
+        
+        return [
+            types.TextContent(
+                type="text",
+                text=message
+            )
+        ]
+        
+    except Exception as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ Error checking server status: {str(e)}"
+            )
+        ]
+
+
+async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextContent]:
+    """Handle server_upgrade tool - upgrade this MCP server via uvx."""
+    try:
+        # Check if uvx is available
+        try:
+            subprocess.run(["uvx", "--version"], capture_output=True, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return [
+                types.TextContent(
+                    type="text",
+                    text="❌ Error: uvx is not installed or not available in PATH.\n\n"
+                         "Please install uvx first or use a different installation method."
+                )
+            ]
+        
+        # Check if this package is installed via uvx
+        list_result = subprocess.run(
+            ["uvx", "list"],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if "agent-knowledge-mcp" not in list_result.stdout:
+            return [
+                types.TextContent(
+                    type="text",
+                    text="⚠️ Agent Knowledge MCP server is not installed via uvx.\n\n"
+                         "This tool only works when the server was installed using:\n"
+                         "uvx install agent-knowledge-mcp\n\n"
+                         f"Current uvx packages:\n{list_result.stdout.strip() or 'None'}"
+                )
+            ]
+        
+        # Run uvx upgrade command
+        result = subprocess.run(
+            ["uvx", "upgrade", "agent-knowledge-mcp"],
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minutes timeout
+        )
+        
+        if result.returncode == 0:
+            message = f"🎉 Agent Knowledge MCP server upgraded successfully!\n\n"
+            if result.stdout.strip():
+                message += f"Output:\n{result.stdout.strip()}\n\n"
+            
+            message += "🔄 Important: Please restart your MCP client (VS Code, Claude Desktop, etc.) to use the new version.\n\n"
+            message += "💡 The upgrade is now complete!"
+            
+            return [
+                types.TextContent(
+                    type="text",
+                    text=message
+                )
+            ]
+        else:
+            error_msg = f"❌ Failed to upgrade Agent Knowledge MCP server\n\n"
+            error_msg += f"Return code: {result.returncode}\n"
+            if result.stderr.strip():
+                error_msg += f"Error output:\n{result.stderr.strip()}\n"
+            if result.stdout.strip():
+                error_msg += f"Standard output:\n{result.stdout.strip()}\n"
+            
+            return [
+                types.TextContent(
+                    type="text",
+                    text=error_msg
+                )
+            ]
+            
+    except subprocess.TimeoutExpired:
+        return [
+            types.TextContent(
+                type="text",
+                text="❌ Timeout: Upgrade took too long (>5 minutes). Please try again."
+            )
+        ]
+    except Exception as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ Error upgrading MCP server: {str(e)}"
+            )
+        ]
+
+
+async def handle_server_uninstall(arguments: Dict[str, Any]) -> List[types.TextContent]:
+    """Handle server_uninstall tool - uninstall this MCP server via uvx."""
+    try:
+        confirm = arguments.get("confirm", False)
+        
+        if not confirm:
+            return [
+                types.TextContent(
+                    type="text",
+                    text="⚠️ DANGER: Uninstall confirmation required!\n\n"
+                         "This will completely remove the Agent Knowledge MCP server from your system.\n"
+                         "All MCP clients using this server will stop working.\n\n"
+                         "To proceed with uninstallation, call this tool again with:\n"
+                         '{"confirm": true}\n\n'
+                         "⚠️ WARNING: This action cannot be undone!"
+                )
+            ]
+        
+        # Check if uvx is available
+        try:
+            subprocess.run(["uvx", "--version"], capture_output=True, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return [
+                types.TextContent(
+                    type="text",
+                    text="❌ Error: uvx is not installed or not available in PATH.\n\n"
+                         "Please install uvx first or use a different uninstallation method."
+                )
+            ]
+        
+        # Check if package is installed
+        list_result = subprocess.run(
+            ["uvx", "list"],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if "agent-knowledge-mcp" not in list_result.stdout:
+            return [
+                types.TextContent(
+                    type="text",
+                    text="⚠️ Agent Knowledge MCP server is not installed via uvx.\n\n"
+                         "This tool only works when the server was installed using:\n"
+                         "uvx install agent-knowledge-mcp\n\n"
+                         f"Current uvx packages:\n{list_result.stdout.strip() or 'None'}"
+                )
+            ]
+        
+        # Run uvx uninstall command
+        result = subprocess.run(
+            ["uvx", "uninstall", "agent-knowledge-mcp"],
+            capture_output=True,
+            text=True,
+            timeout=60  # 1 minute timeout
+        )
+        
+        if result.returncode == 0:
+            message = f"💀 Agent Knowledge MCP server has been uninstalled!\n\n"
+            if result.stdout.strip():
+                message += f"Output:\n{result.stdout.strip()}\n\n"
+            
+            message += "🚫 The MCP server has been completely removed from your system.\n"
+            message += "⚠️ All MCP clients using this server will no longer work.\n\n"
+            message += "To reinstall, run: uvx install agent-knowledge-mcp"
+            
+            return [
+                types.TextContent(
+                    type="text",
+                    text=message
+                )
+            ]
+        else:
+            error_msg = f"❌ Failed to uninstall Agent Knowledge MCP server\n\n"
+            error_msg += f"Return code: {result.returncode}\n"
+            if result.stderr.strip():
+                error_msg += f"Error output:\n{result.stderr.strip()}\n"
+            if result.stdout.strip():
+                error_msg += f"Standard output:\n{result.stdout.strip()}\n"
+            
+            return [
+                types.TextContent(
+                    type="text",
+                    text=error_msg
+                )
+            ]
+            
+    except subprocess.TimeoutExpired:
+        return [
+            types.TextContent(
+                type="text",
+                text="❌ Timeout: Uninstall took too long. Please try again."
+            )
+        ]
+    except Exception as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ Error uninstalling MCP server: {str(e)}"
             )
         ]

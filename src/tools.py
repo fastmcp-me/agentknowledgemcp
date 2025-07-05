@@ -342,6 +342,44 @@ def get_admin_tools() -> List[types.Tool]:
                 "properties": {},
             },
         ),
+        
+        # Server management tools
+        types.Tool(
+            name="server_status",
+            description="Check current server status, version, and available updates",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "check_updates": {
+                        "type": "boolean",
+                        "description": "Check for available updates from PyPI",
+                        "default": True
+                    }
+                },
+            },
+        ),
+        types.Tool(
+            name="server_upgrade",
+            description="Upgrade this MCP server when installed via uvx",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+            },
+        ),
+        types.Tool(
+            name="server_uninstall",
+            description="Uninstall this MCP server when installed via uvx (DANGER: This will remove the server completely)",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "confirm": {
+                        "type": "boolean",
+                        "description": "Confirm uninstall action - REQUIRED to proceed",
+                        "default": False
+                    }
+                },
+            },
+        ),
     ]
 
 

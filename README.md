@@ -5,7 +5,14 @@ Powerful Model Context Protocol server for Elasticsearch integration with compre
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://im### 🎛️ System Administration (11 tools)
+- **Configuration Management** - Complete config viewing, modification, and validation with strict schema controls
+- **Security Controls** - Access restrictions and path validation
+- **Health Monitoring** - System status and Elasticsearch connectivity
+- **Auto-Setup** - Intelligent Elasticsearch configuration
+- **Environment Management** - Directory permissions and structure
+- **Strict Schema Control** - Configurable document validation to prevent unauthorized field additions
+- **Server Management** - Check status, upgrade, and uninstall MCP server via uvxds.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Buy Me Coffee](https://img.shields.io/badge/Buy%20Me%20Coffee-ffdd00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://coff.ee/itshare4u)
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-EA4AAA?style=flat&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/itshare4u)
 
@@ -23,7 +30,7 @@ The most comprehensive MCP server that transforms your AI assistant into a power
 - ✅ **Production Ready**: Battle-tested with comprehensive error handling
 
 **✨ Key Benefits:**
-- 🎯 **31 Powerful Tools**: Everything from search to version control and config management with strict schema validation
+- 🎯 **34 Powerful Tools**: Everything from search to version control and config management with strict schema validation
 - 🔄 **Universal AI Support**: Works with Claude, ChatGPT, Cursor, and any MCP-compatible AI
 - 📊 **Smart Document Management**: Auto-validation, templates, and structured data with configurable strict schema control
 - 🛡️ **Enterprise Security**: Path validation, access controls, and audit trails
@@ -411,7 +418,7 @@ uvx --dry-run --upgrade agent-knowledge-mcp
 
 ## 🛠️ Capabilities
 
-Agent Knowledge MCP provides **31 powerful tools** across 4 categories:
+Agent Knowledge MCP provides **34 powerful tools** across 4 categories:
 
 ### 🔍 Elasticsearch Operations (9 tools)
 - **Smart Search** - Multi-field queries with boosting and relevance scoring
@@ -427,7 +434,7 @@ Agent Knowledge MCP provides **31 powerful tools** across 4 categories:
 - **File Discovery** - Search files by name, content, or metadata
 - **Cross-Platform** - Windows, macOS, Linux compatibility
 
-### 🎛️ System Administration (8 tools)
+### 🎛️ System Administration (11 tools)
 - **Configuration Management** - Complete config viewing, modification, and validation with strict schema controls
 - **Security Controls** - Access restrictions and path validation
 - **Health Monitoring** - System status and Elasticsearch connectivity
@@ -578,10 +585,10 @@ Allowed fields: id, title, summary, file_path, priority, tags, source_type
 |----------|-------|-------|
 | **Elasticsearch** | 9 | search, index_document, create_index, get_document, delete_document, list_indices, delete_index, validate_document_schema, create_document_template |
 | **File System** | 11 | read_file, write_file, append_file, delete_file, move_file, copy_file, list_directory, create_directory, delete_directory, file_info, search_files |
-| **Administration** | 8 | get_config, update_config, validate_config, get_allowed_directory, set_allowed_directory, reload_config, setup_elasticsearch, elasticsearch_status |
+| **Administration** | 11 | get_config, update_config, validate_config, get_allowed_directory, set_allowed_directory, reload_config, setup_elasticsearch, elasticsearch_status, server_status, server_upgrade, server_uninstall |
 | **Version Control** | 3 | setup_version_control, commit_file, get_previous_file_version |
 
-**Total: 31 tools** for comprehensive knowledge management!
+**Total: 34 tools** for comprehensive knowledge management!
 
 ## 🧪 Testing & Validation
 

@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-07-05
+
+### Added
+- **Server Management Tools**: Three new admin tools for MCP server self-management
+  - `server_status` - Check server version, installation method, and available updates with PyPI integration
+  - `server_upgrade` - Upgrade MCP server via uvx with comprehensive error handling and user guidance
+  - `server_uninstall` - Safely uninstall MCP server via uvx with confirmation requirements
+- **Version Detection**: PyPI API integration for automatic update checking in agent workflows
+- **Enhanced Admin Capabilities**: Expanded from 8 to 11 admin tools for complete server lifecycle management
+
+### Changed
+- Updated tool count from 31 to 34 tools total
+- Enhanced README.md with new admin tool documentation
+- Improved admin_handlers.py with uvx command integration and subprocess management
+- Updated server.py with new tool handler registrations
+
+### Fixed
+- Added proper error handling for uvx availability and installation verification
+- Enhanced safety mechanisms with confirmation requirements for destructive operations
+
+### Security
+- All server management operations validate uvx installation method before proceeding
+- Confirmation required for server uninstall to prevent accidental removal
+- Comprehensive error messages guide users for proper installation and usage
+
 ## [1.0.3] - 2025-07-05
 
 ### Added

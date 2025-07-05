@@ -36,7 +36,8 @@ from .file_handlers import (
 from .admin_handlers import (
     handle_get_allowed_directory, handle_set_allowed_directory,
     handle_reload_config, handle_setup_elasticsearch, handle_elasticsearch_status,
-    handle_get_config, handle_update_config, handle_validate_config
+    handle_get_config, handle_update_config, handle_validate_config,
+    handle_server_status, handle_server_upgrade, handle_server_uninstall
 )
 from .version_control_handlers import (
     handle_setup_version_control, handle_commit_file, 
@@ -101,6 +102,9 @@ TOOL_HANDLERS = {
     "reload_config": handle_reload_config,
     "setup_elasticsearch": handle_setup_elasticsearch,
     "elasticsearch_status": handle_elasticsearch_status,
+    "server_status": handle_server_status,
+    "server_upgrade": handle_server_upgrade,
+    "server_uninstall": handle_server_uninstall,
     
     # Version control tools
     "setup_version_control": handle_setup_version_control,
