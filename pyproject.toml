@@ -35,6 +35,9 @@ Homepage = "https://github.com/itshare4u/AgentKnowledgeMCP"
 Repository = "https://github.com/itshare4u/AgentKnowledgeMCP"
 Documentation = "https://github.com/itshare4u/AgentKnowledgeMCP#readme"
 Issues = "https://github.com/itshare4u/AgentKnowledgeMCP/issues"
+Funding = "https://github.com/sponsors/itshare4u"
+"Buy Me Coffee" = "https://coff.ee/itshare4u"
+Changelog = "https://github.com/itshare4u/AgentKnowledgeMCP/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [

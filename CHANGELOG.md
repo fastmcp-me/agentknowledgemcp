@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.3] - 2025-07-05
 
 ### Added
+- **Community Support Features**: Complete sponsorship and contribution system
+  - GitHub Sponsors integration with `.github/FUNDING.yml`
+  - Buy Me Coffee integration (https://coff.ee/itshare4u)
+  - Multiple sponsorship platforms (PayPal, Ko-fi, GitHub Sponsors)
+  - Sponsor tier system with clear benefits and recognition
+  - Comprehensive CONTRIBUTING.md with financial support guidelines
+- **Enhanced README**: Auto-update installation buttons and sponsorship sections
+  - Auto-update installation buttons for VS Code with `--upgrade` flag
+  - Multiple configuration options (stable, pinned, latest, development)
+  - Detailed update instructions for all AI assistant platforms
+  - Beautiful sponsor badges and call-to-action sections
 - **Strict Schema Validation**: Configurable strict mode to prevent extra fields in documents
 - **Enhanced Configuration Management**: New tools for complete config modification and validation
   - `get_config` - View complete configuration

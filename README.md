@@ -6,6 +6,8 @@ Powerful Model Context Protocol server for Elasticsearch integration with compre
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Buy Me Coffee](https://img.shields.io/badge/Buy%20Me%20Coffee-ffdd00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://coff.ee/itshare4u)
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-EA4AAA?style=flat&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/itshare4u)
 
 ## 🚀 What is Elasticsearch MCP Server?
 
@@ -77,6 +79,33 @@ Perfect for **developers** who want to automate knowledge management and **teams
 - **"Find all TODO comments in code files and create a task list"**
 - **"Analyze document metadata and generate a content report"**
 - **"Search for outdated information and flag it for review"**
+
+## ☕ Support This Project
+
+If you find this MCP server useful, consider supporting its development:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://coff.ee/itshare4u)
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/itshare4u)
+[![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/itshare4u)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/itshare4u)
+
+### 💝 Why Support?
+- 🚀 **Faster development** of new features and improvements
+- 🐛 **Priority bug fixes** and technical support
+- 📚 **Better documentation** and comprehensive tutorials
+- 🎯 **Community-requested features** implementation
+- 🛡️ **Enhanced security** and stability updates
+- 🌟 **Long-term project sustainability**
+
+### 🎁 Sponsor Benefits
+| Tier | Amount | Benefits |
+|------|--------|----------|
+| ☕ **Coffee** | $5 | Thank you mention in README + priority issue responses |
+| 🚀 **Supporter** | $15 | Feature request consideration + early access to updates |
+| 💎 **Sponsor** | $30 | Logo in README + special recognition in releases |
+| 🌟 **Gold Sponsor** | $50+ | Custom benefits discussion + direct communication channel |
+
+**Every contribution helps maintain and improve this open-source project! 🙏**
 
 ## ⚡ Quick Start
 
@@ -661,6 +690,27 @@ uvx agent-knowledge-mcp
 ## 📝 License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+## 💖 Contributing & Support
+
+### 🤝 How to Contribute
+- 🐛 **Report bugs** via [GitHub Issues](https://github.com/itshare4u/AgentKnowledgeMCP/issues)
+- 💡 **Suggest features** for new tools or capabilities
+- 🔧 **Submit pull requests** for improvements
+- 📖 **Improve documentation** and examples
+- 🧪 **Test with different AI assistants** and share feedback
+
+### ☕ Financial Support
+If this project saves you time or helps your workflow:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://coff.ee/itshare4u)
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/itshare4u)
+
+### 🌟 Special Thanks
+- All our amazing contributors and supporters
+- The Model Context Protocol community
+- Elasticsearch team for their excellent search engine
+- Python ecosystem for powerful development tools
 
 ---
 
