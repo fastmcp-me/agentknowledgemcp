@@ -117,25 +117,9 @@ If you find this MCP server useful, consider supporting its development:
 ## ⚡ Quick Start
 
 ### 1. Installation
-
-**🎉 NEW: Now Available on PyPI!**
 ```bash
-# Super easy installation with uvx
+# Install with uvx (recommended)
 uvx agent-knowledge-mcp
-
-# Or install as a tool for persistent use
-uv tool install agent-knowledge-mcp
-```
-
-**Alternative installation methods:**
-```bash
-# Install from GitHub (latest development)
-uvx --from git+https://github.com/itshare4u/AgentKnowledgeMCP.git agent-knowledge-mcp
-
-# Traditional installation
-git clone https://github.com/itshare4u/AgentKnowledgeMCP.git
-cd AgentKnowledgeMCP
-pip install -r requirements.txt
 ```
 
 ### 2. Configuration
@@ -147,276 +131,37 @@ nano src/config.json
 
 ### 3. Connect to Your AI Assistant
 
-**For Claude Desktop**, add to your `claude_desktop_config.json`:
+**Claude Desktop** - Add to `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
     "agent-knowledge": {
-      "command": "uvx",
-      "args": ["--upgrade", "agent-knowledge-mcp"]
-    }
-  }
-}
-```
-
-**Alternative configurations:**
-```json
-{
-  "mcpServers": {
-    "agent-knowledge-stable": {
       "command": "uvx",
       "args": ["agent-knowledge-mcp"]
-    },
-    "agent-knowledge-github": {
-      "command": "uvx", 
-      "args": ["--from", "git+https://github.com/itshare4u/AgentKnowledgeMCP.git", "agent-knowledge-mcp"]
-    },
-    "agent-knowledge-pinned": {
-      "command": "uvx",
-      "args": ["agent-knowledge-mcp==1.0.3"]
     }
   }
 }
 ```
 
-**For Cursor**, add to settings:
-```json
-{
-  "cursor.mcp.servers": [
-    {
-      "name": "agent-knowledge",
-      "command": "uvx",
-      "args": ["--upgrade", "agent-knowledge-mcp"]
-    }
-  ]
-}
-```
+**VS Code** - Quick install buttons:
 
-**Alternative (if installed manually):**
-```json
-{
-  "cursor.mcp.servers": [
-    {
-      "name": "agent-knowledge",
-      "command": "python3",
-      "args": ["/path/to/AgentKnowledgeMCP/src/server.py"],
-      "workingDirectory": "/path/to/AgentKnowledgeMCP"
-    }
-  ]
-}
-```
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=agent-knowledge&inputs=%5B%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22agent-knowledge-mcp%22%5D%7D) [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=agent-knowledge&inputs=%5B%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22agent-knowledge-mcp%22%5D%7D&quality=insiders)
 
-**For VS Code**, install MCP extension and configure:
+**Other AI Assistants** - Add similar configuration:
 ```json
 {
   "mcp.servers": {
     "agent-knowledge": {
       "command": "uvx",
-      "args": ["--upgrade", "agent-knowledge-mcp"]
+      "args": ["agent-knowledge-mcp"]
     }
   }
 }
 ```
 
-**Alternative (if installed manually):**
-```json
-{
-  "mcp.servers": {
-    "agent-knowledge": {
-      "command": "python3",
-      "args": ["/path/to/AgentKnowledgeMCP/src/server.py"],
-      "cwd": "/path/to/AgentKnowledgeMCP"
-    }
-  }
-}
-```
+*Note: The server has built-in update mechanisms accessible through admin tools.*
 
-**For Windsurf**, add to `~/.windsurf/config.json`:
-```json
-{
-  "mcp": {
-    "servers": {
-      "agent-knowledge": {
-        "command": "uvx",
-        "args": ["--upgrade", "agent-knowledge-mcp"]
-      }
-    }
-  }
-}
-```
-
-**Alternative (if installed manually):**
-```json
-{
-  "mcp": {
-    "servers": {
-      "agent-knowledge": {
-        "command": "python3",
-        "args": ["/path/to/AgentKnowledgeMCP/src/server.py"],
-        "env": {
-          "PYTHONPATH": "/path/to/AgentKnowledgeMCP"
-        }
-      }
-    }
-  }
-}
-```
-
-## 🚀 Quick VS Code Installation & Updates
-
-### 📥 **Installation Buttons:**
-
-[![Install Latest Version](https://img.shields.io/badge/VS_Code-Install_Latest-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=agent-knowledge&inputs=%5B%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--upgrade%22%2C%22agent-knowledge-mcp%22%5D%7D) [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Latest-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=agent-knowledge&inputs=%5B%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--upgrade%22%2C%22agent-knowledge-mcp%22%5D%7D&quality=insiders)
-
-### 🔄 **Auto-Update Configuration:**
-The above buttons install with `--upgrade` flag to always get the latest version!
-
-For manual installation, add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` (or `Cmd + Shift + P` on macOS) and typing `Preferences: Open Settings (JSON)`.
-
-Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace. This will allow you to share the configuration with others.
-
-> Note that the `mcp` key is needed when using the `mcp.json` file.
-
-### UV Installation with Auto-Update (Recommended)
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "agent-knowledge": {
-        "command": "uvx",
-        "args": ["--upgrade", "agent-knowledge-mcp"]
-      }
-    }
-  }
-}
-```
-
-### UV Installation (Stable Version)
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "agent-knowledge": {
-        "command": "uvx", 
-        "args": ["agent-knowledge-mcp"]
-      }
-    }
-  }
-}
-```
-
-### Pin Specific Version
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "agent-knowledge": {
-        "command": "uvx",
-        "args": ["agent-knowledge-mcp==1.0.3"]
-      }
-    }
-  }
-}
-```
-
-### Manual Installation
-
-```json
-{
-  "mcp": {
-    "inputs": [
-      {
-        "type": "promptString",
-        "id": "server_path",
-        "description": "Path to AgentKnowledgeMCP server.py",
-        "default": "${workspaceFolder}/src/server.py"
-      }
-    ],
-    "servers": {
-      "agent-knowledge": {
-        "command": "python3",
-        "args": [
-          "${input:server_path}"
-        ],
-        "cwd": "${workspaceFolder}"
-      }
-    }
-  }
-}
-```
-
-## 🔄 Keeping Up-to-Date
-
-### **🚀 Auto-Update Method (Recommended):**
-Use `--upgrade` flag in your configuration to always get the latest version:
-```bash
-uvx --upgrade agent-knowledge-mcp
-```
-
-### **📋 Manual Update Commands:**
-
-**For all AI assistants with uvx configuration:**
-```bash
-# Update to latest version
-uvx --upgrade agent-knowledge-mcp
-
-# Then restart your AI assistant to reload the server
-```
-
-**For VS Code specifically:**
-```bash
-# Method 1: Quick reload
-Ctrl+Shift+P → "Developer: Reload Window"
-
-# Method 2: Update and reload 
-uvx --upgrade agent-knowledge-mcp
-# Then: Ctrl+Shift+P → "MCP: Reload Servers"
-```
-
-**For Claude Desktop:**
-```bash
-# Update package
-uvx --upgrade agent-knowledge-mcp
-
-# Restart Claude Desktop application
-```
-
-### **🔍 Check Current Version:**
-```bash
-# Check installed version
-uvx --version agent-knowledge-mcp
-
-# Check latest available version
-uvx --dry-run --upgrade agent-knowledge-mcp
-```
-
-### **📌 Version Management:**
-
-**Latest stable (recommended):**
-```json
-"args": ["--upgrade", "agent-knowledge-mcp"]
-```
-
-**Pin specific version:**
-```json  
-"args": ["agent-knowledge-mcp==1.0.3"]
-```
-
-**Development version:**
-```json
-"args": ["--from", "git+https://github.com/itshare4u/AgentKnowledgeMCP.git", "agent-knowledge-mcp"]
-```
-
-### **⚠️ Important Notes:**
-- **VS Code/Cursor**: Requires restart or "Reload Window" after updates
-- **Claude Desktop**: Requires application restart after updates  
-- **Auto-update**: Only works with `--upgrade` flag in configuration
-- **Version conflicts**: Use `uvx --force` if you encounter caching issues
-
-## 🛠️ Capabilities
+## ️ Capabilities
 
 Agent Knowledge MCP provides **34 powerful tools** across 4 categories:
 
@@ -469,39 +214,6 @@ Once everything is set up, try asking your AI:
 
 **Project Documentation:**
 > *"Read all README files in subdirectories and create a comprehensive project overview document"*
-
-## 🏗️ Architecture
-
-```
-AgentKnowledgeMCP/
-├── src/
-│   ├── server.py                    # Main MCP server
-│   ├── config.json                  # Configuration
-│   ├── config.json.example          # Configuration template
-│   ├── tools.py                     # Tool definitions (28 tools)
-│   ├── elasticsearch_handlers.py    # Elasticsearch operations
-│   ├── file_handlers.py            # File system operations
-│   ├── admin_handlers.py           # Admin operations
-│   ├── version_control_handlers.py # VCS operations
-│   ├── document_schema.py          # Document validation
-│   ├── elasticsearch_client.py     # ES client management
-│   └── security.py                 # Security & validation
-├── tests/
-│   ├── run_all_tests.py            # Test runner
-│   ├── test_file_paths.py          # File operations tests
-│   ├── test_validation.py          # Document validation tests
-│   ├── test_version_control.py     # VCS comprehensive tests
-│   ├── test_simple_vcs.py          # VCS demo tests
-│   ├── test_strict_validation.py   # Strict schema validation tests
-│   ├── demo_agent_workflow.py      # Complete workflow demo
-│   ├── demo_config_management.py   # Config management demo
-│   └── README.md                   # Test documentation
-├── .knowledges/                    # Knowledge base storage
-├── setup.py                       # Quick setup script
-├── requirements.txt                # Python dependencies
-├── CHANGELOG.md                    # Version history
-└── README.md                      # This file
-```
 
 ```mermaid
 graph TD
@@ -590,26 +302,6 @@ Allowed fields: id, title, summary, file_path, priority, tags, source_type
 
 **Total: 34 tools** for comprehensive knowledge management!
 
-## 🧪 Testing & Validation
-
-**Comprehensive test suite included:**
-
-```bash
-# Run all tests
-python3 tests/run_all_tests.py
-
-# Run individual tests
-python3 tests/test_file_paths.py           # File operations
-python3 tests/test_validation.py           # Document validation  
-python3 tests/test_version_control.py      # Version control
-python3 tests/test_simple_vcs.py           # VCS demo
-python3 tests/test_strict_validation.py    # Strict schema validation
-
-# Demo workflows
-python3 tests/demo_agent_workflow.py       # Complete workflow
-python3 tests/demo_config_management.py    # Config management demo
-```
-
 **Quality Assurance:**
 - ✅ **Unit Tests** - All core functionality tested
 - ✅ **Integration Tests** - End-to-end workflow validation
@@ -648,51 +340,6 @@ python3 src/server.py
 - **Security First** - Validate all inputs and file operations
 - **Cross-Platform** - Ensure compatibility across operating systems
 
-## 📦 Installation Options
-
-**✨ Easy Installation with UV (Recommended):**
-```bash
-# Install directly from GitHub
-uvx --from git+https://github.com/itshare4u/AgentKnowledgeMCP.git agent-knowledge-mcp
-
-# After package is published to PyPI:
-uvx agent-knowledge-mcp
-```
-
-**🔧 Manual Installation:**
-```bash
-git clone https://github.com/itshare4u/AgentKnowledgeMCP.git
-cd AgentKnowledgeMCP
-python3 -m pip install -e .
-```
-
-**📋 Requirements:**
-- Python 3.8+
-- Elasticsearch (optional - server works without it for file operations)
-- Git (for version control features)
-
-## 🚀 Publishing to PyPI
-
-For maintainers who want to publish this package:
-
-```bash
-# Build the package
-uv build
-
-# Publish to Test PyPI first
-uv publish --repository testpypi --token <your-test-pypi-token>
-
-# Test installation from Test PyPI
-uvx --index https://test.pypi.org/simple/ agent-knowledge-mcp
-
-# Publish to main PyPI
-uv publish --token <your-pypi-token>
-```
-
-After publishing, users can install with:
-```bash
-uvx agent-knowledge-mcp
-```
 
 ## 📝 License
 
