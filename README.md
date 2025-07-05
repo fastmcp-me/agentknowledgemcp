@@ -5,14 +5,7 @@ Powerful Model Context Protocol server for Elasticsearch integration with compre
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
-[![License: MIT](https://im### 🎛️ System Administration (11 tools)
-- **Configuration Management** - Complete config viewing, modification, and validation with strict schema controls
-- **Security Controls** - Access restrictions and path validation
-- **Health Monitoring** - System status and Elasticsearch connectivity
-- **Auto-Setup** - Intelligent Elasticsearch configuration
-- **Environment Management** - Directory permissions and structure
-- **Strict Schema Control** - Configurable document validation to prevent unauthorized field additions
-- **Server Management** - Check status, upgrade, and uninstall MCP server via uvxds.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Buy Me Coffee](https://img.shields.io/badge/Buy%20Me%20Coffee-ffdd00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://coff.ee/itshare4u)
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-EA4AAA?style=flat&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/itshare4u)
 
@@ -186,6 +179,7 @@ Agent Knowledge MCP provides **34 powerful tools** across 4 categories:
 - **Auto-Setup** - Intelligent Elasticsearch configuration
 - **Environment Management** - Directory permissions and structure
 - **Strict Schema Control** - Configurable document validation to prevent unauthorized field additions
+- **Server Management** - Check status, upgrade, and uninstall MCP server via uvx
 
 ### 🔄 Version Control (3 tools)
 - **Repository Setup** - Git/SVN initialization with best practices
