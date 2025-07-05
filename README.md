@@ -117,7 +117,7 @@ nano src/config.json
   "mcpServers": {
     "agent-knowledge": {
       "command": "uvx",
-      "args": ["agent-knowledge-mcp"]
+      "args": ["--upgrade", "agent-knowledge-mcp"]
     }
   }
 }
@@ -127,9 +127,17 @@ nano src/config.json
 ```json
 {
   "mcpServers": {
-    "agent-knowledge-github": {
+    "agent-knowledge-stable": {
       "command": "uvx",
+      "args": ["agent-knowledge-mcp"]
+    },
+    "agent-knowledge-github": {
+      "command": "uvx", 
       "args": ["--from", "git+https://github.com/itshare4u/AgentKnowledgeMCP.git", "agent-knowledge-mcp"]
+    },
+    "agent-knowledge-pinned": {
+      "command": "uvx",
+      "args": ["agent-knowledge-mcp==1.0.3"]
     }
   }
 }
@@ -142,7 +150,7 @@ nano src/config.json
     {
       "name": "agent-knowledge",
       "command": "uvx",
-      "args": ["agent-knowledge-mcp"]
+      "args": ["--upgrade", "agent-knowledge-mcp"]
     }
   ]
 }
@@ -168,7 +176,7 @@ nano src/config.json
   "mcp.servers": {
     "agent-knowledge": {
       "command": "uvx",
-      "args": ["agent-knowledge-mcp"]
+      "args": ["--upgrade", "agent-knowledge-mcp"]
     }
   }
 }
@@ -194,7 +202,7 @@ nano src/config.json
     "servers": {
       "agent-knowledge": {
         "command": "uvx",
-        "args": ["agent-knowledge-mcp"]
+        "args": ["--upgrade", "agent-knowledge-mcp"]
       }
     }
   }
@@ -218,11 +226,14 @@ nano src/config.json
 }
 ```
 
-## � Quick VS Code Installation
+## 🚀 Quick VS Code Installation & Updates
 
-For quick installation in VS Code, click the installation buttons below:
+### 📥 **Installation Buttons:**
 
-[![Install with UV in VS Code](https://img.shields.io/badge/VS_Code-UV-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=agent-knowledge&inputs=%5B%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22agent-knowledge-mcp%22%5D%7D) [![Install with UV in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-UV-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=agent-knowledge&inputs=%5B%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22agent-knowledge-mcp%22%5D%7D&quality=insiders)
+[![Install Latest Version](https://img.shields.io/badge/VS_Code-Install_Latest-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=agent-knowledge&inputs=%5B%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--upgrade%22%2C%22agent-knowledge-mcp%22%5D%7D) [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Latest-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=agent-knowledge&inputs=%5B%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--upgrade%22%2C%22agent-knowledge-mcp%22%5D%7D&quality=insiders)
+
+### 🔄 **Auto-Update Configuration:**
+The above buttons install with `--upgrade` flag to always get the latest version!
 
 For manual installation, add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` (or `Cmd + Shift + P` on macOS) and typing `Preferences: Open Settings (JSON)`.
 
@@ -230,7 +241,7 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 
 > Note that the `mcp` key is needed when using the `mcp.json` file.
 
-### UV Installation (Recommended)
+### UV Installation with Auto-Update (Recommended)
 
 ```json
 {
@@ -238,7 +249,37 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
     "servers": {
       "agent-knowledge": {
         "command": "uvx",
+        "args": ["--upgrade", "agent-knowledge-mcp"]
+      }
+    }
+  }
+}
+```
+
+### UV Installation (Stable Version)
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "agent-knowledge": {
+        "command": "uvx", 
         "args": ["agent-knowledge-mcp"]
+      }
+    }
+  }
+}
+```
+
+### Pin Specific Version
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "agent-knowledge": {
+        "command": "uvx",
+        "args": ["agent-knowledge-mcp==1.0.3"]
       }
     }
   }
@@ -271,7 +312,75 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 }
 ```
 
-## �🛠️ Capabilities
+## 🔄 Keeping Up-to-Date
+
+### **🚀 Auto-Update Method (Recommended):**
+Use `--upgrade` flag in your configuration to always get the latest version:
+```bash
+uvx --upgrade agent-knowledge-mcp
+```
+
+### **📋 Manual Update Commands:**
+
+**For all AI assistants with uvx configuration:**
+```bash
+# Update to latest version
+uvx --upgrade agent-knowledge-mcp
+
+# Then restart your AI assistant to reload the server
+```
+
+**For VS Code specifically:**
+```bash
+# Method 1: Quick reload
+Ctrl+Shift+P → "Developer: Reload Window"
+
+# Method 2: Update and reload 
+uvx --upgrade agent-knowledge-mcp
+# Then: Ctrl+Shift+P → "MCP: Reload Servers"
+```
+
+**For Claude Desktop:**
+```bash
+# Update package
+uvx --upgrade agent-knowledge-mcp
+
+# Restart Claude Desktop application
+```
+
+### **🔍 Check Current Version:**
+```bash
+# Check installed version
+uvx --version agent-knowledge-mcp
+
+# Check latest available version
+uvx --dry-run --upgrade agent-knowledge-mcp
+```
+
+### **📌 Version Management:**
+
+**Latest stable (recommended):**
+```json
+"args": ["--upgrade", "agent-knowledge-mcp"]
+```
+
+**Pin specific version:**
+```json  
+"args": ["agent-knowledge-mcp==1.0.3"]
+```
+
+**Development version:**
+```json
+"args": ["--from", "git+https://github.com/itshare4u/AgentKnowledgeMCP.git", "agent-knowledge-mcp"]
+```
+
+### **⚠️ Important Notes:**
+- **VS Code/Cursor**: Requires restart or "Reload Window" after updates
+- **Claude Desktop**: Requires application restart after updates  
+- **Auto-update**: Only works with `--upgrade` flag in configuration
+- **Version conflicts**: Use `uvx --force` if you encounter caching issues
+
+## 🛠️ Capabilities
 
 Elasticsearch MCP Server provides **31 powerful tools** across 4 categories:
 
