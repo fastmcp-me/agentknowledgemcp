@@ -7,6 +7,12 @@
   "security": {
     "allowed_base_directory": "./.knowledges/docs"
   },
+  "document_validation": {
+    "strict_schema_validation": true,
+    "allow_extra_fields": false,
+    "required_fields_only": false,
+    "auto_correct_paths": true
+  },
   "version_control": {
     "enabled": true,
     "type": "git",
@@ -14,6 +20,6 @@
   },
   "server": {
     "name": "AgentKnowledgeMCP",
-    "version": "0.1.0"
+    "version": "1.0.3"
   }
 }

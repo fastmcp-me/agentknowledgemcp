@@ -37,6 +37,35 @@ class DocumentValidationError(Exception):
     """Exception raised when document validation fails."""
     pass
 
+def load_validation_config() -> Dict[str, Any]:
+    """
+    Load validation configuration from config.json.
+    
+    Returns:
+        Validation configuration dict
+    """
+    try:
+        config_path = Path(__file__).parent / "config.json"
+        if config_path.exists():
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                return config.get("document_validation", {
+                    "strict_schema_validation": False,
+                    "allow_extra_fields": True,
+                    "required_fields_only": False,
+                    "auto_correct_paths": True
+                })
+    except Exception as e:
+        print(f"⚠️  Warning: Could not load validation config: {e}")
+    
+    # Default fallback
+    return {
+        "strict_schema_validation": False,
+        "allow_extra_fields": True,
+        "required_fields_only": False,
+        "auto_correct_paths": True
+    }
+
 def normalize_file_path(file_path: str, base_directory: str = None) -> Dict[str, str]:
     """
     Normalize file path to relative format and extract components.
@@ -90,13 +119,14 @@ def normalize_file_path(file_path: str, base_directory: str = None) -> Dict[str,
         "directory": directory
     }
 
-def validate_document_structure(document: Dict[str, Any], base_directory: str = None) -> Dict[str, Any]:
+def validate_document_structure(document: Dict[str, Any], base_directory: str = None, is_knowledge_doc: bool = True) -> Dict[str, Any]:
     """
-    Validate document structure against schema.
+    Validate document structure against schema with strict mode support.
     
     Args:
         document: Document to validate
         base_directory: Base directory for relative path conversion
+        is_knowledge_doc: Whether this is a knowledge base document (default: True)
         
     Returns:
         Validated and normalized document
@@ -105,71 +135,100 @@ def validate_document_structure(document: Dict[str, Any], base_directory: str = 
         DocumentValidationError: If validation fails
     """
     errors = []
+    validation_config = load_validation_config()
     
-    # Check required fields
-    for field in DOCUMENT_SCHEMA["required_fields"]:
-        if field not in document:
-            errors.append(f"Missing required field: {field}")
+    # For knowledge base documents, check the full schema
+    if is_knowledge_doc:
+        # Check for extra fields if strict validation is enabled
+        if validation_config.get("strict_schema_validation", False) and not validation_config.get("allow_extra_fields", True):
+            allowed_fields = set(DOCUMENT_SCHEMA["required_fields"])
+            document_fields = set(document.keys())
+            extra_fields = document_fields - allowed_fields
+            
+            if extra_fields:
+                errors.append(f"Extra fields not allowed in strict mode: {', '.join(sorted(extra_fields))}. Allowed fields: {', '.join(sorted(allowed_fields))}")
+    else:
+        # For non-knowledge documents, only check for extra fields if strict validation is enabled
+        if validation_config.get("strict_schema_validation", False) and not validation_config.get("allow_extra_fields", True):
+            # For non-knowledge docs, we don't have a predefined schema, so just enforce no extra fields beyond basic ones
+            # This is a more lenient check - you might want to customize this based on your needs
+            errors.append("Strict schema validation is enabled. Extra fields are not allowed for custom documents.")
+    
+    # Check required fields only for knowledge base documents
+    if is_knowledge_doc:
+        required_fields = DOCUMENT_SCHEMA["required_fields"]
+        if validation_config.get("required_fields_only", False):
+            # Only check fields that are actually required
+            for field in required_fields:
+                if field not in document:
+                    errors.append(f"Missing required field: {field}")
+        else:
+            # Check all fields in schema
+            for field in required_fields:
+                if field not in document:
+                    errors.append(f"Missing required field: {field}")
     
     if errors:
         raise DocumentValidationError("Validation failed: " + "; ".join(errors))
     
-    # Validate field types
-    for field, expected_type in DOCUMENT_SCHEMA["field_types"].items():
-        if field in document:
-            if not isinstance(document[field], expected_type):
-                errors.append(f"Field '{field}' must be of type {expected_type.__name__}, got {type(document[field]).__name__}")
-    
-    # Validate priority values
-    if document.get("priority") not in DOCUMENT_SCHEMA["priority_values"]:
-        errors.append(f"Priority must be one of {DOCUMENT_SCHEMA['priority_values']}, got '{document.get('priority')}'")
-    
-    # Validate source_type
-    if document.get("source_type") not in DOCUMENT_SCHEMA["source_types"]:
-        errors.append(f"Source type must be one of {DOCUMENT_SCHEMA['source_types']}, got '{document.get('source_type')}'")
-    
-    # Validate ID format (should be alphanumeric with hyphens)
-    if document.get("id") and not re.match(r'^[a-zA-Z0-9-_]+$', document["id"]):
-        errors.append("ID must contain only alphanumeric characters, hyphens, and underscores")
-    
-    # Validate timestamp format
-    if document.get("last_modified"):
-        try:
-            datetime.fromisoformat(document["last_modified"].replace('Z', '+00:00'))
-        except ValueError:
-            errors.append("last_modified must be in ISO 8601 format (e.g., '2025-01-04T10:30:00Z')")
-    
-    # Validate file_path and normalize
-    if document.get("file_path"):
-        # Normalize file path
-        path_info = normalize_file_path(document["file_path"], base_directory)
+    # For knowledge base documents, perform detailed validation
+    if is_knowledge_doc:
+        # Validate field types
+        for field, expected_type in DOCUMENT_SCHEMA["field_types"].items():
+            if field in document:
+                if not isinstance(document[field], expected_type):
+                    errors.append(f"Field '{field}' must be of type {expected_type.__name__}, got {type(document[field]).__name__}")
         
-        # Update document with normalized paths
-        document.update(path_info)
+        # Validate priority values
+        if document.get("priority") not in DOCUMENT_SCHEMA["priority_values"]:
+            errors.append(f"Priority must be one of {DOCUMENT_SCHEMA['priority_values']}, got '{document.get('priority')}'")
         
-        # Validate that file exists (optional warning - file might be created later)
-        if base_directory:
-            full_path = Path(base_directory) / path_info["file_path"]
-            if not full_path.exists():
-                print(f"ℹ️  Info: File {full_path} does not exist yet (will be created)")
-    
-    # Validate tags (must be non-empty strings)
-    if document.get("tags"):
-        for i, tag in enumerate(document["tags"]):
-            if not isinstance(tag, str) or not tag.strip():
-                errors.append(f"Tag at index {i} must be a non-empty string")
-    
-    # Validate related documents (must be strings)
-    if document.get("related"):
-        for i, related_id in enumerate(document["related"]):
-            if not isinstance(related_id, str) or not related_id.strip():
-                errors.append(f"Related document ID at index {i} must be a non-empty string")
-    
-    # Validate key_points (must be non-empty strings)
-    if document.get("key_points"):
-        for i, point in enumerate(document["key_points"]):
-            if not isinstance(point, str) or not point.strip():
-                errors.append(f"Key point at index {i} must be a non-empty string")
+        # Validate source_type
+        if document.get("source_type") not in DOCUMENT_SCHEMA["source_types"]:
+            errors.append(f"Source type must be one of {DOCUMENT_SCHEMA['source_types']}, got '{document.get('source_type')}'")
+        
+        # Validate ID format (should be alphanumeric with hyphens)
+        if document.get("id") and not re.match(r'^[a-zA-Z0-9-_]+$', document["id"]):
+            errors.append("ID must contain only alphanumeric characters, hyphens, and underscores")
+        
+        # Validate timestamp format
+        if document.get("last_modified"):
+            try:
+                datetime.fromisoformat(document["last_modified"].replace('Z', '+00:00'))
+            except ValueError:
+                errors.append("last_modified must be in ISO 8601 format (e.g., '2025-01-04T10:30:00Z')")
+        
+        # Validate file_path and normalize if auto_correct_paths is enabled
+        if document.get("file_path") and validation_config.get("auto_correct_paths", True):
+            # Normalize file path
+            path_info = normalize_file_path(document["file_path"], base_directory)
+            
+            # Update document with normalized paths
+            document.update(path_info)
+            
+            # Validate that file exists (optional warning - file might be created later)
+            if base_directory:
+                full_path = Path(base_directory) / path_info["file_path"]
+                if not full_path.exists():
+                    print(f"ℹ️  Info: File {full_path} does not exist yet (will be created)")
+        
+        # Validate tags (must be non-empty strings)
+        if document.get("tags"):
+            for i, tag in enumerate(document["tags"]):
+                if not isinstance(tag, str) or not tag.strip():
+                    errors.append(f"Tag at index {i} must be a non-empty string")
+        
+        # Validate related documents (must be strings)
+        if document.get("related"):
+            for i, related_id in enumerate(document["related"]):
+                if not isinstance(related_id, str) or not related_id.strip():
+                    errors.append(f"Related document ID at index {i} must be a non-empty string")
+        
+        # Validate key_points (must be non-empty strings)
+        if document.get("key_points"):
+            for i, point in enumerate(document["key_points"]):
+                if not isinstance(point, str) or not point.strip():
+                    errors.append(f"Key point at index {i} must be a non-empty string")
     
     if errors:
         raise DocumentValidationError("Validation failed: " + "; ".join(errors))

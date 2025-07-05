@@ -257,9 +257,48 @@ def get_file_system_tools() -> List[types.Tool]:
 def get_admin_tools() -> List[types.Tool]:
     """Get list of admin/configuration tools."""
     return [
+        # New comprehensive config management tools
+        types.Tool(
+            name="get_config",
+            description="Get the complete configuration from config.json file",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+            },
+        ),
+        types.Tool(
+            name="update_config",
+            description="Update the configuration file with new values",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config": {
+                        "type": "object",
+                        "description": "New configuration object to save"
+                    }
+                },
+                "required": ["config"]
+            },
+        ),
+        types.Tool(
+            name="validate_config",
+            description="Validate a configuration object before saving",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "config": {
+                        "type": "object",
+                        "description": "Configuration object to validate"
+                    }
+                },
+                "required": ["config"]
+            },
+        ),
+        
+        # Deprecated tools (kept for backward compatibility)
         types.Tool(
             name="get_allowed_directory",
-            description="Get the current allowed base directory for file operations",
+            description="Get the current allowed base directory for file operations (deprecated - use get_config instead)",
             inputSchema={
                 "type": "object",
                 "properties": {},
@@ -267,7 +306,7 @@ def get_admin_tools() -> List[types.Tool]:
         ),
         types.Tool(
             name="set_allowed_directory",
-            description="Set the allowed base directory for file operations (admin function)",
+            description="Set the allowed base directory for file operations (deprecated - use update_config instead)",
             inputSchema={
                 "type": "object",
                 "properties": {

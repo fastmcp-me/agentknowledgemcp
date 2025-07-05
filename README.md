@@ -14,15 +14,16 @@ The most comprehensive MCP server that transforms your AI assistant into a power
 **🔑 Complete Knowledge Management:**
 - ✅ **Elasticsearch Integration**: Full-featured search, indexing, and document management
 - ✅ **File System Control**: Comprehensive file operations with cross-platform support
-- ✅ **Document Validation**: Schema-enforced document structure with auto-templates
+- ✅ **Document Validation**: Schema-enforced document structure with strict validation modes
+- ✅ **Configuration Management**: Complete config control with validation and reloading
 - ✅ **Version Control**: Git and SVN support with intelligent file tracking
 - ✅ **Security First**: Sandboxed operations with configurable restrictions
 - ✅ **Production Ready**: Battle-tested with comprehensive error handling
 
 **✨ Key Benefits:**
-- 🎯 **28 Powerful Tools**: Everything from search to version control
+- 🎯 **31 Powerful Tools**: Everything from search to version control and config management with strict schema validation
 - 🔄 **Universal AI Support**: Works with Claude, ChatGPT, Cursor, and any MCP-compatible AI
-- 📊 **Smart Document Management**: Auto-validation, templates, and structured data
+- 📊 **Smart Document Management**: Auto-validation, templates, and structured data with configurable strict schema control
 - 🛡️ **Enterprise Security**: Path validation, access controls, and audit trails
 - ⚡ **Zero Dependencies**: Optional Elasticsearch - works standalone for file operations
 
@@ -66,6 +67,11 @@ Perfect for **developers** who want to automate knowledge management and **teams
 - **"Validate all documents follow our schema requirements"**
 - **"Generate project documentation from README files"**
 
+### 🔍 Configuration & Schema Management
+- **"Update configuration to enable strict schema validation for all documents"**
+- **"Show me the current configuration settings and validation rules"**
+- **"Validate this configuration before applying it to prevent errors"**
+- **"Disable extra fields in documents to enforce strict schema compliance"**
 ### 🔍 Advanced Search & Analysis
 - **"Search across all documents and files for security-related information"**
 - **"Find all TODO comments in code files and create a task list"**
@@ -267,7 +273,7 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 
 ## �🛠️ Capabilities
 
-Elasticsearch MCP Server provides **28 powerful tools** across 4 categories:
+Elasticsearch MCP Server provides **31 powerful tools** across 4 categories:
 
 ### 🔍 Elasticsearch Operations (9 tools)
 - **Smart Search** - Multi-field queries with boosting and relevance scoring
@@ -283,12 +289,13 @@ Elasticsearch MCP Server provides **28 powerful tools** across 4 categories:
 - **File Discovery** - Search files by name, content, or metadata
 - **Cross-Platform** - Windows, macOS, Linux compatibility
 
-### 🎛️ System Administration (5 tools)
-- **Configuration Management** - Dynamic config reload and validation
+### 🎛️ System Administration (8 tools)
+- **Configuration Management** - Complete config viewing, modification, and validation with strict schema controls
 - **Security Controls** - Access restrictions and path validation
 - **Health Monitoring** - System status and Elasticsearch connectivity
 - **Auto-Setup** - Intelligent Elasticsearch configuration
 - **Environment Management** - Directory permissions and structure
+- **Strict Schema Control** - Configurable document validation to prevent unauthorized field additions
 
 ### 🔄 Version Control (3 tools)
 - **Repository Setup** - Git/SVN initialization with best practices
@@ -340,8 +347,9 @@ AgentKnowledgeMCP/
 │   ├── test_validation.py          # Document validation tests
 │   ├── test_version_control.py     # VCS comprehensive tests
 │   ├── test_simple_vcs.py          # VCS demo tests
+│   ├── test_strict_validation.py   # Strict schema validation tests
 │   ├── demo_agent_workflow.py      # Complete workflow demo
-│   ├── quick_test.py               # Quick functionality check
+│   ├── demo_config_management.py   # Config management demo
 │   └── README.md                   # Test documentation
 ├── .knowledges/                    # Knowledge base storage
 ├── setup.py                       # Quick setup script
@@ -391,16 +399,51 @@ graph TD
 }
 ```
 
+## 🛡️ Strict Schema Validation
+
+**NEW: Configurable strict schema validation to prevent unwanted data corruption:**
+
+```json
+{
+  "document_validation": {
+    "strict_schema_validation": true,
+    "allow_extra_fields": false,
+    "required_fields_only": false,
+    "auto_correct_paths": true
+  }
+}
+```
+
+**Features:**
+- ✅ **Strict Mode** - Reject documents with extra fields beyond the schema
+- ✅ **Flexible Control** - Enable/disable validation per use case
+- ✅ **Schema Compliance** - Ensure all documents follow defined structure
+- ✅ **Clear Error Messages** - Detailed validation feedback with examples
+- ✅ **Backward Compatibility** - Works with existing documents
+
+**Benefits:**
+- 🛡️ **Data Integrity** - Prevent agents from adding arbitrary fields
+- 📊 **Consistent Structure** - Maintain clean, predictable document schemas
+- 🔧 **Easy Management** - Toggle validation modes through configuration
+- 🚀 **Production Ready** - Ideal for enterprise knowledge management
+
+**Example validation error:**
+```
+❌ Document validation failed!
+Extra fields not allowed in strict mode: custom_field, extra_data
+Allowed fields: id, title, summary, file_path, priority, tags, source_type
+```
+
 ## 📊 Tool Reference
 
 | Category | Count | Tools |
 |----------|-------|-------|
 | **Elasticsearch** | 9 | search, index_document, create_index, get_document, delete_document, list_indices, delete_index, validate_document_schema, create_document_template |
 | **File System** | 11 | read_file, write_file, append_file, delete_file, move_file, copy_file, list_directory, create_directory, delete_directory, file_info, search_files |
-| **Administration** | 5 | get_allowed_directory, set_allowed_directory, reload_config, setup_elasticsearch, elasticsearch_status |
+| **Administration** | 8 | get_config, update_config, validate_config, get_allowed_directory, set_allowed_directory, reload_config, setup_elasticsearch, elasticsearch_status |
 | **Version Control** | 3 | setup_version_control, commit_file, get_previous_file_version |
 
-**Total: 28 tools** for comprehensive knowledge management!
+**Total: 31 tools** for comprehensive knowledge management!
 
 ## 🧪 Testing & Validation
 
@@ -410,15 +453,16 @@ graph TD
 # Run all tests
 python3 tests/run_all_tests.py
 
-# Individual tests
-python3 tests/test_file_paths.py       # File operations
-python3 tests/test_validation.py       # Document validation  
-python3 tests/test_version_control.py  # Version control
-python3 tests/test_simple_vcs.py       # VCS demo
+# Run individual tests
+python3 tests/test_file_paths.py           # File operations
+python3 tests/test_validation.py           # Document validation  
+python3 tests/test_version_control.py      # Version control
+python3 tests/test_simple_vcs.py           # VCS demo
+python3 tests/test_strict_validation.py    # Strict schema validation
 
 # Demo workflows
-python3 tests/demo_agent_workflow.py   # Complete workflow
-python3 tests/quick_test.py            # Quick check
+python3 tests/demo_agent_workflow.py       # Complete workflow
+python3 tests/demo_config_management.py    # Config management demo
 ```
 
 **Quality Assurance:**

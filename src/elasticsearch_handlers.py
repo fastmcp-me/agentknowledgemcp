@@ -100,6 +100,10 @@ async def handle_index_document(arguments: Dict[str, Any]) -> List[types.TextCon
                              f"Ready to index to '{index}' index."
                     )
                 ]
+            else:
+                # For non-knowledge base documents, still validate with strict mode if enabled
+                validated_doc = validate_document_structure(document, base_directory, is_knowledge_doc=False)
+                document = validated_doc
         except DocumentValidationError as e:
             return [
                 types.TextContent(
