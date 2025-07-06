@@ -49,7 +49,7 @@ CONFIG = load_config()
 init_security(CONFIG["security"]["allowed_base_directory"])
 
 # Auto-setup Elasticsearch if needed
-print("🔧 Checking Elasticsearch configuration...")
+print("Checking Elasticsearch configuration")
 config_path = Path(__file__).parent / "config.json"
 setup_result = auto_setup_elasticsearch(config_path, CONFIG)
 
@@ -58,7 +58,7 @@ if setup_result["status"] == "setup_completed":
     CONFIG = load_config()
     print("✅ Elasticsearch auto-setup completed")
 elif setup_result["status"] == "already_configured":
-    print("✅ Elasticsearch already configured")
+    print("Elasticsearch already configured")
 elif setup_result["status"] == "setup_failed":
     print(f"⚠️  Elasticsearch auto-setup failed: {setup_result.get('error', 'Unknown error')}")
     print("📝 You can manually setup using the 'setup_elasticsearch' tool")

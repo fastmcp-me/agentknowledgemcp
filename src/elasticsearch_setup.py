@@ -79,7 +79,7 @@ class ElasticsearchSetup:
         # Check if container already exists
         if self._container_exists(self.container_name):
             if self._is_container_running(self.container_name):
-                print(f"✅ Container {self.container_name} is already running")
+                print(f"Container {self.container_name} is already running")
                 return {"status": "already_running", "host": "localhost", "port": 9200}
             else:
                 # Start existing container
@@ -275,10 +275,10 @@ def auto_setup_elasticsearch(config_path: Path, config: Dict[str, Any]) -> Dict[
     if check_elasticsearch_config(config):
         host = config["elasticsearch"]["host"]
         port = config["elasticsearch"]["port"]
-        print(f"✅ Elasticsearch already running at {host}:{port}")
+        print(f"Elasticsearch already running at {host}:{port}")
         return {"status": "already_configured", "host": host, "port": port}
     
-    print("🔧 Elasticsearch not accessible, starting auto-setup...")
+    print("Elasticsearch not accessible, starting auto-setup...")
     
     # Setup Elasticsearch using Docker
     setup = ElasticsearchSetup(config_path)
