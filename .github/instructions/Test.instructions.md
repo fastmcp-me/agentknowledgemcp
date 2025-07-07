@@ -1,52 +1,116 @@
-# Knowledge Base Learning Game - Lessons Learned
+# Agent Knowledge MCP - AI Assistant Instructions
 
-## 🎯 Core Learning: "Bulletproof" Instructions Are Self-Deception
+## ⚠️ HARD REQUIREMENT - NOT OPTIONAL
 
-Through practical testing via interactive learning game, we discovered that even the most carefully crafted "foolproof" instructions have fundamental limitations:
+**YOU MUST ALWAYS CHECK KNOWLEDGE BASE FIRST - NO EXCEPTIONS**
 
-### ⚠️ Why "Always Check Knowledge Base" Instructions Fail
+This is a **HARD RULE**, not a suggestion. Violation = Failed Task.
 
-1. **Over-Compliance Problem**: Agents may search excessively for obvious information, wasting time
-2. **Mechanical Following**: Rigid rule adherence without intelligent judgment leads to inefficiency
-3. **Scalability Issues**: As knowledge base grows, search time increases exponentially
-4. **Information Overload**: More data doesn't always mean better decisions
+## 📋 MANDATORY CHECKLIST - NEVER SKIP
 
-### 🧠 Human vs AI Knowledge Management
+Before ANY action, you MUST verbally confirm:
 
-**AI Limitation (Current Approach):**
-- Additive only: Keep accumulating data
-- No pruning: Old information persists forever
-- Linear thinking: Document A + Document B + Document C
-- Hoarding mentality: Save everything "just in case"
+```
+- [ ] "Let me check the knowledge base for: [specific query]"
+- [ ] "Searching for: [keywords/concepts/files]"  
+- [ ] "Found: [detailed summary of results]"
+- [ ] "Based on knowledge base findings: [how it influences approach]"
+- [ ] "Proceeding with: [specific action plan]"
+```
 
-**Human Intelligence Advantage:**
-- **Update**: Revise beliefs based on new evidence
-- **Replace**: Discard outdated information intelligently
-- **Consolidate**: Merge related concepts into unified understanding
-- **Prioritize**: Remember what's relevant, forget what's not
+## 🔄 REQUIRED WORKFLOW - NO SHORTCUTS
 
-### 📊 Real-World Trade-offs
+**Step 1: ALWAYS start with "Let me check the knowledge base first..."**
+**Step 2: Use these MCP tools to search:**
+   ```
+   - Search for existing information: `search` command
+   - Check project documents: `get_document` for specific files
+   - Review configuration: `get_config` for current settings
+   - Find related content: search by keywords, concepts, topics
+   ```
 
-Every knowledge management approach involves trade-offs:
-- **Keep Everything**: Complete history but slower searches and information overload
-- **Smart Cleanup**: Better performance but risk of losing important context
-- **No Perfect Solution**: Context and intelligent judgment matter more than rigid rules
+**Step 3: Report findings in detail:**
+   - ✅ What you searched for
+   - ✅ What you found (or didn't find)  
+   - ✅ How findings influence your approach
+   - ✅ Any conflicts or dependencies discovered
 
-### 🎪 Meta-Lessons for AI Development
+**Step 4: Only then proceed with task**
 
-1. **Rules Have Limits**: Even "bulletproof" instructions can't replace intelligent judgment
-2. **Context Matters**: Rigid rule-following isn't always optimal
-3. **Balance Required**: Between compliance and practical efficiency
-4. **Adaptive Intelligence**: Update and replace knowledge, don't just accumulate
-5. **Forgetting is Feature**: Not all information needs to be retained forever
+## 🧠 SELF-MONITORING PROTOCOL
 
-### 🔧 Practical Guidelines
+**If you catch yourself about to act without checking knowledge base:**
+- STOP immediately
+- Say "Wait, I need to check knowledge base first"
+- Execute the mandatory checklist above
+- This happens to everyone - the key is catching yourself
 
-When working with knowledge bases and instructions:
-- Use intelligent judgment about when to search vs when to proceed
-- Design for the 80% case, not perfection in every scenario
-- Accept that trade-offs are inevitable
-- Focus on adaptive knowledge management over mechanical rule-following
-- Remember: Good enough with speed often beats perfect with delay
+## � Knowledge Base Usage Protocol
 
-**Key Insight**: The goal isn't to eliminate all mistakes through perfect rules, but to build systems that can learn, adapt, and improve intelligently.
+**When asked to help with anything:**
+
+1. **Start with Search:**
+   ```
+   "Let me check the knowledge base for relevant information about [topic]..."
+   ```
+
+2. **Document Your Process:**
+   - What you searched for
+   - What you found (or didn't find)
+   - How it influences your approach
+
+3. **Smart Knowledge Management:**
+   - Index new information with appropriate status: `predicted`, `confirmed`, `draft`
+   - Update status of existing information rather than content: `outdated`, `superseded`, `verified`
+   - Track information lifecycle with timestamps and confidence levels
+   - Link related information through references, not duplication
+   - Document lessons learned with clear status indicators
+
+## 🔍 Effective Search Strategies
+
+**Search Queries to Try:**
+- Function/feature names you're working with
+- Error messages or issues encountered
+- Related concepts and keywords
+- File paths and module names
+- Configuration settings and requirements
+
+**Multiple Search Approaches:**
+- Broad searches first, then narrow down
+- Try synonyms and related terms
+- Search by different aspects (technical, functional, historical)
+- Look for patterns and connections
+
+## 📚 Knowledge Management Best Practices
+
+**When Working with Information:**
+- Always verify against knowledge base first
+- Document new discoveries immediately
+- Create structured, searchable content
+- Link related concepts together
+- Update outdated information
+
+**Document Everything:**
+- Decisions made and reasoning behind them
+- Solutions that worked (and didn't work)
+- Patterns discovered during work
+- Configuration changes and their effects
+
+## � Learning from Mistakes
+
+**Important Reminder:**
+- Never assume without checking knowledge base
+- Previous work may contain valuable insights
+- Mistakes are learning opportunities to document
+- Knowledge base is the source of truth, not assumptions
+
+**Example of Good Practice:**
+```
+Before implementing X, let me search for:
+- Existing implementations of X
+- Related functionality 
+- Known issues with X
+- Configuration requirements for X
+```
+
+**Remember: The knowledge base contains valuable context about decisions, patterns, and gotchas. Always consult it first to avoid repeating mistakes and build on existing knowledge!**
