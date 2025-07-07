@@ -566,7 +566,7 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
         # Check if this package is installed via uvx
         try:
             list_result = subprocess.run(
-                ["uvx", "list"],
+                ["uv", "tool", "list"],
                 capture_output=True,
                 text=True,
                 timeout=30
@@ -576,10 +576,10 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
                 return [
                     types.TextContent(
                         type="text",
-                        text="⚠️ Agent Knowledge MCP server is not installed via uvx.\n\n"
+                        text="⚠️ Agent Knowledge MCP server is not installed via uv tool.\n\n"
                              "This tool only works when the server was installed using:\n"
-                             "uvx install agent-knowledge-mcp\n\n"
-                             f"Current uvx packages:\n{list_result.stdout.strip() or 'None'}"
+                             "uv tool install agent-knowledge-mcp\n\n"
+                             f"Current uv tool packages:\n{list_result.stdout.strip() or 'None'}"
                     )
                 ]
         except:

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2025-07-07
+
+### Testing
+- **Auto-Upgrade Feature Test**: Version bump to test the complete auto-upgrade workflow
+  - Test server_status tool detecting version mismatch
+  - Test server_upgrade tool with cache cleaning and user instructions
+  - Validate complete upgrade cycle: detect → clean → reload → verify
+
+### Technical
+- No functional changes, version bump for testing auto-upgrade feature
+- All existing functionality remains unchanged
+
 ## [1.0.6] - 2025-07-07
 
 ### Fixed
