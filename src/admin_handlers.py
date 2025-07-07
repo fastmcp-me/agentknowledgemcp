@@ -625,16 +625,33 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
         if latest_version:
             print(f"Force installing agent-knowledge-mcp=={latest_version}...")
             install_cmd = ["uv", "tool", "install", f"agent-knowledge-mcp=={latest_version}", "--force"]
+            
+            result = subprocess.run(
+                install_cmd,
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
+            
+            # If specific version fails, try without version constraint
+            if result.returncode != 0:
+                print(f"Specific version failed, trying latest available...")
+                install_cmd = ["uv", "tool", "install", "agent-knowledge-mcp", "--force"]
+                result = subprocess.run(
+                    install_cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=120
+                )
         else:
             print("Force installing latest agent-knowledge-mcp...")
             install_cmd = ["uv", "tool", "install", "agent-knowledge-mcp", "--force"]
-        
-        result = subprocess.run(
-            install_cmd,
-            capture_output=True,
-            text=True,
-            timeout=120
-        )
+            result = subprocess.run(
+                install_cmd,
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
         
         if result.returncode == 0:
             # Parse installation output to check if upgrade happened
