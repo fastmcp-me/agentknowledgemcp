@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.17] - 2025-07-07
+
+### Changed
+- **Packaging**: Added `config.json` and example files to the package distribution in `pyproject.toml`. This makes the server more robust by providing a fallback configuration if a local `config.json` is missing or invalid when run via `uvx`.
+
 ## [1.0.16] - 2025-07-07
 
 ### Fixed

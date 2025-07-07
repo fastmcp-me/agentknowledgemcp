@@ -17,5 +17,9 @@
     "enabled": true,
     "type": "git",
     "auto_commit": false
+  },
+  "server": {
+    "name": "AgentKnowledgeMCP",
+    "version": "1.0.17"
   }
 }
