@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.13] - 2025-07-07
+
+### Testing
+- **Auto-Upgrade Workflow Validation**: Final testing of improved server_upgrade tool
+- Testing complete PyPI API integration and version-specific installation
+- Validating fallback mechanisms for UV index sync delays
+- Comprehensive end-to-end auto-upgrade testing from 1.0.10 → 1.0.13
+
+### Technical
+- No functional changes, version bump for testing improved auto-upgrade implementation
+- All enhanced auto-upgrade functionality operational and ready for production use
+
 ## [1.0.12] - 2025-07-07
 
 ### Enhanced
