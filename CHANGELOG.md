@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2025-07-07
+
+### Removed
+- **Server Uninstall Tool**: Removed `server_uninstall` tool and handler for improved safety
+  - Removed `handle_server_uninstall` function from admin_handlers.py
+  - Removed `server_uninstall` tool definition from tools.py
+  - Removed import and mapping from server.py
+  - Users should manually uninstall via `uvx uninstall agent-knowledge-mcp` if needed
+
+### Changed
+- **Cross-Platform Compatibility**: Removed emoji characters from all print statements for better Windows terminal compatibility
+  - Updated print statements across all Python files to use plain text
+  - Improved compatibility with older Windows terminal environments
+  - Maintained functionality while ensuring consistent display across platforms
+- **Server Upgrade Workflow**: Fixed `server_upgrade` function to use proper uvx workflow
+  - Changed from non-existent `uvx upgrade` to `uv cache clean` approach
+  - Added proper user instructions for restarting Claude Desktop client
+  - Improved error handling and user guidance for update process
+
+### Fixed
+- Corrected uvx upgrade process since uvx doesn't support direct upgrade commands
+- Enhanced Windows terminal compatibility by removing emoji dependencies
+- Improved user experience with clearer update instructions
+
+### Technical
+- Reduced total tool count from 34 to 33 tools
+- Maintained all core functionality while improving safety and compatibility
+- Enhanced code maintainability by removing complex uninstall logic
+
 ## [1.0.4] - 2025-07-05
 
 ### Added
