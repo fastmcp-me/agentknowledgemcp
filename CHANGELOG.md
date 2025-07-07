@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2025-07-07
+
+### Testing
+- **Auto-Upgrade Feature Final Test**: Version bump to test complete auto-upgrade workflow with MCP server tools
+  - Test server_status detecting version 1.0.8 vs latest 1.0.9
+  - Test server_upgrade tool performing cache clean and instructing user reload
+  - Validate end-to-end auto-upgrade experience using built-in MCP server tools
+
+### Technical
+- No functional changes, version bump for comprehensive auto-upgrade testing
+- All auto-upgrade functionality ready for production use
+
+## [1.0.8] - 2025-07-07
+
+### Fixed
+- **Server Upgrade Tool**: Fixed detection to use `uv tool list` instead of `uvx list`
+  - Corrected package installation verification for modern uv tool workflow
+  - Updated error messages to reference correct installation method
+  - Enhanced compatibility with current uv tool ecosystem
+
+### Technical
+- All admin tools now properly support uv tool installation method
+- Improved error handling and user guidance in server_upgrade tool
+
 ## [1.0.7] - 2025-07-07
 
 ### Testing
