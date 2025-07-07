@@ -366,20 +366,6 @@ def get_admin_tools() -> List[types.Tool]:
                 "properties": {},
             },
         ),
-        types.Tool(
-            name="server_uninstall",
-            description="Uninstall this MCP server when installed via uvx (DANGER: This will remove the server completely)",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "confirm": {
-                        "type": "boolean",
-                        "description": "Confirm uninstall action - REQUIRED to proceed",
-                        "default": False
-                    }
-                },
-            },
-        ),
     ]
 
 
