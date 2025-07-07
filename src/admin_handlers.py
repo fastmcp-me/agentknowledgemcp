@@ -451,16 +451,24 @@ async def handle_server_status(arguments: Dict[str, Any]) -> List[types.TextCont
         check_updates = arguments.get("check_updates", True)
         
         # Get current version
+        current_version = "unknown"
         try:
-            from .. import __version__ as current_version
-        except ImportError:
-            # Fallback to reading from pyproject.toml or package metadata
-            current_version = "unknown"
+            # When running from uvx package, use standard import
             try:
-                import pkg_resources
-                current_version = pkg_resources.get_distribution("agent-knowledge-mcp").version
+                import importlib.metadata
+                current_version = importlib.metadata.version("agent-knowledge-mcp")
             except:
-                pass
+                # Fallback to local import (for development)
+                try:
+                    from . import __version__ as current_version
+                except ImportError:
+                    try:
+                        from src import __version__ as current_version
+                    except ImportError:
+                        # Last resort - fallback
+                        pass
+        except Exception:
+            pass
         
         # Get server status
         config = load_config()
@@ -471,7 +479,7 @@ async def handle_server_status(arguments: Dict[str, Any]) -> List[types.TextCont
         try:
             # Check if installed via uvx
             result = subprocess.run(
-                ["uvx", "list"],
+                ["uv", "tool", "list"],
                 capture_output=True,
                 text=True,
                 timeout=10

@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2025-07-07
+
+### Fixed
+- **Version Detection**: Fixed version detection in uvx environment for server_status tool
+  - Enhanced `importlib.metadata` usage for proper package version detection
+  - Improved import fallback logic for different runtime environments
+  - Fixed installation method detection using correct `uv tool list` command
+- **Auto-Upgrade Feature**: Version detection now works correctly enabling proper auto-upgrade workflow
+  - Server can now detect current version vs latest PyPI version
+  - Upgrade recommendation and workflow function properly
+  - Clean cache and reload workflow operational
+
+### Technical
+- Removed deprecated `pkg_resources` dependency
+- Improved error handling in version detection logic
+- Enhanced compatibility with uvx installation method
+
 ## [1.0.5] - 2025-07-07
 
 ### Removed
