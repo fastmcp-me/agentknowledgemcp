@@ -590,8 +590,37 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
                 )
             ]
         
-        # Clean uv cache to ensure fresh package download on next run
-        print("Cleaning uv cache...")
+        # Try to upgrade the package directly first
+        print("Attempting to upgrade agent-knowledge-mcp...")
+        upgrade_result = subprocess.run(
+            ["uv", "tool", "upgrade", "agent-knowledge-mcp"],
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        
+        if upgrade_result.returncode == 0:
+            # Upgrade successful
+            message = f"🎉 Agent Knowledge MCP server upgraded successfully!\n\n"
+            message += f"🔄 Please restart your MCP client to use the new version:\n\n"
+            message += f"   • VS Code: Reload window (Ctrl/Cmd + Shift + P → 'Reload Window')\n"
+            message += f"   • Claude Desktop: Restart the application\n"
+            message += f"   • Other clients: Restart/reload the client\n\n"
+            
+            if upgrade_result.stdout.strip():
+                message += f"Upgrade output:\n{upgrade_result.stdout.strip()}\n\n"
+            
+            message += f"✅ Upgrade completed! Restart your client to use the latest version."
+            
+            return [
+                types.TextContent(
+                    type="text",
+                    text=message
+                )
+            ]
+        
+        # If upgrade failed, fall back to cache clean method
+        print("Direct upgrade failed, cleaning uv cache...")
         result = subprocess.run(
             ["uv", "cache", "clean"],
             capture_output=True,
@@ -606,14 +635,17 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
             message += f"   • VS Code: Reload window (Ctrl/Cmd + Shift + P → 'Reload Window')\n"
             message += f"   • Claude Desktop: Restart the application\n"
             message += f"   • Other clients: Restart/reload the client\n\n"
-            message += f"2. **The client will automatically download the latest version** from PyPI\n\n"
-            message += f"✨ Cache cleared! Next client restart will fetch the latest version.\n\n"
+            message += f"2. **If auto-upgrade doesn't work, manually upgrade:**\n"
+            message += f"   • Run: `uv tool uninstall agent-knowledge-mcp`\n"
+            message += f"   • Run: `uv tool install agent-knowledge-mcp`\n"
+            message += f"   • Then restart your client again\n\n"
+            message += f"✨ Cache cleared! Next client restart should fetch the latest version.\n\n"
             
             if result.stdout.strip():
                 message += f"Cache clean output:\n{result.stdout.strip()}\n\n"
             
-            message += f"� Note: uvx doesn't have an 'upgrade' command, so we clean the cache\n"
-            message += f"and let the client fetch the latest version on next restart."
+            message += f"💡 Note: Due to PyPI propagation delays, you may need to manually\n"
+            message += f"   reinstall if auto-upgrade doesn't work immediately."
             
             return [
                 types.TextContent(

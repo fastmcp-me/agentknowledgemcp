@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.10] - 2025-07-07
+
+### Improved
+- Enhanced server_upgrade tool with direct upgrade attempt before cache clean
+- Better error handling and fallback mechanisms for auto-upgrade
+- Improved user instructions for manual upgrade when needed
+- Added PyPI propagation delay handling
+
+### Testing
+- Comprehensive auto-upgrade workflow testing
+- Validated cache cleaning functionality
+- Confirmed version detection accuracy
+
 ## [1.0.9] - 2025-07-07
 
 ### Testing
