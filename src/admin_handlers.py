@@ -590,62 +590,84 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
                 )
             ]
         
-        # Try to upgrade the package directly first
-        print("Attempting to upgrade agent-knowledge-mcp...")
-        upgrade_result = subprocess.run(
-            ["uv", "tool", "upgrade", "agent-knowledge-mcp"],
-            capture_output=True,
-            text=True,
-            timeout=60
-        )
+        # Get the latest version from PyPI first
+        latest_version = None
+        try:
+            import requests
+            response = requests.get(
+                "https://pypi.org/pypi/agent-knowledge-mcp/json",
+                timeout=10
+            )
+            if response.status_code == 200:
+                data = response.json()
+                latest_version = data["info"]["version"]
+        except Exception as e:
+            print(f"Warning: Could not fetch latest version: {e}")
         
-        if upgrade_result.returncode == 0:
-            # Upgrade successful
-            message = f"🎉 Agent Knowledge MCP server upgraded successfully!\n\n"
-            message += f"🔄 Please restart your MCP client to use the new version:\n\n"
-            message += f"   • VS Code: Reload window (Ctrl/Cmd + Shift + P → 'Reload Window')\n"
-            message += f"   • Claude Desktop: Restart the application\n"
-            message += f"   • Other clients: Restart/reload the client\n\n"
-            
-            if upgrade_result.stdout.strip():
-                message += f"Upgrade output:\n{upgrade_result.stdout.strip()}\n\n"
-            
-            message += f"✅ Upgrade completed! Restart your client to use the latest version."
-            
-            return [
-                types.TextContent(
-                    type="text",
-                    text=message
-                )
-            ]
-        
-        # If upgrade failed, fall back to cache clean method
-        print("Direct upgrade failed, cleaning uv cache...")
-        result = subprocess.run(
+        # Clean UV cache first
+        print("Cleaning UV cache...")
+        cache_result = subprocess.run(
             ["uv", "cache", "clean"],
             capture_output=True,
             text=True,
             timeout=60
         )
         
+        if cache_result.returncode != 0:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"❌ Failed to clean UV cache:\n{cache_result.stderr.strip() or 'Unknown error'}"
+                )
+            ]
+        
+        # Force reinstall with specific version if available
+        if latest_version:
+            print(f"Force installing agent-knowledge-mcp=={latest_version}...")
+            install_cmd = ["uv", "tool", "install", f"agent-knowledge-mcp=={latest_version}", "--force"]
+        else:
+            print("Force installing latest agent-knowledge-mcp...")
+            install_cmd = ["uv", "tool", "install", "agent-knowledge-mcp", "--force"]
+        
+        result = subprocess.run(
+            install_cmd,
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        
         if result.returncode == 0:
-            message = f"🧹 UV cache cleaned successfully!\n\n"
-            message += f"🔄 To upgrade Agent Knowledge MCP server:\n\n"
-            message += f"1. **Restart your MCP client:**\n"
+            # Parse installation output to check if upgrade happened
+            output = result.stdout.strip()
+            upgrade_detected = False
+            installed_version = "unknown"
+            
+            # Look for upgrade indicators in output
+            if "+" in output and "agent-knowledge-mcp" in output:
+                for line in output.split('\n'):
+                    if line.strip().startswith('+ agent-knowledge-mcp=='):
+                        installed_version = line.split('==')[1].strip()
+                        upgrade_detected = True
+                        break
+                    elif line.strip().startswith('- agent-knowledge-mcp==') and '+ agent-knowledge-mcp==' in output:
+                        upgrade_detected = True
+            
+            if upgrade_detected:
+                message = f"🎉 Agent Knowledge MCP server upgraded successfully!\n\n"
+                if installed_version != "unknown":
+                    message += f"📦 Installed version: {installed_version}\n\n"
+            else:
+                message = f"🔄 Agent Knowledge MCP server reinstalled successfully!\n\n"
+            
+            message += f"🔄 Please restart your MCP client to use the updated version:\n\n"
             message += f"   • VS Code: Reload window (Ctrl/Cmd + Shift + P → 'Reload Window')\n"
             message += f"   • Claude Desktop: Restart the application\n"
             message += f"   • Other clients: Restart/reload the client\n\n"
-            message += f"2. **If auto-upgrade doesn't work, manually upgrade:**\n"
-            message += f"   • Run: `uv tool uninstall agent-knowledge-mcp`\n"
-            message += f"   • Run: `uv tool install agent-knowledge-mcp`\n"
-            message += f"   • Then restart your client again\n\n"
-            message += f"✨ Cache cleared! Next client restart should fetch the latest version.\n\n"
             
-            if result.stdout.strip():
-                message += f"Cache clean output:\n{result.stdout.strip()}\n\n"
+            if output:
+                message += f"Installation output:\n{output}\n\n"
             
-            message += f"💡 Note: Due to PyPI propagation delays, you may need to manually\n"
-            message += f"   reinstall if auto-upgrade doesn't work immediately."
+            message += f"✅ Installation completed! Restart your client to use the latest version."
             
             return [
                 types.TextContent(
@@ -654,14 +676,15 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
                 )
             ]
         else:
-            error_msg = f"❌ Failed to clean uv cache\n\n"
+            error_msg = f"❌ Failed to install/upgrade agent-knowledge-mcp\n\n"
             error_msg += f"Return code: {result.returncode}\n"
             if result.stderr.strip():
                 error_msg += f"Error output:\n{result.stderr.strip()}\n"
             if result.stdout.strip():
                 error_msg += f"Standard output:\n{result.stdout.strip()}\n"
             
-            error_msg += f"\n💡 You can manually restart your MCP client to check for updates."
+            error_msg += f"\n💡 You can manually run:\n"
+            error_msg += f"   uv cache clean && uv tool install agent-knowledge-mcp --force"
             
             return [
                 types.TextContent(
