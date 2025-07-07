@@ -541,54 +541,71 @@ async def handle_server_status(arguments: Dict[str, Any]) -> List[types.TextCont
 
 
 async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextContent]:
-    """Handle server_upgrade tool - upgrade this MCP server via uvx."""
+    """Handle server_upgrade tool - clean uv cache and instruct user to reload client."""
     try:
-        # Check if uvx is available
+        # Check if uv is available
         try:
-            subprocess.run(["uvx", "--version"], capture_output=True, check=True)
+            subprocess.run(["uv", "--version"], capture_output=True, check=True)
         except (subprocess.CalledProcessError, FileNotFoundError):
             return [
                 types.TextContent(
                     type="text",
-                    text="❌ Error: uvx is not installed or not available in PATH.\n\n"
-                         "Please install uvx first or use a different installation method."
+                    text="❌ Error: uv is not installed or not available in PATH.\n\n"
+                         "Please install uv first."
                 )
             ]
         
         # Check if this package is installed via uvx
-        list_result = subprocess.run(
-            ["uvx", "list"],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        
-        if "agent-knowledge-mcp" not in list_result.stdout:
+        try:
+            list_result = subprocess.run(
+                ["uvx", "list"],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if "agent-knowledge-mcp" not in list_result.stdout:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text="⚠️ Agent Knowledge MCP server is not installed via uvx.\n\n"
+                             "This tool only works when the server was installed using:\n"
+                             "uvx install agent-knowledge-mcp\n\n"
+                             f"Current uvx packages:\n{list_result.stdout.strip() or 'None'}"
+                    )
+                ]
+        except:
             return [
                 types.TextContent(
                     type="text",
-                    text="⚠️ Agent Knowledge MCP server is not installed via uvx.\n\n"
-                         "This tool only works when the server was installed using:\n"
-                         "uvx install agent-knowledge-mcp\n\n"
-                         f"Current uvx packages:\n{list_result.stdout.strip() or 'None'}"
+                    text="⚠️ Cannot verify uvx installation. Please ensure agent-knowledge-mcp is installed via uvx."
                 )
             ]
         
-        # Run uvx upgrade command
+        # Clean uv cache to ensure fresh package download on next run
+        print("Cleaning uv cache...")
         result = subprocess.run(
-            ["uvx", "upgrade", "agent-knowledge-mcp"],
+            ["uv", "cache", "clean"],
             capture_output=True,
             text=True,
-            timeout=300  # 5 minutes timeout
+            timeout=60
         )
         
         if result.returncode == 0:
-            message = f"🎉 Agent Knowledge MCP server upgraded successfully!\n\n"
-            if result.stdout.strip():
-                message += f"Output:\n{result.stdout.strip()}\n\n"
+            message = f"🧹 UV cache cleaned successfully!\n\n"
+            message += f"🔄 To upgrade Agent Knowledge MCP server:\n\n"
+            message += f"1. **Restart your MCP client:**\n"
+            message += f"   • VS Code: Reload window (Ctrl/Cmd + Shift + P → 'Reload Window')\n"
+            message += f"   • Claude Desktop: Restart the application\n"
+            message += f"   • Other clients: Restart/reload the client\n\n"
+            message += f"2. **The client will automatically download the latest version** from PyPI\n\n"
+            message += f"✨ Cache cleared! Next client restart will fetch the latest version.\n\n"
             
-            message += "🔄 Important: Please restart your MCP client (VS Code, Claude Desktop, etc.) to use the new version.\n\n"
-            message += "💡 The upgrade is now complete!"
+            if result.stdout.strip():
+                message += f"Cache clean output:\n{result.stdout.strip()}\n\n"
+            
+            message += f"� Note: uvx doesn't have an 'upgrade' command, so we clean the cache\n"
+            message += f"and let the client fetch the latest version on next restart."
             
             return [
                 types.TextContent(
@@ -597,12 +614,14 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
                 )
             ]
         else:
-            error_msg = f"❌ Failed to upgrade Agent Knowledge MCP server\n\n"
+            error_msg = f"❌ Failed to clean uv cache\n\n"
             error_msg += f"Return code: {result.returncode}\n"
             if result.stderr.strip():
                 error_msg += f"Error output:\n{result.stderr.strip()}\n"
             if result.stdout.strip():
                 error_msg += f"Standard output:\n{result.stdout.strip()}\n"
+            
+            error_msg += f"\n💡 You can manually restart your MCP client to check for updates."
             
             return [
                 types.TextContent(
@@ -615,13 +634,14 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
         return [
             types.TextContent(
                 type="text",
-                text="❌ Timeout: Upgrade took too long (>5 minutes). Please try again."
+                text="❌ Timeout: Cache clean took too long. Please try again."
             )
         ]
     except Exception as e:
         return [
             types.TextContent(
                 type="text",
-                text=f"❌ Error upgrading MCP server: {str(e)}"
+                text=f"❌ Error during upgrade process: {str(e)}\n\n"
+                     f"💡 You can manually restart your MCP client to check for updates."
             )
         ]

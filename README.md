@@ -179,7 +179,7 @@ Agent Knowledge MCP provides **34 powerful tools** across 4 categories:
 - **Auto-Setup** - Intelligent Elasticsearch configuration
 - **Environment Management** - Directory permissions and structure
 - **Strict Schema Control** - Configurable document validation to prevent unauthorized field additions
-- **Server Management** - Check status, upgrade, and uninstall MCP server via uvx
+- **Server Management** - Check status, upgrade MCP server
 
 ### 🔄 Version Control (3 tools)
 - **Repository Setup** - Git/SVN initialization with best practices
