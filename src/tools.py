@@ -366,6 +366,14 @@ def get_admin_tools() -> List[types.Tool]:
                 "properties": {},
             },
         ),
+        types.Tool(
+            name="get_prompt_guidance",
+            description="Get links to GitHub documentation for writing effective prompts with agent-knowledge-mcp",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+            },
+        ),
     ]
 
 

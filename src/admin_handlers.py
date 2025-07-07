@@ -725,3 +725,27 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
                      f"💡 You can manually restart your MCP client to check for updates."
             )
         ]
+
+
+async def handle_get_prompt_guidance(arguments: Dict[str, Any]) -> List[types.TextContent]:
+    """Handle get_prompt_guidance tool."""
+    try:
+        # Simple message with GitHub link to instructions
+        message = ("📚 We have created a prompt like this: "
+                  "https://github.com/itshare4u/AgentKnowledgeMCP/blob/main/.github/copilot-instructions.md - "
+                  "it will help you work more effectively with our MCP server.")
+        
+        return [
+            types.TextContent(
+                type="text",
+                text=message
+            )
+        ]
+        
+    except Exception as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ Error getting prompt guidance: {str(e)}"
+            )
+        ]
