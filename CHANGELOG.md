@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.12] - 2025-07-07
+
+### Enhanced
+- Improved server_upgrade tool with robust fallback mechanism
+- Direct version-specific installation from PyPI API
+- Clean cache + force install approach for reliable upgrades
+- Better error handling and upgrade detection
+- Fallback to latest available version when specific version fails
+
+### Fixed
+- Auto-upgrade reliability issues with UV index sync delays
+- Enhanced upgrade detection from installation output
+- Better user messaging for upgrade success/failure
+
 ## [1.0.11] - 2025-07-07
 
 ### Enhanced
