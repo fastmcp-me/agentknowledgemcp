@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.16] - 2025-07-07
+
+### Fixed
+- **Version Consistency**: Corrected the `__version__` in `src/__init__.py` to match the `pyproject.toml` version. The `1.0.15` release had an incorrect internal version number.
+
+## [1.0.15] - 2025-07-07
+
+### Fixed
+- **Tool Definition Bug**: Corrected the `inputSchema` for the `update_config` tool in `src/tools.py` to match the actual implementation in `src/admin_handlers.py`. This resolves a critical bug that made the tool unusable.
+
+### Added
+- **Knowledge Base Documentation**:
+  - Added a detailed guide on how to configure the MCP client for local development using `.vscode/mcp.json`.
+  - Added a comprehensive guide for the Python package release process.
+
 ## [1.0.14] - 2025-07-07
 
 ### Added

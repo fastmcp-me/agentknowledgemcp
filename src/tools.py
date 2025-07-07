@@ -272,12 +272,23 @@ def get_admin_tools() -> List[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "config": {
+                    "full_config": {
                         "type": "object",
-                        "description": "New configuration object to save"
+                        "description": "Full configuration object to save. Replaces the entire config."
+                    },
+                    "config_section": {
+                        "type": "string",
+                        "description": "The top-level section of the config to update (e.g., 'security')."
+                    },
+                    "config_key": {
+                        "type": "string",
+                        "description": "The key within the section to update (e.g., 'allowed_base_directory')."
+                    },
+                    "config_value": {
+                        "type": "string", # Note: This is a simplification, the handler can take any type.
+                        "description": "The new value for the specified key."
                     }
                 },
-                "required": ["config"]
             },
         ),
         types.Tool(
