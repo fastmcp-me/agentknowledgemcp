@@ -88,18 +88,9 @@ async def handle_index_document(arguments: Dict[str, Any]) -> List[types.TextCon
                 if not doc_id:
                     doc_id = document.get("id")
                     
-                return [
-                    types.TextContent(
-                        type="text",
-                        text=f"✅ Document validation passed. Structure is correct.\n"
-                             f"Document ID: {doc_id}\n"
-                             f"Title: {document.get('title')}\n"
-                             f"Priority: {document.get('priority')}\n"
-                             f"Tags: {document.get('tags')}\n"
-                             f"Source Type: {document.get('source_type')}\n\n"
-                             f"Ready to index to '{index}' index."
-                    )
-                ]
+                # THIS IS THE FIX: REMOVED THE PREMATURE RETURN
+                # The function will now proceed to the indexing block
+                
             else:
                 # For non-knowledge base documents, still validate with strict mode if enabled
                 validated_doc = validate_document_structure(document, base_directory, is_knowledge_doc=False)
