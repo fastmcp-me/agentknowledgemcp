@@ -378,11 +378,18 @@ def get_admin_tools() -> List[types.Tool]:
             },
         ),
         types.Tool(
-            name="get_prompt_guidance",
-            description="Get links to GitHub documentation for writing effective prompts with agent-knowledge-mcp",
+            name="get_comprehensive_usage_guide",
+            description="Get complete comprehensive usage guide for AgentKnowledgeMCP with examples, workflows, best practices, and prompting instructions",
             inputSchema={
                 "type": "object",
-                "properties": {},
+                "properties": {
+                    "section": {
+                        "type": "string",
+                        "description": "Specific section to focus on (optional)",
+                        "enum": ["quick_start", "workflows", "advanced", "troubleshooting", "best_practices", "all"],
+                        "default": "all"
+                    }
+                }
             },
         ),
     ]

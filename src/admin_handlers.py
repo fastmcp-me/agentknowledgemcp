@@ -727,18 +727,34 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
         ]
 
 
-async def handle_get_prompt_guidance(arguments: Dict[str, Any]) -> List[types.TextContent]:
-    """Handle get_prompt_guidance tool."""
+async def handle_get_comprehensive_usage_guide(arguments: Dict[str, Any]) -> List[types.TextContent]:
+    """Handle get_comprehensive_usage_guide tool."""
     try:
-        # Simple message with GitHub link to instructions
-        message = ("📚 We have created a prompt like this: "
-                  "https://github.com/itshare4u/AgentKnowledgeMCP/blob/main/.github/copilot-instructions.md - "
-                  "it will help you work more effectively with our MCP server.")
+        section = arguments.get("section", "all")
+        
+        # Read guide content from markdown file
+        guide_path = Path(__file__).parent / "comprehensive_usage_guide.md"
+        
+        if not guide_path.exists():
+            return [
+                types.TextContent(
+                    type="text",
+                    text="❌ Error: Comprehensive usage guide file not found. Please ensure 'comprehensive_usage_guide.md' exists in the src directory."
+                )
+            ]
+        
+        # Read the full guide content
+        with open(guide_path, 'r', encoding='utf-8') as f:
+            guide_content = f.read()
+        
+        # Filter by section if requested
+        if section != "all":
+            guide_content = extract_section_content(guide_content, section)
         
         return [
             types.TextContent(
                 type="text",
-                text=message
+                text=guide_content
             )
         ]
         
@@ -746,6 +762,57 @@ async def handle_get_prompt_guidance(arguments: Dict[str, Any]) -> List[types.Te
         return [
             types.TextContent(
                 type="text",
-                text=f"❌ Error getting prompt guidance: {str(e)}"
+                text=f"❌ Error getting comprehensive usage guide: {str(e)}"
             )
         ]
+
+
+def extract_section_content(full_content: str, section: str) -> str:
+    """Extract specific section from full guide content."""
+    lines = full_content.split('\n')
+    section_lines = []
+    in_section = False
+    
+    # Section mappings
+    section_headers = {
+        "quick_start": "## 🚀 **Quick Start",
+        "workflows": "## 📚 **Core Workflows",
+        "advanced": "## ⚡ **Power Commands",
+        "troubleshooting": "## 🔧 **Troubleshooting Guide", 
+        "best_practices": "## 🎓 **Best Practices"
+    }
+    
+    target_header = section_headers.get(section)
+    if not target_header:
+        return full_content  # Return full content if section not found
+    
+    # Always include the prompting instructions at the beginning
+    prompt_instruction = """# 🚀 AgentKnowledgeMCP - Complete Usage Guide
+
+## ⚡ **Before Getting Started - IMPORTANT!**
+
+> 💡 **Pro Tip for Maximum Effectiveness**: 
+> For the most effective experience with this MCP server, you should attach this instructions file to each prompt:
+> 
+> 📚 **https://github.com/itshare4u/AgentKnowledgeMCP/blob/main/.github/copilot-instructions.md**
+> 
+> This file contains guidelines that help AI assistants understand and use the MCP server optimally!
+
+---
+
+"""
+    
+    # Extract specific section
+    for line in lines:
+        if target_header in line:
+            in_section = True
+            section_lines.append(line)
+        elif in_section and line.startswith('## ') and target_header not in line:
+            break  # Stop when we reach the next section
+        elif in_section:
+            section_lines.append(line)
+    
+    if section_lines:
+        return prompt_instruction + '\n'.join(section_lines)
+    else:
+        return full_content  # Return full content if section extraction fails
