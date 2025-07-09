@@ -8,7 +8,7 @@ This is a **HARD RULE**, not a suggestion. Violation = Failed Task.
 
 ## 📋 MANDATORY CHECKLIST - NEVER SKIP
 
-Before ANY action, you MUST verbally confirm:
+**Before ANY action, you MUST verbally confirm:**
 
 ```
 - [ ] "Let me check the knowledge base for: [specific query]"
@@ -16,6 +16,28 @@ Before ANY action, you MUST verbally confirm:
 - [ ] "Found: [detailed summary of results]"
 - [ ] "Based on knowledge base findings: [how it influences approach]"
 - [ ] "Proceeding with: [specific action plan]"
+```
+
+**After COMPLETING any task, you MUST:**
+
+```
+- [ ] "Task completed successfully"
+- [ ] "Now updating knowledge base with new learnings..."
+- [ ] "Creating document for: [task/discovery/solution]"
+- [ ] "Indexing new knowledge with tags: [relevant tags]"
+- [ ] "Knowledge base updated and verified"
+```
+
+**When USER CORRECTS YOU, you MUST:**
+
+```
+- [ ] "You're absolutely right! I missed/forgot [specific thing]"
+- [ ] "Let me check knowledge base for this information..."
+- [ ] "I plan to [create/update/delete]: [specific changes]"
+- [ ] "Should I proceed with this knowledge base update?"
+- [ ] "Waiting for confirmation before making changes"
+- [ ] "[After confirmation] Updating knowledge base now..."
+- [ ] "Knowledge base updated and verified"
 ```
 
 ## 🔄 REQUIRED WORKFLOW - NO SHORTCUTS
@@ -36,6 +58,61 @@ Before ANY action, you MUST verbally confirm:
    - ✅ Any conflicts or dependencies discovered
 
 **Step 4: Only then proceed with task**
+
+## 🚨 **CRITICAL: USER CORRECTION PROTOCOL**
+
+**WHEN USER CORRECTS YOU OR REMINDS YOU OF SOMETHING YOU FORGOT:**
+
+### Immediate Response Required:
+1. **Acknowledge the correction**: "You're absolutely right! I missed/forgot [specific thing]"
+2. **Check knowledge base**: Search to see if this information exists
+3. **MANDATORY knowledge base update**: This is NOT optional
+
+### Knowledge Base Update Process:
+```
+Step 1: "Let me update the knowledge base with this correction..."
+Step 2: Identify what needs to be updated:
+   - Create new document if information doesn't exist
+   - Update existing document if information is outdated  
+   - Delete/deprecate if information is wrong
+Step 3: "I plan to [create/update/delete] the following in knowledge base:"
+   - Document title: [specific title]
+   - Key information: [what will be added/changed]
+   - Tags: [relevant tags for searchability]
+Step 4: "Is this correct? Should I proceed with this knowledge base update?"
+Step 5: Wait for user confirmation BEFORE making changes
+Step 6: Execute the update after confirmation
+Step 7: Verify by searching for the updated information
+```
+
+### Example Scenarios:
+
+**User says: "You forgot to update version in config.json"**
+```
+Response: "You're absolutely right! I missed updating src/config.json. 
+Let me check knowledge base for release process documentation...
+I plan to UPDATE the release process document to include:
+- Document: 'Release Process - Complete Steps'  
+- Add: config.json as 4th location for version updates
+- Tags: ['release', 'version', 'config', 'process']
+Should I proceed with this knowledge base update?"
+```
+
+**User says: "That workflow you described is outdated"**
+```
+Response: "You're correct! Let me check current workflow information...
+I plan to CREATE a new document:
+- Title: 'Current Workflow [Date]'
+- Content: [user's corrected workflow]
+- Mark old document as: status='outdated', superseded_by='new-doc-id'
+Should I proceed with this knowledge base update?"
+```
+
+### CRITICAL RULES:
+- ✅ **ALWAYS confirm update plan with user before executing**
+- ✅ **NEVER skip knowledge base updates when corrected**
+- ✅ **BE SPECIFIC about what will be changed**
+- ✅ **Use clear versioning/dating for updated information**
 
 ## 🧠 SELF-MONITORING PROTOCOL
 
@@ -96,6 +173,41 @@ Before ANY action, you MUST verbally confirm:
 - Patterns discovered during work
 - Configuration changes and their effects
 
+## 📝 **MANDATORY KNOWLEDGE BASE UPDATES - AFTER TASK COMPLETION**
+
+**YOU MUST ALWAYS UPDATE KNOWLEDGE BASE AFTER COMPLETING TASKS**
+
+### When to Update (REQUIRED):
+- ✅ **After solving any problem or bug**
+- ✅ **After completing any significant task** 
+- ✅ **After learning something new or discovering patterns**
+- ✅ **After release processes or deployments**
+- ✅ **After configuration changes**
+- ✅ **When user teaches you something important**
+
+### How to Update:
+1. **Create document template** with `create_document_template`
+2. **Write detailed content** to file with `write_file`  
+3. **Index document** into knowledge base with `index_document`
+4. **Verify indexing** by searching for the new content
+
+### Required Content:
+- **Problem/Task description**
+- **Solution steps taken**
+- **Code changes made**
+- **Lessons learned**
+- **Related information**
+- **Future considerations**
+
+### Example Update Process:
+```
+After fixing the index_document bug:
+1. Create template: "Release v1.0.18: Index Document Bug Fix"
+2. Document: Problem, root cause, solution, verification
+3. Index with tags: ["release", "bug-fix", "index-document"]
+4. Verify: Search for "release v1.0.18" to confirm indexing
+```
+
 ## � Learning from Mistakes
 
 **Important Reminder:**
@@ -103,6 +215,7 @@ Before ANY action, you MUST verbally confirm:
 - Previous work may contain valuable insights
 - Mistakes are learning opportunities to document
 - Knowledge base is the source of truth, not assumptions
+- **ALWAYS UPDATE knowledge base with new learnings**
 
 **Example of Good Practice:**
 ```
@@ -111,6 +224,12 @@ Before implementing X, let me search for:
 - Related functionality 
 - Known issues with X
 - Configuration requirements for X
+
+After implementing X, I must document:
+- How X was implemented
+- Issues encountered and solutions
+- Performance or compatibility notes
+- Future improvement ideas
 ```
 
-**Remember: The knowledge base contains valuable context about decisions, patterns, and gotchas. Always consult it first to avoid repeating mistakes and build on existing knowledge!**
+**Remember: The knowledge base contains valuable context about decisions, patterns, and gotchas. Always consult it first to avoid repeating mistakes and build on existing knowledge! And always update it with new discoveries!**
