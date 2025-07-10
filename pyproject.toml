@@ -66,6 +66,7 @@ include = [
 [project.scripts]
 agent-knowledge-mcp = "src.server:cli_main"
 elasticsearch-mcp = "src.server:cli_main"
+akm-dev = "scripts.dev:main"
 
 [tool.black]
 line-length = 88
