@@ -279,6 +279,25 @@ def validate_document_structure(document: Dict[str, Any], base_directory: str = 
                 if not isinstance(document[field], expected_type):
                     errors.append(f"Field '{field}' must be of type {expected_type.__name__}, got {type(document[field]).__name__}")
         
+        # NEW: Validate content length
+        if document.get("content"):
+            content = document["content"]
+            
+            # Check character limit
+            max_length = validation_config.get("content_max_length", 10000)
+            if len(content) > max_length:
+                errors.append(f"Content too long: {len(content)} characters (max: {max_length})")
+            
+            # Check line limit
+            max_lines = validation_config.get("content_max_lines", 500)
+            line_count = len(content.split('\n'))
+            if line_count > max_lines:
+                errors.append(f"Content has too many lines: {line_count} lines (max: {max_lines})")
+                
+            # Check for empty content
+            if not content.strip():
+                errors.append("Content cannot be empty or contain only whitespace")
+        
         # Validate priority values
         if document.get("priority") not in document_schema["priority_values"]:
             errors.append(f"Priority must be one of {document_schema['priority_values']}, got '{document.get('priority')}'")
@@ -404,6 +423,7 @@ def create_document_template(
         "id": generate_document_id(title, source_type),
         "title": title,
         "summary": summary or f"Brief description of {title}",
+        "content": "",  # Will be filled with actual content
         "file_path": path_info["file_path"],
         "file_name": path_info["file_name"],
         "directory": path_info["directory"],
@@ -431,6 +451,7 @@ def get_example_document(context: str = "general") -> Dict[str, Any]:
             "id": "doc-example-document",
             "title": "Example Document",
             "summary": "Brief description of the document content",
+            "content": "This is the main content of the document. It can contain detailed information, explanations, code examples, or any relevant text content. Content should be meaningful and well-structured.",
             "file_path": "docs/example.md",
             "file_name": "example.md",
             "directory": "docs",

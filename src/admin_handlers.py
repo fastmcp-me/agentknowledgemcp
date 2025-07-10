@@ -185,6 +185,15 @@ async def handle_validate_config(arguments: Dict[str, Any]) -> List[types.TextCo
             for field in bool_fields:
                 if field in doc_config and not isinstance(doc_config[field], bool):
                     errors.append(f"document_validation.{field} must be a boolean")
+            
+            # Validate content limits
+            int_fields = ["content_max_length", "content_max_lines"]
+            for field in int_fields:
+                if field in doc_config:
+                    if not isinstance(doc_config[field], int):
+                        errors.append(f"document_validation.{field} must be an integer")
+                    elif doc_config[field] <= 0:
+                        errors.append(f"document_validation.{field} must be positive")
         
         # Validate document_schema section
         if "document_schema" in config:

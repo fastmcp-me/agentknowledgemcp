@@ -11,14 +11,15 @@
     "strict_schema_validation": "false",
     "allow_extra_fields": false,
     "required_fields_only": false,
-    "auto_correct_paths": true
+    "auto_correct_paths": true,
+    "content_max_length": 10000,
+    "content_max_lines": 500
   },
   "document_schema": {
     "required_fields": [
       "id",
       "title",
       "summary",
-      "content",
       "file_path",
       "file_name",
       "directory",
