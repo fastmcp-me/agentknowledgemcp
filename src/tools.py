@@ -305,6 +305,15 @@ def get_admin_tools() -> List[types.Tool]:
                 "required": ["config"]
             },
         ),
+        types.Tool(
+            name="restore_config",
+            description="Restore config.json from config.default.json backup after server upgrade",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+                "description": "Restore configuration from default backup when config.json is missing after server upgrade"
+            },
+        ),
         
         # Deprecated tools (kept for backward compatibility)
         types.Tool(

@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.20] - 2025-07-10
+
+### BREAKING CHANGES ⚠️
+- **Strict Configuration Mode**: Removed ALL fallback mechanisms from configuration loading. Server now requires proper `config.json` with `document_schema` and `document_validation` sections or will fail to start with clear error messages.
+- **No Emergency Fallbacks**: Eliminated `EMERGENCY_FALLBACK_SCHEMA` and all silent configuration defaults. Configuration errors now cause immediate RuntimeError with detailed fix suggestions.
+
+### Added
+- **Configuration Backup/Restore System**: Implemented comprehensive backup and restore system for server upgrades
+  - `config.default.json` - Automatic backup file created from current configuration
+  - `restore_config` - New admin tool to manually restore configuration from backup
+  - **Smart Fallback**: Automatic fallback to `config.default.json` when `config.json` is missing after server upgrades
+  - **Clear User Messaging**: Explicit notifications when fallback configuration is used
+
+### Enhanced
+- **Strict Error Handling**: Implemented zero-tolerance configuration validation with comprehensive error messages and solution guidance
+- **Boolean Type Conversion**: Enhanced validation config loading to properly handle string boolean values (`"false"` → `false`) from JSON configuration
+- **Production Safety**: Server will fail fast on startup if configuration is invalid, preventing silent degradation in production environments
+- **Upgrade Resilience**: Server upgrades no longer cause configuration loss with automatic backup/restore system
+
+### Documentation
+- **Comprehensive Guide**: Added `strict-configuration-validation-implementation-v1020.md` with complete implementation details, testing results, and migration guidance
+- **Backup/Restore Guide**: Added `configuration-backup-restore-system-v1020.md` with detailed upgrade workflow and recovery procedures
+- **Configuration Examples**: Updated all config examples (`config.json.example`, `config.example.json`) with proper document_schema sections
+
+### Technical Improvements
+- **Zero Fallback Architecture**: Complete removal of fallback code paths ensures predictable behavior and prevents configuration drift
+- **Enhanced Error Messages**: Configuration errors include exact file paths, missing sections, and specific fix instructions
+- **Runtime Safety**: Strict validation prevents server startup with incomplete or invalid configurations
+- **Multi-tier Fallback**: Controlled fallback system for server upgrade scenarios while maintaining strict validation in normal operation
+
 ## [1.0.19] - 2025-07-10
 
 ### Fixed

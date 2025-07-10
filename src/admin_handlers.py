@@ -153,7 +153,7 @@ async def handle_validate_config(arguments: Dict[str, Any]) -> List[types.TextCo
         warnings = []
         
         # Validate structure
-        required_sections = ["elasticsearch", "security", "document_validation", "version_control", "server"]
+        required_sections = ["elasticsearch", "security", "document_validation", "document_schema", "version_control", "server"]
         for section in required_sections:
             if section not in config:
                 errors.append(f"Missing required section: {section}")
@@ -185,6 +185,30 @@ async def handle_validate_config(arguments: Dict[str, Any]) -> List[types.TextCo
             for field in bool_fields:
                 if field in doc_config and not isinstance(doc_config[field], bool):
                     errors.append(f"document_validation.{field} must be a boolean")
+        
+        # Validate document_schema section
+        if "document_schema" in config:
+            schema_config = config["document_schema"]
+            required_schema_fields = ["required_fields", "field_types", "priority_values", "source_types"]
+            for field in required_schema_fields:
+                if field not in schema_config:
+                    errors.append(f"document_schema.{field} is required")
+                    
+            # Validate required_fields is a list
+            if "required_fields" in schema_config and not isinstance(schema_config["required_fields"], list):
+                errors.append("document_schema.required_fields must be a list")
+                
+            # Validate field_types is a dict
+            if "field_types" in schema_config and not isinstance(schema_config["field_types"], dict):
+                errors.append("document_schema.field_types must be a dictionary")
+                
+            # Validate priority_values is a list
+            if "priority_values" in schema_config and not isinstance(schema_config["priority_values"], list):
+                errors.append("document_schema.priority_values must be a list")
+                
+            # Validate source_types is a list
+            if "source_types" in schema_config and not isinstance(schema_config["source_types"], list):
+                errors.append("document_schema.source_types must be a list")
         
         # Validate version_control section
         if "version_control" in config:
@@ -816,3 +840,61 @@ def extract_section_content(full_content: str, section: str) -> str:
         return prompt_instruction + '\n'.join(section_lines)
     else:
         return full_content  # Return full content if section extraction fails
+
+
+async def handle_restore_config(arguments: Dict[str, Any]) -> List[types.TextContent]:
+    """Handle restore_config tool - restore config.json from config.default.json after server upgrade."""
+    try:
+        config_path = Path(__file__).parent / "config.json"
+        default_config_path = Path(__file__).parent / "config.default.json"
+        
+        # Check if config.json already exists
+        if config_path.exists():
+            return [
+                types.TextContent(
+                    type="text",
+                    text="✅ Configuration file config.json already exists.\n"
+                         "💡 Use 'get_config' to view current configuration or 'update_config' to modify it."
+                )
+            ]
+        
+        # Check if config.default.json exists
+        if not default_config_path.exists():
+            return [
+                types.TextContent(
+                    type="text",
+                    text="❌ Default configuration file config.default.json not found.\n"
+                         "💡 Create config.json manually or contact support for configuration template."
+                )
+            ]
+        
+        # Copy config.default.json to config.json
+        import shutil
+        shutil.copy2(default_config_path, config_path)
+        
+        # Reload configuration after restore
+        config = load_config()
+        
+        # Reinitialize components with restored config
+        init_security(config["security"]["allowed_base_directory"])
+        init_elasticsearch(config)
+        reset_es_client()
+        
+        return [
+            types.TextContent(
+                type="text",
+                text="✅ Configuration restored successfully from config.default.json!\n\n"
+                     "⚠️  Configuration file config.json was not found, so restored from default backup.\n\n"
+                     "📋 Configuration has been reloaded and all components reinitialized.\n"
+                     "💡 Use 'get_config' to view the restored configuration or 'update_config' to customize it."
+            )
+        ]
+        
+    except Exception as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ Error restoring configuration: {str(e)}\n\n"
+                     "💡 You may need to manually copy config.default.json to config.json"
+            )
+        ]

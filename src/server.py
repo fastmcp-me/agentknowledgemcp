@@ -36,7 +36,7 @@ from .file_handlers import (
 from .admin_handlers import (
     handle_get_allowed_directory, handle_set_allowed_directory,
     handle_reload_config, handle_setup_elasticsearch, handle_elasticsearch_status,
-    handle_get_config, handle_update_config, handle_validate_config,
+    handle_get_config, handle_update_config, handle_validate_config, handle_restore_config,
     handle_server_status, handle_server_upgrade, handle_get_comprehensive_usage_guide
 )
 from .version_control_handlers import (
@@ -97,6 +97,7 @@ TOOL_HANDLERS = {
     "get_config": handle_get_config,
     "update_config": handle_update_config,
     "validate_config": handle_validate_config,
+    "restore_config": handle_restore_config,
     "get_allowed_directory": handle_get_allowed_directory,
     "set_allowed_directory": handle_set_allowed_directory,
     "reload_config": handle_reload_config,
