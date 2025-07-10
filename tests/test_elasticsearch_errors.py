@@ -11,6 +11,7 @@ from pathlib import Path
 spec = importlib.util.spec_from_file_location("elasticsearch_handlers", 
     os.path.join(os.path.dirname(__file__), '..', 'src', 'elasticsearch_handlers.py'))
 elasticsearch_handlers = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(elasticsearch_handlers)
 
 # Mock the get_es_client function to simulate connection errors
 class MockElasticsearchClient:
