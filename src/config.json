@@ -8,7 +8,7 @@
     "allowed_base_directory": "./.knowledges/docs"
   },
   "document_validation": {
-    "strict_schema_validation": "true",
+    "strict_schema_validation": "false",
     "allow_extra_fields": false,
     "required_fields_only": false,
     "auto_correct_paths": true
