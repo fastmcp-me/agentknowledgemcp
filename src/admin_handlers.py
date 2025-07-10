@@ -582,7 +582,7 @@ async def handle_server_status(arguments: Dict[str, Any]) -> List[types.TextCont
 
 
 async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextContent]:
-    """Handle server_upgrade tool - clean uv cache and instruct user to reload client."""
+    """Handle server_upgrade tool - backup config, upgrade server, and restore settings automatically."""
     try:
         # Check if uv is available
         try:
@@ -622,6 +622,20 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
                     text="⚠️ Cannot verify uvx installation. Please ensure agent-knowledge-mcp is installed via uvx."
                 )
             ]
+        
+        # Step 1: Backup current configuration
+        config_path = Path(__file__).parent / "config.json"
+        backup_config = None
+        
+        if config_path.exists():
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    backup_config = json.load(f)
+                print("✅ Configuration backed up for restoration")
+            except Exception as e:
+                print(f"⚠️ Warning: Could not backup config: {e}")
+        else:
+            print("ℹ️ No existing config.json to backup")
         
         # Get the latest version from PyPI first
         latest_version = None
@@ -708,6 +722,46 @@ async def handle_server_upgrade(arguments: Dict[str, Any]) -> List[types.TextCon
                     message += f"📦 Installed version: {installed_version}\n\n"
             else:
                 message = f"🔄 Agent Knowledge MCP server reinstalled successfully!\n\n"
+            
+            # Step 3: Restore configuration intelligently
+            config_restored = False
+            if backup_config:
+                try:
+                    # Check if config.json exists after upgrade (it should)
+                    if config_path.exists():
+                        # Load new config from upgrade
+                        with open(config_path, 'r', encoding='utf-8') as f:
+                            new_config = json.load(f)
+                        
+                        # Perform intelligent merge
+                        merged_config = intelligent_config_merge(new_config, backup_config)
+                        
+                        # Write merged config back
+                        with open(config_path, 'w', encoding='utf-8') as f:
+                            json.dump(merged_config, f, indent=2, ensure_ascii=False)
+                        
+                        # Reload configuration after restore
+                        config = load_config()
+                        
+                        # Reinitialize components with restored config
+                        init_security(config["security"]["allowed_base_directory"])
+                        init_elasticsearch(config)
+                        reset_es_client()
+                        
+                        config_restored = True
+                        message += "🔧 Configuration automatically restored with intelligent merge!\n"
+                        message += "   • Your custom settings preserved\n"
+                        message += "   • New features from upgrade included\n"
+                        message += "   • Deprecated settings removed\n\n"
+                    else:
+                        message += "⚠️ New config.json not found after upgrade\n\n"
+                        
+                except Exception as e:
+                    message += f"⚠️ Warning: Could not restore configuration: {e}\n"
+                    message += "💡 Use 'get_config' to review and 'update_config' to customize\n\n"
+            
+            if not config_restored and not backup_config:
+                message += "ℹ️ No previous configuration to restore\n\n"
             
             message += f"🔄 Please restart your MCP client to use the updated version:\n\n"
             message += f"   • VS Code: Reload window (Ctrl/Cmd + Shift + P → 'Reload Window')\n"
@@ -851,51 +905,142 @@ def extract_section_content(full_content: str, section: str) -> str:
         return full_content  # Return full content if section extraction fails
 
 
-async def handle_restore_config(arguments: Dict[str, Any]) -> List[types.TextContent]:
-    """Handle restore_config tool - restore config.json from config.default.json after server upgrade."""
+def intelligent_config_merge(current_config: Dict[str, Any], backup_config: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Intelligently merge configuration after server upgrade.
+    
+    Logic:
+    - Some sections use LATEST config (server, schema, version info)
+    - Some sections use INTELLIGENT merge (user settings like security, elasticsearch)
+    - Ignore deprecated features (keys only in backup - these were removed)
+    
+    Args:
+        current_config: New configuration from server upgrade
+        backup_config: User's previous configuration (backup)
+        
+    Returns:
+        Merged configuration with appropriate merge strategy per section
+    """
+    # Sections that should always use the LATEST config (no merge)
+    # These contain version info, schema definitions, server settings that must be current
+    LATEST_CONFIG_SECTIONS = {
+        "server",           # Version info, new server settings
+        "schema",           # Schema definitions must be current  
+        "version",          # Version tracking
+        "defaults",         # Default values must be current
+        "required_fields",  # Schema requirements must be current
+        "field_types"       # Schema field types must be current
+    }
+    
+    # Sections that should use INTELLIGENT merge (preserve user settings)
+    # These contain user customizations that should be preserved
+    INTELLIGENT_MERGE_SECTIONS = {
+        "security",         # User's paths and security settings
+        "elasticsearch",    # User's ES connection settings  
+        "logging",          # User's logging preferences
+        "features",         # User's feature toggles
+        "custom"            # Any custom user sections
+    }
+    
+    def merge_recursive(current: Dict[str, Any], backup: Dict[str, Any], section_name: str = None) -> Dict[str, Any]:
+        result = current.copy()  # Start with current config (includes new features)
+        
+        for key, backup_value in backup.items():
+            if key in current:
+                current_value = current[key]
+                
+                # Check if this is a top-level section that needs special handling
+                if section_name is None and key in LATEST_CONFIG_SECTIONS:
+                    # Use latest config for these sections - no merge
+                    result[key] = current_value
+                    continue
+                elif section_name is None and key in INTELLIGENT_MERGE_SECTIONS:
+                    # Use intelligent merge for these sections
+                    if isinstance(current_value, dict) and isinstance(backup_value, dict):
+                        result[key] = merge_recursive(current_value, backup_value, key)
+                    else:
+                        result[key] = backup_value  # Preserve user setting
+                    continue
+                elif section_name is None and isinstance(current_value, dict) and isinstance(backup_value, dict):
+                    # For unknown top-level sections, default to intelligent merge
+                    result[key] = merge_recursive(current_value, backup_value, key)
+                    continue
+                
+                # For nested values within a section, merge normally
+                if isinstance(current_value, dict) and isinstance(backup_value, dict):
+                    # Recursively merge nested dictionaries
+                    result[key] = merge_recursive(current_value, backup_value, section_name)
+                else:
+                    # Use backup value (user's setting) for intelligent merge sections
+                    if section_name in INTELLIGENT_MERGE_SECTIONS or section_name is None:
+                        result[key] = backup_value
+                    else:
+                        # For latest config sections, keep current value
+                        result[key] = current_value
+            else:
+                # Key only exists in backup
+                # For intelligent merge sections, preserve user settings even if not in current config
+                # BUT only if they're not clearly deprecated (e.g., "old_", "deprecated_", "legacy_")
+                if section_name in INTELLIGENT_MERGE_SECTIONS:
+                    # Check if this looks like a deprecated setting
+                    is_deprecated = any(key.startswith(prefix) for prefix in ["old_", "deprecated_", "legacy_"])
+                    if not is_deprecated:
+                        result[key] = backup_value
+                # For latest config sections or deprecated keys, ignore (don't include)
+            
+        return result
+    
+    return merge_recursive(current_config, backup_config)
+
+
+async def handle_reset_config(arguments: Dict[str, Any]) -> List[types.TextContent]:
+    """Handle reset_config tool - reset config.json to defaults from config.default.json."""
     try:
         config_path = Path(__file__).parent / "config.json"
         default_config_path = Path(__file__).parent / "config.default.json"
-        
-        # Check if config.json already exists
-        if config_path.exists():
-            return [
-                types.TextContent(
-                    type="text",
-                    text="✅ Configuration file config.json already exists.\n"
-                         "💡 Use 'get_config' to view current configuration or 'update_config' to modify it."
-                )
-            ]
         
         # Check if config.default.json exists
         if not default_config_path.exists():
             return [
                 types.TextContent(
-                    type="text",
+                    type="text", 
                     text="❌ Default configuration file config.default.json not found.\n"
-                         "💡 Create config.json manually or contact support for configuration template."
+                         "💡 Cannot reset configuration without default template."
                 )
             ]
         
-        # Copy config.default.json to config.json
+        # Create backup of current config if it exists
+        backup_created = False
+        if config_path.exists():
+            import time
+            timestamp = int(time.time())
+            backup_path = config_path.with_name(f"config.backup.{timestamp}.json")
+            import shutil
+            shutil.copy2(config_path, backup_path)
+            backup_created = True
+        
+        # Copy config.default.json to config.json (overwrite)
         import shutil
         shutil.copy2(default_config_path, config_path)
         
-        # Reload configuration after restore
+        # Reload configuration after reset
         config = load_config()
         
-        # Reinitialize components with restored config
+        # Reinitialize components with reset config
         init_security(config["security"]["allowed_base_directory"])
         init_elasticsearch(config)
         reset_es_client()
         
+        message = "✅ Configuration reset to defaults successfully!\n\n"
+        if backup_created:
+            message += f"📁 Previous configuration backed up as: {backup_path.name}\n\n"
+        message += "🔄 All components reinitialized with default settings.\n"
+        message += "💡 Use 'update_config' to customize settings as needed."
+        
         return [
             types.TextContent(
                 type="text",
-                text="✅ Configuration restored successfully from config.default.json!\n\n"
-                     "⚠️  Configuration file config.json was not found, so restored from default backup.\n\n"
-                     "📋 Configuration has been reloaded and all components reinitialized.\n"
-                     "💡 Use 'get_config' to view the restored configuration or 'update_config' to customize it."
+                text=message
             )
         ]
         
@@ -903,7 +1048,7 @@ async def handle_restore_config(arguments: Dict[str, Any]) -> List[types.TextCon
         return [
             types.TextContent(
                 type="text",
-                text=f"❌ Error restoring configuration: {str(e)}\n\n"
+                text=f"❌ Error resetting configuration: {str(e)}\n\n"
                      "💡 You may need to manually copy config.default.json to config.json"
             )
         ]

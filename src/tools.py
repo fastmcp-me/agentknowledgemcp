@@ -306,12 +306,12 @@ def get_admin_tools() -> List[types.Tool]:
             },
         ),
         types.Tool(
-            name="restore_config",
-            description="Restore config.json from config.default.json backup after server upgrade",
+            name="reset_config",
+            description="Reset config.json to defaults from config.default.json (manual reset - overwrites current config)",
             inputSchema={
                 "type": "object",
                 "properties": {},
-                "description": "Restore configuration from default backup when config.json is missing after server upgrade"
+                "description": "Reset configuration to defaults, creating backup of current config"
             },
         ),
         
