@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.19] - 2025-07-10
+
+### Fixed
+- **Function Signature Bug**: Fixed critical bug in `get_example_document()` function that was causing "takes 0 positional arguments but 1 was given" error when strict validation was enabled during `index_document` operations
+- **Document Schema Validation**: Removed duplicate `format_validation_error` functions that were causing conflicts in document validation workflow
+- **Test Infrastructure**: Updated test import paths for proper module loading without MCP dependencies
+
+### Enhanced
+- **Error Handling**: Improved error messages for validation failures with proper context handling
+- **Strict Validation**: Strict schema validation now works correctly without function signature errors
+- **Knowledge Base**: Added comprehensive documentation of the bug fix for future reference
+
 ## [1.0.18] - 2025-07-09
 
 ### Fixed

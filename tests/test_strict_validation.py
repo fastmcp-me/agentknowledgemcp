@@ -4,9 +4,16 @@ Test script to verify strict schema validation is working properly.
 """
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+import importlib.util
 
-from document_schema import validate_document_structure, DocumentValidationError
+# Import document_schema directly from the file
+spec = importlib.util.spec_from_file_location("document_schema", 
+    os.path.join(os.path.dirname(__file__), '..', 'src', 'document_schema.py'))
+document_schema = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(document_schema)
+
+validate_document_structure = document_schema.validate_document_structure
+DocumentValidationError = document_schema.DocumentValidationError
 import json
 
 def test_strict_validation():

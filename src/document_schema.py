@@ -309,37 +309,7 @@ def create_document_template(
     
     return validate_document_structure(document, base_directory)
 
-def format_validation_error(error: DocumentValidationError) -> str:
-    """
-    Format validation error with a clear example.
-    
-    Args:
-        error: The validation error
-        
-    Returns:
-        Formatted error message with example
-    """
-    return (
-        f"❌ Document validation failed!\n\n{str(error)}\n\n"
-        f"Expected format example:\n"
-        f"{{\n"
-        f'  "id": "auth-jwt-001",\n'
-        f'  "title": "JWT Authentication Implementation",\n'
-        f'  "summary": "Brief description of the document",\n'
-        f'  "file_path": "auth/jwt.md",\n'
-        f'  "file_name": "jwt.md",\n'
-        f'  "directory": "auth",\n'
-        f'  "last_modified": "2025-01-04T10:30:00Z",\n'
-        f'  "priority": "high",\n'
-        f'  "tags": ["tag1", "tag2"],\n'
-        f'  "related": ["related-doc-id"],\n'
-        f'  "source_type": "markdown",\n'
-        f'  "key_points": ["Key point 1", "Key point 2"]\n'
-        f"}}"
-    )
-
-
-def get_example_document() -> Dict[str, Any]:
+def get_example_document(context: str = "general") -> Dict[str, Any]:
     """
     Generate an example document with proper format.
     

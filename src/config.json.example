@@ -18,7 +18,7 @@
   },
   "server": {
     "name": "elasticsearch-mcp",
-    "version": "1.0.0",
+    "version": "1.0.19",
     "description": "Comprehensive knowledge management MCP server"
   },
   "logging": {
