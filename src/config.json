@@ -20,6 +20,7 @@
       "id",
       "title",
       "summary",
+      "content",
       "file_path",
       "file_name",
       "directory",
