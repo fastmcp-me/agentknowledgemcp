@@ -25,7 +25,7 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
         size = arguments.get("size", 10)
         fields = arguments.get("fields", [])
         
-        # Build search query
+        # Build search query with date sorting consideration
         search_body = {
             "query": {
                 "multi_match": {
@@ -33,6 +33,10 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
                     "fields": ["title^3", "summary^2", "content", "tags^2", "features^2", "tech_stack^2"]
                 }
             },
+            "sort": [
+                "_score",  # Primary sort by relevance
+                {"last_modified": {"order": "desc"}}  # Secondary sort by recency
+            ],
             "size": size
         }
         
@@ -52,14 +56,51 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
                 "source": source
             })
         
+        total_results = result['hits']['total']['value']
+        
+        # Check if no results found and provide helpful suggestions
+        if total_results == 0:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"🔍 No results found for '{query_text}' in index '{index}'\n\n" +
+                         f"💡 **Search Optimization Suggestions for Agents**:\n\n" +
+                         f"🎯 **Try Different Keywords**:\n" +
+                         f"   • Use synonyms and related terms\n" +
+                         f"   • Try shorter, more general keywords\n" +
+                         f"   • Break complex queries into simpler parts\n" +
+                         f"   • Use different language variations if applicable\n\n" +
+                         f"📅 **Consider Recency**:\n" +
+                         f"   • Recent documents may use different terminology\n" +
+                         f"   • Try searching with current date/time related terms\n" +
+                         f"   • Look for latest trends or recent updates\n\n" +
+                         f"🤝 **Ask User for Help**:\n" +
+                         f"   • Request user to suggest related keywords\n" +
+                         f"   • Ask about specific topics or domains they're interested in\n" +
+                         f"   • Get context about what they're trying to find\n" +
+                         f"   • Ask for alternative ways to describe their query\n\n" +
+                         f"🔧 **Technical Tips**:\n" +
+                         f"   • Try searching in different indices with 'list_indices'\n" +
+                         f"   • Use broader search terms first, then narrow down\n" +
+                         f"   • Check for typos in search terms\n" +
+                         f"   • Consider partial word matches"
+                )
+            ]
+        
         return [
             types.TextContent(
                 type="text",
-                text=f"Search results for '{query_text}' in index '{index}':\n\n" +
+                text=f"Search results for '{query_text}' in index '{index}' (sorted by relevance and recency):\n\n" +
                      json.dumps({
-                         "total": result['hits']['total']['value'],
+                         "total": total_results,
                          "results": formatted_results
-                     }, indent=2, ensure_ascii=False)
+                     }, indent=2, ensure_ascii=False) +
+                     (f"\n\n💡 **Limited Results Found** ({total_results} matches):\n" +
+                      f"   • Try broader or alternative keywords for more results\n" +
+                      f"   • Ask user for related terms or different perspectives\n" +
+                      f"   • Consider searching in other indices with 'list_indices'\n" +
+                      f"   • Results are sorted by relevance first, then by recency"
+                      if total_results > 0 and total_results <= 3 else "")
             )
         ]
     except Exception as e:
@@ -74,7 +115,11 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
         elif "index" in error_str and "not found" in error_str:
             error_message += f"📁 **Index Error**: Index '{index}' does not exist\n"
             error_message += f"📍 The search index has not been created yet\n"
-            error_message += f"💡 Try: Use 'list_indices' to see available indices\n\n"
+            error_message += f"💡 **Suggestions for agents**:\n"
+            error_message += f"   1. Use 'list_indices' tool to see all available indices\n"
+            error_message += f"   2. Check which indices contain your target data\n"
+            error_message += f"   3. Use the correct index name from the list\n"
+            error_message += f"   4. If no suitable index exists, create one with 'create_index' tool\n\n"
         elif "timeout" in error_str:
             error_message += "⏱️ **Timeout Error**: Search query timed out\n"
             error_message += f"📍 Query may be too complex or index too large\n"
@@ -153,7 +198,13 @@ async def handle_index_document(arguments: Dict[str, Any]) -> List[types.TextCon
         return [
             types.TextContent(
                 type="text",
-                text=f"Document indexed successfully:\n{json.dumps(result, indent=2)}"
+                text=f"Document indexed successfully:\n{json.dumps(result, indent=2)}\n\n" +
+                     f"💡 **Best Practices for Agents**:\n" +
+                     f"   • For SHORT content: Store directly in document 'content' field (recommended)\n" +
+                     f"   • For LONG content: Create separate files only when necessary\n" +
+                     f"   • Before creating new documents: Check if existing ones can be updated\n" +
+                     f"   • Consider deleting outdated documents to keep knowledge base clean\n" +
+                     f"   • Use 'search' tool to find and update existing relevant content"
             )
         ]
     except Exception as e:
@@ -276,13 +327,18 @@ async def handle_get_document(arguments: Dict[str, Any]) -> List[types.TextConte
             error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
             error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
         elif "not_found" in error_str or "not found" in error_str:
-            error_message += f"📄 **Document Not Found**: Document ID '{doc_id}' does not exist\n"
-            error_message += f"📍 The requested document was not found in index '{index}'\n"
-            error_message += f"💡 Try: Check document ID or use 'search' to find documents\n\n"
-        elif "index" in error_str and ("not found" in error_str or "not_found" in error_str):
-            error_message += f"📁 **Index Not Found**: Index '{index}' does not exist\n"
-            error_message += f"📍 The target index has not been created yet\n"
-            error_message += f"💡 Try: Use 'list_indices' to see available indices\n\n"
+            if "index" in error_str:
+                error_message += f"📁 **Index Not Found**: Index '{index}' does not exist\n"
+                error_message += f"📍 The target index has not been created yet\n"
+                error_message += f"💡 **Suggestions for agents**:\n"
+                error_message += f"   1. Use 'list_indices' tool to see all available indices\n"
+                error_message += f"   2. Check which indices contain your target data\n"
+                error_message += f"   3. Use the correct index name from the list\n"
+                error_message += f"   4. If no suitable index exists, create one with 'create_index' tool\n\n"
+            else:
+                error_message += f"📄 **Document Not Found**: Document ID '{doc_id}' does not exist\n"
+                error_message += f"📍 The requested document was not found in index '{index}'\n"
+                error_message += f"💡 Try: Check document ID or use 'search' to find documents\n\n"
         else:
             error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
         
@@ -468,7 +524,12 @@ async def handle_validate_document_schema(arguments: Dict[str, Any]) -> List[typ
                 type="text",
                 text=f"✅ Document validation successful!\n\n"
                      f"Validated document:\n{json.dumps(validated_doc, indent=2, ensure_ascii=False)}\n\n"
-                     f"Document is ready to be indexed."
+                     f"Document is ready to be indexed.\n\n"
+                     f"🎯 **Smart Content Strategy for Agents**:\n"
+                     f"   • Check content length: If < 1000 chars, store in 'content' field directly\n"
+                     f"   • For longer content: Consider if a separate file is truly needed\n"
+                     f"   • Before indexing: Search for existing similar documents to update\n"
+                     f"   • Avoid creating duplicate content - update existing instead"
             )
         ]
     except DocumentValidationError as e:
@@ -520,7 +581,13 @@ async def handle_create_document_template(arguments: Dict[str, Any]) -> List[typ
                 type="text",
                 text=f"✅ Document template created successfully!\n\n"
                      f"{json.dumps(template, indent=2, ensure_ascii=False)}\n\n"
-                     f"This template can be used with the 'index_document' tool."
+                     f"This template can be used with the 'index_document' tool.\n\n"
+                     f"💡 **Content Management Guidelines for Agents**:\n"
+                     f"   • If content is SHORT (< 1000 chars): Add directly to 'content' field\n"
+                     f"   • If content is LONG: Create file and reference it in document\n"
+                     f"   • Always search existing documents first before creating new ones\n"
+                     f"   • Update existing content instead of duplicating information\n"
+                     f"   • Clean up outdated documents regularly to maintain quality"
             )
         ]
     except Exception as e:

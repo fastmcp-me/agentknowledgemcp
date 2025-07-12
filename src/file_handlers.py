@@ -9,6 +9,46 @@ from typing import List, Dict, Any
 
 import mcp.types as types
 from .security import get_safe_path, is_path_allowed, get_allowed_base_dir
+from .config import load_config
+
+
+def _format_file_error(operation: str, file_path: str, error: Exception) -> str:
+    """Format enhanced error messages for file operations with specific guidance."""
+    error_str = str(error).lower()
+    error_message = f"❌ {operation} failed for '{file_path}':\n\n"
+    
+    if "permission" in error_str or "access" in error_str or "denied" in error_str:
+        error_message += "🔒 **Permission Error**: Access denied to file or directory\n"
+        error_message += f"📍 Insufficient permissions for {operation.lower()}\n"
+        error_message += f"💡 **Suggestions for agents**:\n"
+        error_message += f"   1. Check if you have write access to the directory\n"
+        error_message += f"   2. Ask user to change working directory using 'update_config' tool\n"
+        error_message += f"   3. Use 'get_config' to check current allowed_base_directory\n"
+        error_message += f"   4. Request user to set a different base directory with proper permissions\n\n"
+    elif "not found" in error_str or "no such file" in error_str:
+        error_message += f"📁 **File Not Found**: The specified path does not exist\n"
+        error_message += f"📍 File or directory not found: {file_path}\n"
+        error_message += f"💡 Check the path and ensure it exists\n\n"
+    elif "directory" in error_str and "not empty" in error_str:
+        error_message += f"📂 **Directory Not Empty**: Cannot delete non-empty directory\n"
+        error_message += f"📍 Directory contains files or subdirectories\n"
+        error_message += f"💡 Use recursive=true parameter to delete directory and contents\n\n"
+    elif "exists" in error_str:
+        error_message += f"📄 **File Exists**: File or directory already exists\n"
+        error_message += f"📍 Cannot create because path already exists\n"
+        error_message += f"💡 Choose a different name or delete existing file first\n\n"
+    elif "outside allowed" in error_str:
+        error_message += f"🚫 **Security Error**: Path is outside allowed directory\n"
+        error_message += f"📍 File operations are restricted to the configured base directory\n"
+        error_message += f"💡 **Suggestions for agents**:\n"
+        error_message += f"   1. Ask user about expanding allowed directory with 'update_config' tool\n"
+        error_message += f"   2. Use 'get_config' to see current security settings\n"
+        error_message += f"   3. Request user to change allowed_base_directory setting\n\n"
+    else:
+        error_message += f"⚠️ **Unknown Error**: {str(error)}\n\n"
+    
+    error_message += f"🔍 **Technical Details**: {str(error)}"
+    return error_message
 
 
 async def handle_read_file(arguments: Dict[str, Any]) -> List[types.TextContent]:
@@ -35,7 +75,7 @@ async def handle_read_file(arguments: Dict[str, Any]) -> List[types.TextContent]
         return [
             types.TextContent(
                 type="text",
-                text=f"Error reading file '{file_path}': {str(e)}"
+                text=_format_file_error("Read", file_path, e)
             )
         ]
 
@@ -66,7 +106,7 @@ async def handle_write_file(arguments: Dict[str, Any]) -> List[types.TextContent
         return [
             types.TextContent(
                 type="text",
-                text=f"Error writing file '{file_path}': {str(e)}"
+                text=_format_file_error("Write", file_path, e)
             )
         ]
 
@@ -93,7 +133,7 @@ async def handle_append_file(arguments: Dict[str, Any]) -> List[types.TextConten
         return [
             types.TextContent(
                 type="text",
-                text=f"Error appending to file '{file_path}': {str(e)}"
+                text=_format_file_error("Append", file_path, e)
             )
         ]
 
@@ -123,7 +163,7 @@ async def handle_delete_file(arguments: Dict[str, Any]) -> List[types.TextConten
         return [
             types.TextContent(
                 type="text",
-                text=f"Error deleting file '{file_path}': {str(e)}"
+                text=_format_file_error("Delete", file_path, e)
             )
         ]
 
@@ -156,7 +196,7 @@ async def handle_move_file(arguments: Dict[str, Any]) -> List[types.TextContent]
         return [
             types.TextContent(
                 type="text",
-                text=f"Error moving file from '{source_path}' to '{destination_path}': {str(e)}"
+                text=_format_file_error("Move", source_path, e)
             )
         ]
 
@@ -189,7 +229,7 @@ async def handle_copy_file(arguments: Dict[str, Any]) -> List[types.TextContent]
         return [
             types.TextContent(
                 type="text",
-                text=f"Error copying file from '{source_path}' to '{destination_path}': {str(e)}"
+                text=_format_file_error("Copy", source_path, e)
             )
         ]
 
@@ -242,7 +282,7 @@ async def handle_list_directory(arguments: Dict[str, Any]) -> List[types.TextCon
         return [
             types.TextContent(
                 type="text",
-                text=f"Error listing directory '{directory_path}': {str(e)}"
+                text=_format_file_error("List", directory_path, e)
             )
         ]
 
@@ -273,7 +313,7 @@ async def handle_create_directory(arguments: Dict[str, Any]) -> List[types.TextC
         return [
             types.TextContent(
                 type="text",
-                text=f"Error creating directory '{directory_path}': {str(e)}"
+                text=_format_file_error("Create", directory_path, e)
             )
         ]
 
@@ -313,7 +353,7 @@ async def handle_delete_directory(arguments: Dict[str, Any]) -> List[types.TextC
         return [
             types.TextContent(
                 type="text",
-                text=f"Error deleting directory '{directory_path}': {str(e)}"
+                text=_format_file_error("Delete", directory_path, e)
             )
         ]
 
@@ -356,6 +396,6 @@ async def handle_file_info(arguments: Dict[str, Any]) -> List[types.TextContent]
         return [
             types.TextContent(
                 type="text",
-                text=f"Error getting info for '{path}': {str(e)}"
+                text=_format_file_error("Info", path, e)
             )
         ]

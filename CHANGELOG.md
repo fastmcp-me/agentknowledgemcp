@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.22] - 2025-07-10
+
+### Added
+- **Section-Specific Intelligent Merge**: Enhanced configuration merge algorithm with differentiated handling for different config sections
+- **reset_config Tool**: New manual reset tool that overwrites config with defaults while creating timestamped backups
+- **Deprecated Settings Detection**: Automatic filtering of deprecated settings using pattern detection for 'old_', 'deprecated_', 'legacy_' prefixes
+- **User-Only Settings Preservation**: Intelligent merge now preserves user settings even if they don't exist in new config
+
+### Enhanced
+- **server_upgrade Tool**: Now automatically backs up and intelligently restores user configuration during upgrades
+- **Configuration Management**: Two-tier approach with manual reset vs automatic intelligent restore
+- **LATEST CONFIG Sections**: server, schema, version sections always use newest config for compatibility
+- **INTELLIGENT MERGE Sections**: security, elasticsearch, logging sections preserve user settings while adding new features
+
+### Removed
+- **restore_config Tool**: Replaced by automatic restoration in server_upgrade process
+
+### Technical
+- **Algorithm Enhancement**: Recursive merge with section-aware logic for optimal configuration handling
+- **Comprehensive Testing**: Added extensive test coverage for section-specific behavior and real-world upgrade scenarios
+
 ## [1.0.21] - 2025-07-10
 
 ### Enhanced
