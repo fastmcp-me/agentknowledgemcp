@@ -87,6 +87,9 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
                 )
             ]
         
+        # Add detailed reorganization analysis for too many results
+        reorganization_analysis = _analyze_search_results_for_reorganization(formatted_results, query_text, total_results)
+        
         return [
             types.TextContent(
                 type="text",
@@ -100,7 +103,23 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
                       f"   • Ask user for related terms or different perspectives\n" +
                       f"   • Consider searching in other indices with 'list_indices'\n" +
                       f"   • Results are sorted by relevance first, then by recency"
-                      if total_results > 0 and total_results <= 3 else "")
+                      if total_results > 0 and total_results <= 3 else "") +
+                     (f"\n\n🧹 **Too Many Results Found** ({total_results} matches):\n" +
+                      f"   📊 **Consider Knowledge Base Reorganization**:\n" +
+                      f"      • Ask user: 'Would you like to organize the knowledge base better?'\n" +
+                      f"      • List key topics found in search results\n" +
+                      f"      • Ask user to confirm which topics to consolidate/update/delete\n" +
+                      f"      • Suggest merging similar documents into comprehensive ones\n" +
+                      f"      • Propose archiving outdated/redundant information\n" +
+                      f"   🎯 **User Collaboration Steps**:\n" +
+                      f"      1. 'I found {total_results} documents about this topic'\n" +
+                      f"      2. 'Would you like me to help organize them better?'\n" +
+                      f"      3. List main themes/topics from results\n" +
+                      f"      4. Get user confirmation for reorganization plan\n" +
+                      f"      5. Execute: consolidate, update, or delete as agreed\n" +
+                      f"   💡 **Quality Goals**: Fewer, better organized, comprehensive documents"
+                      if total_results > 15 else "") +
+                     reorganization_analysis
             )
         ]
     except Exception as e:
@@ -199,12 +218,13 @@ async def handle_index_document(arguments: Dict[str, Any]) -> List[types.TextCon
             types.TextContent(
                 type="text",
                 text=f"Document indexed successfully:\n{json.dumps(result, indent=2)}\n\n" +
-                     f"💡 **Best Practices for Agents**:\n" +
-                     f"   • For SHORT content: Store directly in document 'content' field (recommended)\n" +
-                     f"   • For LONG content: Create separate files only when necessary\n" +
-                     f"   • Before creating new documents: Check if existing ones can be updated\n" +
-                     f"   • Consider deleting outdated documents to keep knowledge base clean\n" +
-                     f"   • Use 'search' tool to find and update existing relevant content"
+                     f"💡 **IMPORTANT: Always Update Existing Documents Instead of Creating Duplicates**:\n" +
+                     f"   🔍 **BEFORE indexing new content**: Use 'search' tool to find similar documents\n" +
+                     f"   🔄 **UPDATE existing documents** instead of creating duplicates\n" +
+                     f"   📝 **For SHORT content**: Store directly in document 'content' field (recommended)\n" +
+                     f"   📁 **For LONG content**: Create separate files only when absolutely necessary\n" +
+                     f"   🧹 **Regular cleanup**: Delete outdated/superseded documents to maintain quality\n" +
+                     f"   🎯 **Search first, create last**: Avoid knowledge base bloat by reusing existing structure"
             )
         ]
     except Exception as e:
@@ -525,11 +545,12 @@ async def handle_validate_document_schema(arguments: Dict[str, Any]) -> List[typ
                 text=f"✅ Document validation successful!\n\n"
                      f"Validated document:\n{json.dumps(validated_doc, indent=2, ensure_ascii=False)}\n\n"
                      f"Document is ready to be indexed.\n\n"
-                     f"🎯 **Smart Content Strategy for Agents**:\n"
-                     f"   • Check content length: If < 1000 chars, store in 'content' field directly\n"
-                     f"   • For longer content: Consider if a separate file is truly needed\n"
-                     f"   • Before indexing: Search for existing similar documents to update\n"
-                     f"   • Avoid creating duplicate content - update existing instead"
+                     f"🚨 **MANDATORY: Check for Existing Documents First**:\n"
+                     f"   🔍 **Search for similar content**: Use 'search' tool with relevant keywords\n"
+                     f"   🔄 **Update instead of duplicate**: Modify existing documents when possible\n"
+                     f"   📏 **Content length check**: If < 1000 chars, store in 'content' field directly\n"
+                     f"   📁 **File creation**: Only for truly long content that needs separate storage\n"
+                     f"   🎯 **Quality over quantity**: Prevent knowledge base bloat through smart reuse"
             )
         ]
     except DocumentValidationError as e:
@@ -582,12 +603,13 @@ async def handle_create_document_template(arguments: Dict[str, Any]) -> List[typ
                 text=f"✅ Document template created successfully!\n\n"
                      f"{json.dumps(template, indent=2, ensure_ascii=False)}\n\n"
                      f"This template can be used with the 'index_document' tool.\n\n"
-                     f"💡 **Content Management Guidelines for Agents**:\n"
-                     f"   • If content is SHORT (< 1000 chars): Add directly to 'content' field\n"
-                     f"   • If content is LONG: Create file and reference it in document\n"
-                     f"   • Always search existing documents first before creating new ones\n"
-                     f"   • Update existing content instead of duplicating information\n"
-                     f"   • Clean up outdated documents regularly to maintain quality"
+                     f"⚠️ **CRITICAL: Search Before Creating - Avoid Duplicates**:\n" +
+                     f"   🔍 **STEP 1**: Use 'search' tool to check if similar content already exists\n" +
+                     f"   🔄 **STEP 2**: If found, UPDATE existing document instead of creating new one\n" +
+                     f"   📝 **STEP 3**: For SHORT content (< 1000 chars): Add directly to 'content' field\n" +
+                     f"   📁 **STEP 4**: For LONG content: Create file only when truly necessary\n" +
+                     f"   🧹 **STEP 5**: Clean up outdated documents regularly to maintain quality\n" +
+                     f"   🎯 **Remember**: Knowledge base quality > quantity - avoid bloat!"
             )
         ]
     except Exception as e:
@@ -597,3 +619,74 @@ async def handle_create_document_template(arguments: Dict[str, Any]) -> List[typ
                 text=f"❌ Failed to create document template: {str(e)}"
             )
         ]
+
+
+def _analyze_search_results_for_reorganization(results: List[Dict], query_text: str, total_results: int) -> str:
+    """Analyze search results and provide specific reorganization suggestions."""
+    if total_results <= 15:
+        return ""
+    
+    # Extract topics and themes from search results
+    topics = set()
+    sources = set()
+    priorities = {"high": 0, "medium": 0, "low": 0}
+    dates = []
+    
+    for result in results[:10]:  # Analyze first 10 results
+        source_data = result.get("source", {})
+        
+        # Extract tags as topics
+        tags = source_data.get("tags", [])
+        topics.update(tags)
+        
+        # Extract source types
+        source_type = source_data.get("source_type", "unknown")
+        sources.add(source_type)
+        
+        # Count priorities
+        priority = source_data.get("priority", "medium")
+        priorities[priority] = priorities.get(priority, 0) + 1
+        
+        # Extract dates for timeline analysis
+        last_modified = source_data.get("last_modified", "")
+        if last_modified:
+            dates.append(last_modified)
+    
+    # Generate reorganization suggestions
+    suggestion = f"\n\n🔍 **Knowledge Base Analysis for '{query_text}'** ({total_results} documents):\n\n"
+    
+    # Topic analysis
+    if topics:
+        suggestion += f"📋 **Topics Found**: {', '.join(sorted(list(topics))[:8])}\n"
+        suggestion += f"💡 **Reorganization Suggestion**: Group documents by these topics\n\n"
+    
+    # Source type analysis
+    if sources:
+        suggestion += f"📁 **Content Types**: {', '.join(sorted(sources))}\n"
+        suggestion += f"💡 **Organization Tip**: Separate by content type for better structure\n\n"
+    
+    # Priority distribution
+    total_priority_docs = sum(priorities.values())
+    if total_priority_docs > 0:
+        high_pct = (priorities["high"] / total_priority_docs) * 100
+        suggestion += f"⭐ **Priority Distribution**: {priorities['high']} high, {priorities['medium']} medium, {priorities['low']} low\n"
+        if priorities["low"] > 5:
+            suggestion += f"💡 **Cleanup Suggestion**: Consider archiving {priorities['low']} low-priority documents\n\n"
+    
+    # User collaboration template
+    suggestion += f"🤝 **Ask User These Questions**:\n"
+    suggestion += f"   1. 'I found {total_results} documents about {query_text}. Would you like to organize them better?'\n"
+    suggestion += f"   2. 'Should we group them by: {', '.join(sorted(list(topics))[:3]) if topics else 'topic areas'}?'\n"
+    suggestion += f"   3. 'Which documents can we merge or archive to reduce redundancy?'\n"
+    suggestion += f"   4. 'Do you want to keep all {priorities.get('low', 0)} low-priority items?'\n\n"
+    
+    suggestion += f"✅ **Reorganization Goals**:\n"
+    suggestion += f"   • Reduce from {total_results} to ~{max(5, total_results // 3)} well-organized documents\n"
+    suggestion += f"   • Create comprehensive topic-based documents\n"
+    suggestion += f"   • Archive or delete outdated/redundant content\n"
+    suggestion += f"   • Improve searchability and knowledge quality"
+    
+    return suggestion
+
+
+# Existing async functions continue below...
