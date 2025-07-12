@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.26] - 2025-07-12
+
+### Added
+- **Time-Based Search Enhancement**: Comprehensive time filtering capabilities for search operations
+  - `date_from` parameter: Filter documents from specific date (YYYY-MM-DD, YYYY-MM-DD HH:MM:SS, or relative: '7d', '1w', '1m')
+  - `date_to` parameter: Filter documents until specific date (YYYY-MM-DD, YYYY-MM-DD HH:MM:SS, or 'now')
+  - `time_period` parameter: Quick time shortcuts ('today', 'yesterday', 'week', 'month', 'year')
+  - `sort_by_time` parameter: Control time-based sorting ('desc' or 'asc')
+- **Relative Date Support**: Natural language date parsing for flexible time filtering
+  - '7d', '1w', '1m' style relative dates
+  - Automatic conversion to Elasticsearch-compatible date ranges
+  - Support for 'now' as end date reference
+- **Intelligent Time-Based Sorting**: Dynamic sorting behavior based on time filtering usage
+  - Time filtering enabled: Sort by time first, then relevance
+  - No time filtering: Sort by relevance first, then recency (existing behavior)
+- **Enhanced Search Guidance**: Time-specific suggestions when no results found with time filters
+
+### Enhanced
+- **Search Tool Schema**: Extended with comprehensive time-based parameters and documentation
+- **Search Result Descriptions**: Clear indication of applied time filters and sorting behavior
+- **Error Handling**: Time-specific suggestions for broadening search when time filters yield no results
+- **User Experience**: Contextual guidance for time filter usage and optimization
+
+### Technical
+- **Date Parsing Engine**: Robust parsing for multiple date formats and relative date expressions
+- **Elasticsearch Integration**: Proper range filters and bool queries for time-based search
+- **Backward Compatibility**: All existing search functionality preserved, time parameters are optional
+
 ## [1.0.25] - 2025-07-12
 
 ### Added

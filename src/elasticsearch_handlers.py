@@ -3,6 +3,8 @@ Elasticsearch tool handlers.
 """
 import json
 from typing import List, Dict, Any, Optional
+from datetime import datetime, timedelta
+import re
 
 import mcp.types as types
 from .elasticsearch_client import get_es_client
@@ -15,8 +17,139 @@ from .document_schema import (
 from .config import load_config
 
 
+def _parse_time_parameters(date_from: Optional[str] = None, date_to: Optional[str] = None, 
+                          time_period: Optional[str] = None) -> Dict[str, Any]:
+    """Parse time-based search parameters and return Elasticsearch date range filter."""
+    
+    def parse_relative_date(date_str: str) -> datetime:
+        """Parse relative date strings like '7d', '1w', '1m' to datetime."""
+        if not date_str:
+            return None
+            
+        match = re.match(r'(\d+)([dwmy])', date_str.lower())
+        if match:
+            amount, unit = match.groups()
+            amount = int(amount)
+            
+            if unit == 'd':
+                return datetime.now() - timedelta(days=amount)
+            elif unit == 'w':
+                return datetime.now() - timedelta(weeks=amount)
+            elif unit == 'm':
+                return datetime.now() - timedelta(days=amount * 30)
+            elif unit == 'y':
+                return datetime.now() - timedelta(days=amount * 365)
+        
+        return None
+    
+    def parse_date_string(date_str: str) -> str:
+        """Parse various date formats to Elasticsearch compatible format."""
+        if not date_str:
+            return None
+            
+        if date_str.lower() == 'now':
+            return 'now'
+            
+        # Try relative dates first
+        relative_date = parse_relative_date(date_str)
+        if relative_date:
+            return relative_date.isoformat()
+            
+        # Try parsing standard formats
+        formats = [
+            '%Y-%m-%d',
+            '%Y-%m-%d %H:%M:%S',
+            '%Y-%m-%dT%H:%M:%S',
+            '%Y-%m-%dT%H:%M:%SZ'
+        ]
+        
+        for fmt in formats:
+            try:
+                parsed_date = datetime.strptime(date_str, fmt)
+                return parsed_date.isoformat()
+            except ValueError:
+                continue
+                
+        return None
+    
+    # Handle time_period shortcuts
+    if time_period:
+        now = datetime.now()
+        if time_period == 'today':
+            start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            return {
+                "range": {
+                    "last_modified": {
+                        "gte": start_of_day.isoformat(),
+                        "lte": "now"
+                    }
+                }
+            }
+        elif time_period == 'yesterday':
+            yesterday = now - timedelta(days=1)
+            start_of_yesterday = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_of_yesterday = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
+            return {
+                "range": {
+                    "last_modified": {
+                        "gte": start_of_yesterday.isoformat(),
+                        "lte": end_of_yesterday.isoformat()
+                    }
+                }
+            }
+        elif time_period == 'week':
+            week_ago = now - timedelta(weeks=1)
+            return {
+                "range": {
+                    "last_modified": {
+                        "gte": week_ago.isoformat(),
+                        "lte": "now"
+                    }
+                }
+            }
+        elif time_period == 'month':
+            month_ago = now - timedelta(days=30)
+            return {
+                "range": {
+                    "last_modified": {
+                        "gte": month_ago.isoformat(),
+                        "lte": "now"
+                    }
+                }
+            }
+        elif time_period == 'year':
+            year_ago = now - timedelta(days=365)
+            return {
+                "range": {
+                    "last_modified": {
+                        "gte": year_ago.isoformat(),
+                        "lte": "now"
+                    }
+                }
+            }
+    
+    # Handle explicit date range
+    if date_from or date_to:
+        range_filter = {"range": {"last_modified": {}}}
+        
+        if date_from:
+            parsed_from = parse_date_string(date_from)
+            if parsed_from:
+                range_filter["range"]["last_modified"]["gte"] = parsed_from
+                
+        if date_to:
+            parsed_to = parse_date_string(date_to)
+            if parsed_to:
+                range_filter["range"]["last_modified"]["lte"] = parsed_to
+                
+        if range_filter["range"]["last_modified"]:
+            return range_filter
+    
+    return None
+
+
 async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
-    """Handle search tool."""
+    """Handle search tool with optional time-based filtering."""
     try:
         es = get_es_client()
         
@@ -25,25 +158,82 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
         size = arguments.get("size", 10)
         fields = arguments.get("fields", [])
         
-        # Build search query with date sorting consideration
-        search_body = {
-            "query": {
-                "multi_match": {
-                    "query": query_text,
-                    "fields": ["title^3", "summary^2", "content", "tags^2", "features^2", "tech_stack^2"]
+        # Time-based parameters
+        date_from = arguments.get("date_from")
+        date_to = arguments.get("date_to")
+        time_period = arguments.get("time_period")
+        sort_by_time = arguments.get("sort_by_time", "desc")
+        
+        # Parse time filters
+        time_filter = _parse_time_parameters(date_from, date_to, time_period)
+        
+        # Build search query with optional time filtering
+        if time_filter:
+            # Combine text search with time filtering
+            search_body = {
+                "query": {
+                    "bool": {
+                        "must": [
+                            {
+                                "multi_match": {
+                                    "query": query_text,
+                                    "fields": ["title^3", "summary^2", "content", "tags^2", "features^2", "tech_stack^2"]
+                                }
+                            }
+                        ],
+                        "filter": [time_filter]
+                    }
                 }
-            },
-            "sort": [
+            }
+        else:
+            # Standard text search without time filtering
+            search_body = {
+                "query": {
+                    "multi_match": {
+                        "query": query_text,
+                        "fields": ["title^3", "summary^2", "content", "tags^2", "features^2", "tech_stack^2"]
+                    }
+                }
+            }
+        
+        # Add sorting - prioritize time if time filtering is used
+        if time_filter:
+            if sort_by_time == "desc":
+                search_body["sort"] = [
+                    {"last_modified": {"order": "desc"}},  # Primary: newest first
+                    "_score"  # Secondary: relevance
+                ]
+            else:
+                search_body["sort"] = [
+                    {"last_modified": {"order": "asc"}},  # Primary: oldest first
+                    "_score"  # Secondary: relevance
+                ]
+        else:
+            # Default sorting: relevance first, then recency
+            search_body["sort"] = [
                 "_score",  # Primary sort by relevance
                 {"last_modified": {"order": "desc"}}  # Secondary sort by recency
-            ],
-            "size": size
-        }
+            ]
+        
+        search_body["size"] = size
         
         if fields:
             search_body["_source"] = fields
         
         result = es.search(index=index, body=search_body)
+        
+        # Build time filter description early for use in all branches
+        time_filter_desc = ""
+        if time_filter:
+            if time_period:
+                time_filter_desc = f" (filtered by: {time_period})"
+            elif date_from or date_to:
+                filter_parts = []
+                if date_from:
+                    filter_parts.append(f"from {date_from}")
+                if date_to:
+                    filter_parts.append(f"to {date_to}")
+                time_filter_desc = f" (filtered by: {' '.join(filter_parts)})"
         
         # Format results
         formatted_results = []
@@ -60,10 +250,20 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
         
         # Check if no results found and provide helpful suggestions
         if total_results == 0:
+            time_suggestions = ""
+            if time_filter:
+                time_suggestions = (
+                    f"\n\n⏰ **Time Filter Suggestions**:\n" +
+                    f"   • Try broader time range (expand dates or use 'month'/'year')\n" +
+                    f"   • Remove time filters to search all documents\n" +
+                    f"   • Check if documents exist in the specified time period\n" +
+                    f"   • Use relative dates like '30d' or '6m' for wider ranges\n"
+                )
+            
             return [
                 types.TextContent(
                     type="text",
-                    text=f"🔍 No results found for '{query_text}' in index '{index}'\n\n" +
+                    text=f"🔍 No results found for '{query_text}' in index '{index}'{time_filter_desc}\n\n" +
                          f"💡 **Search Optimization Suggestions for Agents**:\n\n" +
                          f"🎯 **Try Different Keywords**:\n" +
                          f"   • Use synonyms and related terms\n" +
@@ -73,7 +273,8 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
                          f"📅 **Consider Recency**:\n" +
                          f"   • Recent documents may use different terminology\n" +
                          f"   • Try searching with current date/time related terms\n" +
-                         f"   • Look for latest trends or recent updates\n\n" +
+                         f"   • Look for latest trends or recent updates\n" +
+                         f"   • Use time_period='month' or 'year' for broader time searches\n\n" +
                          f"🤝 **Ask User for Help**:\n" +
                          f"   • Request user to suggest related keywords\n" +
                          f"   • Ask about specific topics or domains they're interested in\n" +
@@ -83,17 +284,24 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
                          f"   • Try searching in different indices with 'list_indices'\n" +
                          f"   • Use broader search terms first, then narrow down\n" +
                          f"   • Check for typos in search terms\n" +
-                         f"   • Consider partial word matches"
+                         f"   • Consider partial word matches" +
+                         time_suggestions
                 )
             ]
         
         # Add detailed reorganization analysis for too many results
         reorganization_analysis = _analyze_search_results_for_reorganization(formatted_results, query_text, total_results)
         
+        # Build sorting description
+        if time_filter:
+            sort_desc = f"sorted by time ({sort_by_time}) then relevance"
+        else:
+            sort_desc = "sorted by relevance and recency"
+        
         return [
             types.TextContent(
                 type="text",
-                text=f"Search results for '{query_text}' in index '{index}' (sorted by relevance and recency):\n\n" +
+                text=f"Search results for '{query_text}' in index '{index}'{time_filter_desc} ({sort_desc}):\n\n" +
                      json.dumps({
                          "total": total_results,
                          "results": formatted_results
@@ -102,7 +310,8 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
                       f"   • Try broader or alternative keywords for more results\n" +
                       f"   • Ask user for related terms or different perspectives\n" +
                       f"   • Consider searching in other indices with 'list_indices'\n" +
-                      f"   • Results are sorted by relevance first, then by recency"
+                      f"   • Results are sorted by relevance first, then by recency" +
+                      (f"\n   • Consider broader time range if using time filters" if time_filter else "")
                       if total_results > 0 and total_results <= 3 else "") +
                      (f"\n\n🧹 **Too Many Results Found** ({total_results} matches):\n" +
                       f"   📊 **Consider Knowledge Base Reorganization**:\n" +
@@ -117,7 +326,8 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
                       f"      3. List main themes/topics from results\n" +
                       f"      4. Get user confirmation for reorganization plan\n" +
                       f"      5. Execute: consolidate, update, or delete as agreed\n" +
-                      f"   💡 **Quality Goals**: Fewer, better organized, comprehensive documents"
+                      f"   💡 **Quality Goals**: Fewer, better organized, comprehensive documents" +
+                      (f"\n   • Consider narrower time range to reduce results" if time_filter else "")
                       if total_results > 15 else "") +
                      reorganization_analysis
             )

@@ -10,14 +10,18 @@ def get_elasticsearch_tools() -> List[types.Tool]:
     return [
         types.Tool(
             name="search",
-            description="Search documents in Elasticsearch index",
+            description="Search documents in Elasticsearch index with optional time-based filtering",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "index": {"type": "string", "description": "Index name to search in"},
                     "query": {"type": "string", "description": "Search query text"},
                     "size": {"type": "integer", "description": "Number of results to return", "default": 10},
-                    "fields": {"type": "array", "items": {"type": "string"}, "description": "Specific fields to return"}
+                    "fields": {"type": "array", "items": {"type": "string"}, "description": "Specific fields to return"},
+                    "date_from": {"type": "string", "description": "Start date for filtering (YYYY-MM-DD, YYYY-MM-DD HH:MM:SS, or relative: '7d', '1w', '1m')"},
+                    "date_to": {"type": "string", "description": "End date for filtering (YYYY-MM-DD, YYYY-MM-DD HH:MM:SS, or 'now')"},
+                    "time_period": {"type": "string", "description": "Quick time period filter", "enum": ["today", "yesterday", "week", "month", "year"]},
+                    "sort_by_time": {"type": "string", "description": "Sort order for time-based results", "enum": ["desc", "asc"], "default": "desc"}
                 },
                 "required": ["index", "query"],
             },
