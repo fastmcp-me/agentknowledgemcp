@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.25] - 2025-07-12
+
+### Added
+- **Enhanced Error Pattern Matching**: Comprehensive detection of Elasticsearch index errors including `index_not_found_exception` and `no such index` patterns
+- **4-Step Agent Guidance**: Structured guidance for agents when encountering index-related errors with specific tool recommendations
+- **Improved Error Messages**: Clear distinction between index errors and document errors with actionable next steps
+
+### Enhanced
+- **Search Error Handling**: Now provides specific 4-step guidance when searching non-existent indices
+- **Agent Experience**: From generic "Unknown Error" to detailed, actionable error messages with tool suggestions
+- **Pattern Recognition**: Supports multiple error message variations including "does not exist" formats
+
+### Fixed
+- **Error Handler Coverage**: All Elasticsearch handlers now have comprehensive pattern matching for better error detection
+- **User Experience**: Search operations now provide helpful guidance instead of cryptic error messages
+
 ## [1.0.24] - 2025-07-12
 
 ### Added

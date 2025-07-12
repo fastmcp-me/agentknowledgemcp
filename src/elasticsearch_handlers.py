@@ -131,7 +131,7 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
             error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
             error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
-        elif "index" in error_str and "not found" in error_str:
+        elif ("index" in error_str and "not found" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
             error_message += f"📁 **Index Error**: Index '{index}' does not exist\n"
             error_message += f"📍 The search index has not been created yet\n"
             error_message += f"💡 **Suggestions for agents**:\n"
@@ -241,10 +241,14 @@ async def handle_index_document(arguments: Dict[str, Any]) -> List[types.TextCon
             error_message += "⏱️ **Timeout Error**: Elasticsearch server is not responding\n"
             error_message += f"📍 Server may be overloaded or slow to respond\n"
             error_message += f"💡 Try: Wait and retry, or check server status\n\n"
-        elif "index" in error_str and "not found" in error_str:
+        elif ("index" in error_str and "not found" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
             error_message += f"📁 **Index Error**: Index '{index}' does not exist\n"
             error_message += f"📍 The target index has not been created yet\n"
-            error_message += f"💡 Try: Use 'create_index' tool to create the index first\n\n"
+            error_message += f"💡 **Suggestions for agents**:\n"
+            error_message += f"   1. Use 'list_indices' tool to see all available indices\n"
+            error_message += f"   2. Check which indices contain your target data\n"
+            error_message += f"   3. Use the correct index name from the list\n"
+            error_message += f"   4. If no suitable index exists, create one with 'create_index' tool\n\n"
         elif "mapping" in error_str or "field" in error_str:
             error_message += "📝 **Document Structure Error**: Document doesn't match index mapping\n"
             error_message += f"📍 Document fields may be incompatible with existing index structure\n"
@@ -346,14 +350,15 @@ async def handle_get_document(arguments: Dict[str, Any]) -> List[types.TextConte
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
             error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
             error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
-        elif "not_found" in error_str or "not found" in error_str:
-            if "index" in error_str:
+        elif ("not_found" in error_str or "not found" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
+            if "index" in error_str or "index_not_found_exception" in error_str or "no such index" in error_str:
                 error_message += f"📁 **Index Not Found**: Index '{index}' does not exist\n"
                 error_message += f"📍 The target index has not been created yet\n"
                 error_message += f"💡 **Suggestions for agents**:\n"
                 error_message += f"   1. Use 'list_indices' tool to see all available indices\n"
                 error_message += f"   2. Check which indices contain your target data\n"
                 error_message += f"   3. Use the correct index name from the list\n"
+                error_message += f"   4. If no suitable index exists, create one with 'create_index' tool\n\n"
                 error_message += f"   4. If no suitable index exists, create one with 'create_index' tool\n\n"
             else:
                 error_message += f"📄 **Document Not Found**: Document ID '{doc_id}' does not exist\n"
@@ -397,14 +402,16 @@ async def handle_delete_document(arguments: Dict[str, Any]) -> List[types.TextCo
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
             error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
             error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
-        elif "not_found" in error_str or "not found" in error_str:
-            error_message += f"📄 **Document Not Found**: Document ID '{doc_id}' does not exist\n"
-            error_message += f"📍 Cannot delete a document that doesn't exist\n"
-            error_message += f"💡 Try: Check document ID or use 'search' to find documents\n\n"
-        elif "index" in error_str and ("not found" in error_str or "not_found" in error_str):
-            error_message += f"📁 **Index Not Found**: Index '{index}' does not exist\n"
-            error_message += f"📍 The target index has not been created yet\n"
-            error_message += f"💡 Try: Use 'list_indices' to see available indices\n\n"
+        elif ("not_found" in error_str or "not found" in error_str or "does not exist" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
+            # Check if it's specifically an index not found error
+            if ("index" in error_str and ("not found" in error_str or "not_found" in error_str or "does not exist" in error_str)) or "index_not_found_exception" in error_str or "no such index" in error_str:
+                error_message += f"📁 **Index Not Found**: Index '{index}' does not exist\n"
+                error_message += f"📍 The target index has not been created yet\n"
+                error_message += f"💡 Try: Use 'list_indices' to see available indices\n\n"
+            else:
+                error_message += f"📄 **Document Not Found**: Document ID '{doc_id}' does not exist\n"
+                error_message += f"📍 Cannot delete a document that doesn't exist\n"
+                error_message += f"💡 Try: Check document ID or use 'search' to find documents\n\n"
         else:
             error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
         
@@ -508,7 +515,7 @@ async def handle_delete_index(arguments: Dict[str, Any]) -> List[types.TextConte
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
             error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
             error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
-        elif "not_found" in error_str or "not found" in error_str:
+        elif ("not_found" in error_str or "not found" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
             error_message += f"📁 **Index Not Found**: Index '{index}' does not exist\n"
             error_message += f"📍 Cannot delete an index that doesn't exist\n"
             error_message += f"💡 Try: Use 'list_indices' to see available indices\n\n"
