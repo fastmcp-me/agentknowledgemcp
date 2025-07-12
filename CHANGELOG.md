@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.23] - 2025-07-10
+
+### Added
+- **Enhanced Agent Error Guidance**: Search errors now provide 4-step specific guidance for AI agents when indices don't exist
+- **Content Management Strategy**: Intelligent guidance for when to create files vs index content directly (1000+ character threshold)
+- **Search Optimization**: No-results scenarios trigger comprehensive keyword expansion suggestions and user collaboration prompts
+- **Dual Result Sorting**: Search results now sorted by both relevance score and recent update time for better discovery
+
+### Enhanced
+- **File Permission Handling**: Enhanced error messages with specific tool suggestions and fallback strategies for permission issues
+- **Agent Workflow Integration**: All error handling now includes actionable next steps specifically designed for AI agent workflows
+
 ## [1.0.22] - 2025-07-10
 
 ### Added
