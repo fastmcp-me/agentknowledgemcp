@@ -482,11 +482,43 @@ def get_version_control_tools() -> List[types.Tool]:
     ]
 
 
+def get_confirmation_tools() -> List[types.Tool]:
+    """Get list of confirmation tools."""
+    return [
+        types.Tool(
+            name="user_response",
+            description="Respond to a pending operation confirmation request",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "pending_id": {"type": "string", "description": "The operation ID to respond to"},
+                    "response": {"type": "string", "description": "User response: 'yes' to approve, 'no' to deny", "enum": ["yes", "no"]},
+                    "message": {"type": "string", "description": "Optional user message"}
+                },
+                "required": ["pending_id", "response"],
+            },
+        ),
+        types.Tool(
+            name="confirmation_status",
+            description="Get status of confirmation system and pending operations",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "pending_id": {"type": "string", "description": "Specific operation to check (optional)"},
+                    "session_id": {"type": "string", "description": "All operations for session (optional)"}
+                },
+                "required": [],
+            },
+        ),
+    ]
+
+
 def get_all_tools() -> List[types.Tool]:
     """Get all available tools."""
     return (
         get_elasticsearch_tools() +
         get_file_system_tools() +
         get_admin_tools() +
-        get_version_control_tools()
+        get_version_control_tools() +
+        get_confirmation_tools()
     )

@@ -19,6 +19,7 @@ from .security import init_security
 from .elasticsearch_client import init_elasticsearch, get_es_client
 from .elasticsearch_setup import auto_setup_elasticsearch
 from .tools import get_all_tools
+from .confirmation import initialize_confirmation_manager, get_confirmation_manager
 
 # Import handlers
 from .elasticsearch_handlers import (
@@ -43,10 +44,17 @@ from .version_control_handlers import (
     handle_setup_version_control, handle_commit_file, 
     handle_get_previous_file_version
 )
+from .confirmation_handlers import (
+    handle_user_response, handle_confirmation_status
+)
 
 # Load configuration and initialize components
 CONFIG = load_config()
 init_security(CONFIG["security"]["allowed_base_directory"])
+
+# Initialize confirmation manager
+confirmation_manager = initialize_confirmation_manager(CONFIG)
+print(f"✅ Confirmation system initialized (enabled: {CONFIG.get('confirmation', {}).get('enabled', True)})")
 
 # Auto-setup Elasticsearch if needed
 print("Checking Elasticsearch configuration")
@@ -111,6 +119,10 @@ TOOL_HANDLERS = {
     "setup_version_control": handle_setup_version_control,
     "commit_file": handle_commit_file,
     "get_previous_file_version": handle_get_previous_file_version,
+    
+    # Confirmation tools
+    "user_response": handle_user_response,
+    "confirmation_status": handle_confirmation_status,
 }
 
 
@@ -194,45 +206,116 @@ async def handle_call_tool(
     name: str, arguments: dict | None
 ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
     """
-    Handle tool execution requests.
+    Handle tool execution requests with sophisticated confirmation system.
     """
     if not arguments:
         arguments = {}
 
     try:
-        # Get the appropriate handler
-        handler = TOOL_HANDLERS.get(name)
-        if not handler:
-            raise ValueError(f"Unknown tool: {name}")
-        
-        # Call the handler
-        return await handler(arguments)
+        # Handle confirmation tools first (they bypass confirmation)
+        if name in ["user_response", "confirmation_status"]:
+            handler = TOOL_HANDLERS.get(name)
+            if handler:
+                return await handler(arguments)
+            else:
+                raise ValueError(f"Handler not found for confirmation tool: {name}")
+
+        # Check if tool requires confirmation
+        confirmation_mgr = get_confirmation_manager()
+        if confirmation_mgr:
+            requires_confirm, rule_details = await confirmation_mgr.requires_confirmation(name)
+            
+            if requires_confirm:
+                # Store the operation and request confirmation
+                try:
+                    pending_id = await confirmation_mgr.store_operation(
+                        tool_name=name,
+                        arguments=arguments,
+                        session_id=None  # Could extract from request context if needed
+                    )
+                    
+                    return [types.TextContent(
+                        type="text",
+                        text=f"🚨 **CONFIRMATION REQUIRED** 🚨\n\n"
+                             f"**Operation**: {name}\n"
+                             f"**Rule**: {rule_details.get('rule_name', 'default')}\n"
+                             f"**Timeout**: {rule_details.get('timeout_minutes', 30)} minutes\n"
+                             f"**Pending ID**: {pending_id}\n\n"
+                             f"⚠️ This operation requires user approval before execution.\n\n"
+                             f"**Required Action**:\n"
+                             f"Please ask user to confirm this operation, then call:\n"
+                             f"• **To Approve**: user_response(pending_id='{pending_id}', response='yes')\n"
+                             f"• **To Deny**: user_response(pending_id='{pending_id}', response='no')\n\n"
+                             f"⏰ **This request will expire in {rule_details.get('timeout_minutes', 30)} minutes**"
+                    )]
+                    
+                except ValueError as e:
+                    # If confirmation system has issues, fall back to normal execution with warning
+                    print(f"⚠️ Confirmation system error: {e}")
+                    return [types.TextContent(
+                        type="text",
+                        text=f"⚠️ **Confirmation System Warning**: {str(e)}\n\n"
+                             f"Proceeding with operation without confirmation..."
+                    )] + await _execute_tool_directly(name, arguments)
+
+        # Normal tool execution (no confirmation required or confirmation disabled)
+        return await _execute_tool_directly(name, arguments)
         
     except Exception as e:
         return [
             types.TextContent(
                 type="text",
-                text=f"Error executing {name}: {str(e)}"
+                text=f"❌ **Error executing {name}**: {str(e)}"
             )
         ]
 
 
+async def _execute_tool_directly(name: str, arguments: dict) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
+    """
+    Execute tool directly without confirmation.
+    
+    Args:
+        name: Tool name
+        arguments: Tool arguments
+        
+    Returns:
+        Tool execution result
+    """
+    handler = TOOL_HANDLERS.get(name)
+    if not handler:
+        raise ValueError(f"Unknown tool: {name}")
+    
+    return await handler(arguments)
+
+
 async def main():
     """Main server entry point."""
-    # Run the server using stdin/stdout streams
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name=CONFIG["server"]["name"],
-                server_version=CONFIG["server"]["version"],
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
+    confirmation_mgr = get_confirmation_manager()
+    
+    try:
+        # Start confirmation cleanup task now that we're in async context
+        if confirmation_mgr:
+            await confirmation_mgr.start_cleanup_task()
+        
+        # Run the server using stdin/stdout streams
+        async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+            await server.run(
+                read_stream,
+                write_stream,
+                InitializationOptions(
+                    server_name=CONFIG["server"]["name"],
+                    server_version=CONFIG["server"]["version"],
+                    capabilities=server.get_capabilities(
+                        notification_options=NotificationOptions(),
+                        experimental_capabilities={},
+                    ),
                 ),
-            ),
-        )
+            )
+    finally:
+        # Graceful shutdown of confirmation system
+        if confirmation_mgr:
+            print("🧹 Shutting down confirmation system...")
+            await confirmation_mgr.shutdown()
 
 
 def cli_main():
