@@ -66,7 +66,7 @@
   },
   "server": {
     "name": "AgentKnowledgeMCP",
-    "version": "1.0.26"
+    "version": "1.0.27"
   },
   "confirmation": {
     "enabled": true,
@@ -76,22 +76,39 @@
     "audit_log_enabled": true,
     "rules": {
       "admin_tools": {
-        "tools": ["update_config", "reset_config", "setup_elasticsearch"],
+        "tools": [
+          "update_config",
+          "reset_config",
+          "setup_elasticsearch"
+        ],
         "require_confirmation": true,
         "timeout_minutes": 60
       },
       "destructive_operations": {
-        "tools": ["delete_file", "delete_directory", "delete_index", "delete_document"],
+        "tools": [
+          "delete_file",
+          "delete_directory",
+          "delete_index",
+          "delete_document"
+        ],
         "require_confirmation": true,
         "timeout_minutes": 30
       },
       "file_write_operations": {
-        "tools": ["write_file", "move_file", "copy_file", "append_file"],
+        "tools": [
+          "write_file",
+          "move_file",
+          "copy_file",
+          "append_file"
+        ],
         "require_confirmation": true,
         "timeout_minutes": 15
       },
       "elasticsearch_write": {
-        "tools": ["index_document", "create_index"],
+        "tools": [
+          "index_document",
+          "create_index"
+        ],
         "require_confirmation": true,
         "timeout_minutes": 20
       }

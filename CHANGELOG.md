@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.27] - 2025-07-13
+
+### Added
+- **Enhanced Confirmation System Configuration**: Improved configuration management for user confirmation requirements
+  - Fixed duplicate configuration structure in confirmation section
+  - Enabled confirmation for `index_document` operations by default for enhanced security
+  - Streamlined configuration structure with proper validation
+- **Configuration System Restoration**: Complete revert to original working state after user feedback
+  - Restored `self.default_config` with hard-coded values in ConfirmationManager
+  - Maintained both config.json and config.default.json with identical confirmation sections
+  - Ensured proper backup/restore functionality for server upgrades
+- **Test File Organization**: Improved project structure organization
+  - Moved test files to appropriate tests directory for better organization
+  - Enhanced project structure following Python best practices
+
+### Fixed
+- **Configuration Duplication**: Removed redundant configuration entries
+- **File Organization**: Proper placement of test files in tests directory
+- **Configuration Validation**: Fixed malformed JSON structure in confirmation configuration
+
+### Changed
+- **Default Security Posture**: Index operations now require confirmation by default
+- **File Structure**: Test files properly organized in tests directory
+- **Configuration Management**: Streamlined confirmation system configuration
+
 ## [1.0.26] - 2025-07-12
 
 ### Added
