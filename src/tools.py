@@ -487,12 +487,12 @@ def get_confirmation_tools() -> List[types.Tool]:
     return [
         types.Tool(
             name="user_response",
-            description="Respond to a pending operation confirmation request",
+            description="⚠️ CRITICAL: This tool MUST ONLY be called by the USER, NEVER by the agent! Agents MUST ask the user to manually approve/deny operations. DO NOT automatically call this tool with any response value. This tool responds to a pending operation confirmation request.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "pending_id": {"type": "string", "description": "The operation ID to respond to"},
-                    "response": {"type": "string", "description": "User response: 'yes' to approve, 'no' to deny", "enum": ["yes", "no"]},
+                    "response": {"type": "string", "description": "User response: 'yes' to approve, 'no' to deny - AGENTS MUST NOT automatically set this value", "enum": ["yes", "no"]},
                     "message": {"type": "string", "description": "Optional user message"}
                 },
                 "required": ["pending_id", "response"],

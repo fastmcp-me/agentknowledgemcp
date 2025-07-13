@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.28] - 2025-07-13
+
+### Security
+- **CRITICAL SECURITY FIX**: Fixed user_response tool auto-calling vulnerability
+  - Agent was bypassing confirmation system by auto-calling user_response without user permission
+  - Updated user_response tool description with explicit warning: "⚠️ CRITICAL: This tool MUST ONLY be called by the USER, NEVER by the agent!"
+  - Enhanced parameter descriptions to prevent automatic response setting
+  - Verification confirms agents now properly ask user for approval instead of auto-calling
+  - Complete resolution of confirmation system bypass vulnerability
+
+### Changed
+- Enhanced security constraints in MCP tool definitions
+- Improved agent behavior compliance with permission protocols
+
 ## [1.0.27] - 2025-07-13
 
 ### Added
