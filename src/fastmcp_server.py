@@ -129,19 +129,48 @@ async def index_document(
 
 @app.tool()
 async def delete_document(
+    ctx: Context,
     index: str,
     doc_id: str
 ) -> str:
     """Delete a document from Elasticsearch index."""
-    arguments = {
-        "index": index,
-        "doc_id": doc_id
-    }
     
-    # For now, just call the handler directly
-    # We'll add elicitation later when we understand FastMCP Context better
-    handler_result = await handle_delete_document(arguments)
-    return handler_result[0].text if handler_result and hasattr(handler_result[0], 'text') else str(handler_result)
+    # Step 1: Ask for user confirmation using FastMCP elicitation
+    result = await ctx.elicit(
+        message=f"🚨 DESTRUCTIVE OPERATION\n"
+               f"Are you sure you want to delete document '{doc_id}' from index '{index}'?\n"
+               f"This action cannot be undone.\n\n"
+               f"Type 'yes' to confirm deletion or 'no' to cancel:",
+        response_type=str
+    )
+    
+    # Step 2: Check user response
+    if result.action == "decline":
+        return f"❌ Deletion declined by user. Document '{doc_id}' was NOT deleted."
+    elif result.action == "cancel":
+        return f"❌ Deletion cancelled by user. Document '{doc_id}' was NOT deleted."
+    elif result.action == "accept":
+        # Check if user confirmed with 'yes'
+        user_response = result.data.lower().strip()
+        if user_response not in ['yes', 'y']:
+            return f"❌ Deletion not confirmed (user said '{result.data}'). Document '{doc_id}' was NOT deleted."
+        
+        # Step 3: User confirmed, proceed with deletion
+        arguments = {
+            "index": index,
+            "doc_id": doc_id
+        }
+        
+        handler_result = await handle_delete_document(arguments)
+        
+        # Step 4: Add confirmation note to result
+        if handler_result and hasattr(handler_result[0], 'text'):
+            result_text = handler_result[0].text
+            return f"✅ User confirmed deletion with '{result.data}'.\n{result_text}"
+        else:
+            return f"✅ User confirmed deletion with '{result.data}'.\n{str(handler_result)}"
+    
+    return f"❌ Unexpected elicitation result: {result.action}"
 
 @app.tool()
 async def get_document(
