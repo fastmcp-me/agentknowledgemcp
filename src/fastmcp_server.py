@@ -1,12 +1,17 @@
 """
 FastMCP server implementation for AgentKnowledgeMCP.
 Migration from Standard MCP to FastMCP for enhanced elicitation capabilities.
+
+NOTE: This is the original monolithic FastMCP server implementation.
+For the new modular service composition architecture, see composed_server.py
+which uses individual services (elasticsearch_service, file_service, admin_service, etc.)
+for better maintainability and scalability.
 """
 import asyncio
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Annotated
 
 from fastmcp import FastMCP
 from fastmcp.server import Context
@@ -83,16 +88,19 @@ app = FastMCP(
 # ELASTICSEARCH TOOLS (FastMCP)
 # ================================
 
-@app.tool()
+@app.tool(
+    description="Search documents in Elasticsearch index with advanced filtering, pagination, and time-based sorting capabilities",
+    tags={"elasticsearch", "search", "query"}
+)
 async def search(
-    index: str,
-    query: str,
-    size: int = 10,
-    fields: Optional[List[str]] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
-    time_period: Optional[str] = None,
-    sort_by_time: str = "desc"
+    index: Annotated[str, Field(description="Name of the Elasticsearch index to search")],
+    query: Annotated[str, Field(description="Search query text to find matching documents")],
+    size: Annotated[int, Field(description="Maximum number of results to return", ge=1, le=1000)] = 10,
+    fields: Annotated[Optional[List[str]], Field(description="Specific fields to include in search results")] = None,
+    date_from: Annotated[Optional[str], Field(description="Start date filter in ISO format (YYYY-MM-DD)")] = None,
+    date_to: Annotated[Optional[str], Field(description="End date filter in ISO format (YYYY-MM-DD)")] = None,
+    time_period: Annotated[Optional[str], Field(description="Predefined time period filter (e.g., '7d', '1m', '1y')")] = None,
+    sort_by_time: Annotated[str, Field(description="Sort order by timestamp", regex="^(asc|desc)$")] = "desc"
 ) -> str:
     """Search documents in Elasticsearch index with optional time-based filtering."""
     arguments = {
@@ -108,12 +116,15 @@ async def search(
     result = await handle_search(arguments)
     return result[0].text if result and hasattr(result[0], 'text') else str(result)
 
-@app.tool()
+@app.tool(
+    description="Index/store a document in Elasticsearch with automatic schema validation and content processing",
+    tags={"elasticsearch", "indexing", "document"}
+)
 async def index_document(
-    index: str,
-    document: Dict[str, Any],
-    doc_id: Optional[str] = None,
-    validate_schema: bool = True
+    index: Annotated[str, Field(description="Name of the Elasticsearch index to store the document")],
+    document: Annotated[Dict[str, Any], Field(description="Document content as JSON object/dictionary")],
+    doc_id: Annotated[Optional[str], Field(description="Custom document ID (auto-generated if not provided)")] = None,
+    validate_schema: Annotated[bool, Field(description="Whether to validate document against index schema")] = True
 ) -> str:
     """Index a document into Elasticsearch with optional schema validation."""
     arguments = {
@@ -127,11 +138,14 @@ async def index_document(
     handler_result = await handle_index_document(arguments)
     return handler_result[0].text if handler_result and hasattr(handler_result[0], 'text') else str(handler_result)
 
-@app.tool()
+@app.tool(
+    description="🚨 DESTRUCTIVE: Delete a document from Elasticsearch index with user confirmation via interactive elicitation",
+    tags={"elasticsearch", "delete", "destructive", "elicitation"}
+)
 async def delete_document(
     ctx: Context,
-    index: str,
-    doc_id: str
+    index: Annotated[str, Field(description="Name of the Elasticsearch index containing the document")],
+    doc_id: Annotated[str, Field(description="Unique ID of the document to delete")]
 ) -> str:
     """Delete a document from Elasticsearch index."""
     
