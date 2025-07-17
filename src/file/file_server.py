@@ -3,17 +3,12 @@ File Operations FastMCP Server - Step by step migration
 Tool-by-tool conversion from handlers to FastMCP tools.
 File 2/4: File Server
 """
-import json
-from typing import List, Dict, Any, Optional, Annotated
-from pathlib import Path
-import os
+from typing import Annotated
 
 from fastmcp import FastMCP
-from fastmcp.server import Context
 from pydantic import Field
 
-from .security import validate_path, SecurityError
-from .config import load_config
+from src.utils.security import validate_path, SecurityError
 
 # Create FastMCP app
 app = FastMCP(
@@ -25,7 +20,7 @@ app = FastMCP(
 def _format_file_error(e: Exception, operation: str, file_path: str = None) -> str:
     """Format file operation errors with detailed guidance for agents."""
     error_message = f"❌ Failed to {operation}:\n\n"
-    
+
     error_str = str(e).lower()
     if "permission denied" in error_str or "access denied" in error_str:
         error_message += "🔒 **Permission Error**: Access denied to file or directory\n"
@@ -54,9 +49,9 @@ def _format_file_error(e: Exception, operation: str, file_path: str = None) -> s
         error_message += f"💡 Try: Use directory-specific operations or specify a file path\n\n"
     else:
         error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
-    
+
     error_message += f"🔍 **Technical Details**: {str(e)}"
-    
+
     return error_message
 
 
@@ -76,12 +71,12 @@ async def read_file(
     try:
         # Validate path security
         validated_path = validate_path(file_path)
-        
+
         with open(validated_path, 'r', encoding=encoding) as f:
             content = f.read()
-        
+
         return f"✅ File read successfully:\n\n{content}"
-        
+
     except SecurityError as e:
         return f"❌ Security error: {str(e)}"
     except Exception as e:
@@ -104,19 +99,19 @@ async def write_file(
 ) -> str:
     """Write content to a file with proper security validation and directory creation."""
     try:
-        # Validate path security 
+        # Validate path security
         validated_path = validate_path(file_path)
-        
+
         # Create parent directories if requested
         if create_dirs:
             validated_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Write content to file
         with open(validated_path, 'w', encoding=encoding) as f:
             f.write(content)
-        
+
         return f"✅ File written successfully:\n\n📁 Path: {file_path}\n📏 Size: {len(content)} characters\n🔤 Encoding: {encoding}"
-        
+
     except SecurityError as e:
         return f"❌ Security error: {str(e)}"
     except Exception as e:
@@ -140,20 +135,20 @@ async def append_file(
     try:
         # Validate path security
         validated_path = validate_path(file_path)
-        
+
         # Check if file exists
         if not validated_path.exists():
             return f"❌ File not found: {file_path}\n💡 Use 'write_file' to create a new file"
-        
+
         # Append content to file
         with open(validated_path, 'a', encoding=encoding) as f:
             f.write(content)
-        
+
         # Get file size after appending
         file_size = validated_path.stat().st_size
-        
+
         return f"✅ Content appended successfully:\n\n📁 Path: {file_path}\n📏 Added: {len(content)} characters\n📊 Total file size: {file_size} bytes\n🔤 Encoding: {encoding}"
-        
+
     except SecurityError as e:
         return f"❌ Security error: {str(e)}"
     except Exception as e:
@@ -175,20 +170,20 @@ async def delete_file(
     try:
         # Validate path security
         validated_path = validate_path(file_path)
-        
+
         # Check if file exists
         if not validated_path.exists():
             return f"❌ File not found: {file_path}\n💡 File may already be deleted or path is incorrect"
-        
+
         # Check if it's actually a file (not a directory)
         if validated_path.is_dir():
             return f"❌ Path is a directory: {file_path}\n💡 Use 'delete_directory' to remove directories"
-        
+
         # Delete the file
         validated_path.unlink()
-        
+
         return f"✅ File deleted successfully:\n\n📁 Path: {file_path}\n🗑️ Operation: File removal completed"
-        
+
     except SecurityError as e:
         return f"❌ Security error: {str(e)}"
     except Exception as e:
@@ -213,28 +208,28 @@ async def move_file(
         # Validate both paths for security
         validated_source = validate_path(source_path)
         validated_destination = validate_path(destination_path)
-        
+
         # Check if source file exists
         if not validated_source.exists():
             return f"❌ Source file not found: {source_path}\n💡 Check the source path spelling and location"
-        
+
         # Check if source is actually a file (not a directory)
         if validated_source.is_dir():
             return f"❌ Source is a directory: {source_path}\n💡 Use directory-specific operations for folders"
-        
+
         # Check if destination already exists
         if validated_destination.exists():
             return f"❌ Destination already exists: {destination_path}\n💡 Choose a different name or delete the existing file first"
-        
+
         # Create parent directories if requested
         if create_dirs:
             validated_destination.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Move the file
         validated_source.rename(validated_destination)
-        
+
         return f"✅ File moved successfully:\n\n📂 From: {source_path}\n📁 To: {destination_path}\n🔄 Operation: File relocation completed"
-        
+
     except SecurityError as e:
         return f"❌ Security error: {str(e)}"
     except Exception as e:
@@ -259,33 +254,33 @@ async def copy_file(
         # Validate both paths for security
         validated_source = validate_path(source_path)
         validated_destination = validate_path(destination_path)
-        
+
         # Check if source file exists
         if not validated_source.exists():
             return f"❌ Source file not found: {source_path}\n💡 Check the source path spelling and location"
-        
+
         # Check if source is actually a file (not a directory)
         if validated_source.is_dir():
             return f"❌ Source is a directory: {source_path}\n💡 Use directory-specific operations for folders"
-        
+
         # Check if destination already exists
         if validated_destination.exists():
             return f"❌ Destination already exists: {destination_path}\n💡 Choose a different name or delete the existing file first"
-        
+
         # Create parent directories if requested
         if create_dirs:
             validated_destination.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Copy the file
         import shutil
         shutil.copy2(validated_source, validated_destination)
-        
+
         # Get file sizes for verification
         source_size = validated_source.stat().st_size
         dest_size = validated_destination.stat().st_size
-        
+
         return f"✅ File copied successfully:\n\n📂 From: {source_path}\n📁 To: {destination_path}\n📏 Size: {source_size} bytes\n🔍 Verified: Source and destination match ({dest_size} bytes)"
-        
+
     except SecurityError as e:
         return f"❌ Security error: {str(e)}"
     except Exception as e:
@@ -309,15 +304,15 @@ async def list_directory(
     try:
         # Validate path security
         validated_path = validate_path(directory_path)
-        
+
         # Check if path exists
         if not validated_path.exists():
             return f"❌ Directory not found: {directory_path}\n💡 Check the directory path spelling and location"
-        
+
         # Check if it's actually a directory (not a file)
         if not validated_path.is_dir():
             return f"❌ Path is not a directory: {directory_path}\n💡 Use file operations for files"
-        
+
         # List directory contents
         items = []
         try:
@@ -341,15 +336,15 @@ async def list_directory(
                     items.append(f"{item_type} {item.name}{size_info}")
         except PermissionError:
             return f"❌ Permission denied accessing directory: {directory_path}\n💡 Check directory permissions or ask user to change allowed_base_directory"
-        
+
         if not items:
             return f"✅ Directory is empty:\n\n📁 Path: {directory_path}\n📋 Contents: No files or directories found"
-        
+
         listing_type = "recursive" if recursive else "non-recursive"
         hidden_info = "including hidden" if include_hidden else "excluding hidden"
-        
+
         return f"✅ Directory listing ({listing_type}, {hidden_info}):\n\n📁 Path: {directory_path}\n📋 Items ({len(items)}):\n\n" + "\n".join(items)
-        
+
     except SecurityError as e:
         return f"❌ Security error: {str(e)}"
     except Exception as e:
@@ -372,25 +367,25 @@ async def create_directory(
     try:
         # Validate path security
         validated_path = validate_path(directory_path)
-        
+
         # Check if directory already exists
         if validated_path.exists():
             if validated_path.is_dir():
                 return f"❌ Directory already exists: {directory_path}\n💡 Directory is already present at this location"
             else:
                 return f"❌ Path exists but is not a directory: {directory_path}\n💡 A file exists at this location - choose a different path"
-        
+
         # Create the directory
         try:
             validated_path.mkdir(parents=parents, exist_ok=False)
-            
+
             # Verify creation
             if validated_path.exists() and validated_path.is_dir():
                 parent_info = " (including parent directories)" if parents else ""
                 return f"✅ Directory created successfully:\n\n📁 Path: {directory_path}\n🔨 Operation: Directory creation completed{parent_info}"
             else:
                 return f"❌ Directory creation failed: {directory_path}\n💡 Directory was not created successfully - check permissions"
-                
+
         except FileExistsError:
             return f"❌ Directory already exists: {directory_path}\n💡 Directory was created by another process"
         except FileNotFoundError:
@@ -400,7 +395,7 @@ async def create_directory(
                 return f"❌ Cannot create directory: {directory_path}\n💡 Check the path and parent directory permissions"
         except PermissionError:
             return f"❌ Permission denied creating directory: {directory_path}\n💡 Check write permissions for the parent directory"
-        
+
     except SecurityError as e:
         return f"❌ Security error: {str(e)}"
     except Exception as e:
@@ -423,15 +418,15 @@ async def delete_directory(
     try:
         # Validate path security
         validated_path = validate_path(directory_path)
-        
+
         # Check if directory exists
         if not validated_path.exists():
             return f"❌ Directory not found: {directory_path}\n💡 Directory may already be deleted or path is incorrect"
-        
+
         # Check if it's actually a directory (not a file)
         if not validated_path.is_dir():
             return f"❌ Path is not a directory: {directory_path}\n💡 Use 'delete_file' to remove files"
-        
+
         # Check if directory is empty (when not using recursive)
         if not recursive:
             try:
@@ -441,7 +436,7 @@ async def delete_directory(
                     return f"❌ Directory not empty: {directory_path}\n💡 Directory contains {len(contents)} items - use 'recursive=True' to delete contents or remove items first"
             except PermissionError:
                 return f"❌ Permission denied accessing directory: {directory_path}\n💡 Check directory permissions or ask user to change allowed_base_directory"
-        
+
         # Delete the directory
         try:
             if recursive:
@@ -458,13 +453,13 @@ async def delete_directory(
                 return f"❌ Permission denied deleting directory: {directory_path}\n💡 Check directory permissions or ask user to change allowed_base_directory"
             else:
                 raise e
-        
+
         # Verify deletion
         if not validated_path.exists():
             return f"✅ Directory deleted successfully:\n\n📁 Path: {directory_path}\n🗑️ Operation: {deletion_type.capitalize()} completed"
         else:
             return f"❌ Directory deletion failed: {directory_path}\n💡 Directory still exists - check permissions and try again"
-            
+
     except SecurityError as e:
         return f"❌ Security error: {str(e)}"
     except Exception as e:
@@ -486,20 +481,20 @@ async def file_info(
     try:
         # Validate path security
         validated_path = validate_path(path)
-        
+
         # Check if path exists
         if not validated_path.exists():
             return f"❌ Path not found: {path}\n💡 Check the path spelling and location"
-        
+
         # Get basic information
         is_file = validated_path.is_file()
         is_dir = validated_path.is_dir()
         is_symlink = validated_path.is_symlink()
-        
+
         # Get detailed stats
         try:
             stat_info = validated_path.stat()
-            
+
             # Format file size
             size_bytes = stat_info.st_size
             if size_bytes < 1024:
@@ -510,18 +505,18 @@ async def file_info(
                 size_display = f"{size_bytes/(1024**2):.1f} MB ({size_bytes} bytes)"
             else:
                 size_display = f"{size_bytes/(1024**3):.1f} GB ({size_bytes} bytes)"
-            
+
             # Format timestamps
             import datetime
             modified_time = datetime.datetime.fromtimestamp(stat_info.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
             accessed_time = datetime.datetime.fromtimestamp(stat_info.st_atime).strftime('%Y-%m-%d %H:%M:%S')
             created_time = datetime.datetime.fromtimestamp(stat_info.st_ctime).strftime('%Y-%m-%d %H:%M:%S')
-            
+
             # Format permissions (Unix-style)
             import stat
             mode = stat_info.st_mode
             permissions = stat.filemode(mode)
-            
+
             # Determine type emoji and info
             if is_file:
                 type_emoji = "📄"
@@ -551,7 +546,7 @@ async def file_info(
                     type_details = f"Link target: {target}"
                 except:
                     type_details = "Link target: Unable to read"
-            
+
             # Additional metadata for files
             additional_info = ""
             if is_file:
@@ -567,7 +562,7 @@ async def file_info(
                             additional_info = f"\n💾 Binary file: Non-text content"
                 except:
                     additional_info = f"\n❓ File content: Unable to analyze"
-            
+
             # Build comprehensive information display
             info_display = f"""✅ {type_name} information retrieved:
 
@@ -587,14 +582,14 @@ async def file_info(
    👤 Owner UID: {stat_info.st_uid}
    👥 Group GID: {stat_info.st_gid}
    🔗 Links: {stat_info.st_nlink}{additional_info}"""
-            
+
             return info_display
-            
+
         except PermissionError:
             return f"❌ Permission denied accessing path: {path}\n💡 Check file/directory permissions or ask user to change allowed_base_directory"
         except OSError as e:
             return f"❌ System error accessing path: {path}\n🔍 Error: {str(e)}\n💡 Path may be on an inaccessible filesystem or have system restrictions"
-            
+
     except SecurityError as e:
         return f"❌ Security error: {str(e)}"
     except Exception as e:
@@ -607,7 +602,7 @@ def cli_main():
     print("🚀 Starting AgentKnowledgeMCP File FastMCP server...")
     print("📁 Tools: read_file, write_file, append_file, delete_file, move_file, copy_file, list_directory, create_directory, delete_directory, file_info")
     print("✅ Status: All 10 File Tools Complete - Ready for production!")
-    
+
     app.run()
 
 if __name__ == "__main__":

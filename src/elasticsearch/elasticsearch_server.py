@@ -9,17 +9,16 @@ from datetime import datetime, timedelta
 import re
 
 from fastmcp import FastMCP
-from fastmcp.server import Context
 from pydantic import Field
 
-from .elasticsearch_client import get_es_client
-from .document_schema import (
-    validate_document_structure, 
-    DocumentValidationError, 
+from src.elasticsearch.elasticsearch_client import get_es_client
+from src.elasticsearch.document_schema import (
+    validate_document_structure,
+    DocumentValidationError,
     create_document_template,
     format_validation_error
 )
-from .config import load_config
+from src.config.config import load_config
 
 # Create FastMCP app
 app = FastMCP(
@@ -28,20 +27,20 @@ app = FastMCP(
     instructions="Elasticsearch tools for knowledge management"
 )
 
-def _parse_time_parameters(date_from: Optional[str] = None, date_to: Optional[str] = None, 
+def _parse_time_parameters(date_from: Optional[str] = None, date_to: Optional[str] = None,
                           time_period: Optional[str] = None) -> Dict[str, Any]:
     """Parse time-based search parameters and return Elasticsearch date range filter."""
-    
+
     def parse_relative_date(date_str: str) -> datetime:
         """Parse relative date strings like '7d', '1w', '1m' to datetime."""
         if not date_str:
             return None
-            
+
         match = re.match(r'(\d+)([dwmy])', date_str.lower())
         if match:
             amount, unit = match.groups()
             amount = int(amount)
-            
+
             if unit == 'd':
                 return datetime.now() - timedelta(days=amount)
             elif unit == 'w':
@@ -50,22 +49,22 @@ def _parse_time_parameters(date_from: Optional[str] = None, date_to: Optional[st
                 return datetime.now() - timedelta(days=amount * 30)
             elif unit == 'y':
                 return datetime.now() - timedelta(days=amount * 365)
-        
+
         return None
-    
+
     def parse_date_string(date_str: str) -> str:
         """Parse various date formats to Elasticsearch compatible format."""
         if not date_str:
             return None
-            
+
         if date_str.lower() == 'now':
             return 'now'
-            
+
         # Try relative dates first
         relative_date = parse_relative_date(date_str)
         if relative_date:
             return relative_date.isoformat()
-            
+
         # Try parsing standard formats
         formats = [
             '%Y-%m-%d',
@@ -73,16 +72,16 @@ def _parse_time_parameters(date_from: Optional[str] = None, date_to: Optional[st
             '%Y-%m-%dT%H:%M:%S',
             '%Y-%m-%dT%H:%M:%SZ'
         ]
-        
+
         for fmt in formats:
             try:
                 parsed_date = datetime.strptime(date_str, fmt)
                 return parsed_date.isoformat()
             except ValueError:
                 continue
-                
+
         return None
-    
+
     # Handle time_period shortcuts
     if time_period:
         now = datetime.now()
@@ -138,24 +137,24 @@ def _parse_time_parameters(date_from: Optional[str] = None, date_to: Optional[st
                     }
                 }
             }
-    
+
     # Handle explicit date range
     if date_from or date_to:
         range_filter = {"range": {"last_modified": {}}}
-        
+
         if date_from:
             parsed_from = parse_date_string(date_from)
             if parsed_from:
                 range_filter["range"]["last_modified"]["gte"] = parsed_from
-                
+
         if date_to:
             parsed_to = parse_date_string(date_to)
             if parsed_to:
                 range_filter["range"]["last_modified"]["lte"] = parsed_to
-                
+
         if range_filter["range"]["last_modified"]:
             return range_filter
-    
+
     return None
 
 
@@ -163,46 +162,46 @@ def _analyze_search_results_for_reorganization(results: List[Dict], query_text: 
     """Analyze search results and provide specific reorganization suggestions."""
     if total_results <= 15:
         return ""
-    
+
     # Extract topics and themes from search results
     topics = set()
     sources = set()
     priorities = {"high": 0, "medium": 0, "low": 0}
     dates = []
-    
+
     for result in results[:10]:  # Analyze first 10 results
         source_data = result.get("source", {})
-        
+
         # Extract tags as topics
         tags = source_data.get("tags", [])
         topics.update(tags)
-        
+
         # Extract source types
         source_type = source_data.get("source_type", "unknown")
         sources.add(source_type)
-        
+
         # Count priorities
         priority = source_data.get("priority", "medium")
         priorities[priority] = priorities.get(priority, 0) + 1
-        
+
         # Extract dates for timeline analysis
         last_modified = source_data.get("last_modified", "")
         if last_modified:
             dates.append(last_modified)
-    
+
     # Generate reorganization suggestions
     suggestion = f"\n\n🔍 **Knowledge Base Analysis for '{query_text}'** ({total_results} documents):\n\n"
-    
+
     # Topic analysis
     if topics:
         suggestion += f"📋 **Topics Found**: {', '.join(sorted(list(topics))[:8])}\n"
         suggestion += f"💡 **Reorganization Suggestion**: Group documents by these topics\n\n"
-    
+
     # Source type analysis
     if sources:
         suggestion += f"📁 **Content Types**: {', '.join(sorted(sources))}\n"
         suggestion += f"💡 **Organization Tip**: Separate by content type for better structure\n\n"
-    
+
     # Priority distribution
     total_priority_docs = sum(priorities.values())
     if total_priority_docs > 0:
@@ -210,25 +209,25 @@ def _analyze_search_results_for_reorganization(results: List[Dict], query_text: 
         suggestion += f"⭐ **Priority Distribution**: {priorities['high']} high, {priorities['medium']} medium, {priorities['low']} low\n"
         if priorities["low"] > 5:
             suggestion += f"💡 **Cleanup Suggestion**: Consider archiving {priorities['low']} low-priority documents\n\n"
-    
+
     # User collaboration template
     suggestion += f"🤝 **Ask User These Questions**:\n"
     suggestion += f"   1. 'I found {total_results} documents about {query_text}. Would you like to organize them better?'\n"
     suggestion += f"   2. 'Should we group them by: {', '.join(sorted(list(topics))[:3]) if topics else 'topic areas'}?'\n"
     suggestion += f"   3. 'Which documents can we merge or archive to reduce redundancy?'\n"
     suggestion += f"   4. 'Do you want to keep all {priorities.get('low', 0)} low-priority items?'\n\n"
-    
+
     suggestion += f"✅ **Reorganization Goals**:\n"
     suggestion += f"   • Reduce from {total_results} to ~{max(5, total_results // 3)} well-organized documents\n"
     suggestion += f"   • Create comprehensive topic-based documents\n"
     suggestion += f"   • Archive or delete outdated/redundant content\n"
     suggestion += f"   • Improve searchability and knowledge quality"
-    
+
     return suggestion
 
 
 # ================================
-# TOOL 1: SEARCH 
+# TOOL 1: SEARCH
 # ================================
 
 @app.tool(
@@ -248,10 +247,10 @@ async def search(
     """Search documents in Elasticsearch index with optional time-based filtering."""
     try:
         es = get_es_client()
-        
+
         # Parse time filters
         time_filter = _parse_time_parameters(date_from, date_to, time_period)
-        
+
         # Build search query with optional time filtering
         if time_filter:
             # Combine text search with time filtering
@@ -280,7 +279,7 @@ async def search(
                     }
                 }
             }
-        
+
         # Add sorting - prioritize time if time filtering is used
         if time_filter:
             if sort_by_time == "desc":
@@ -299,14 +298,14 @@ async def search(
                 "_score",  # Primary sort by relevance
                 {"last_modified": {"order": "desc"}}  # Secondary sort by recency
             ]
-        
+
         search_body["size"] = size
-        
+
         if fields:
             search_body["_source"] = fields
-        
+
         result = es.search(index=index, body=search_body)
-        
+
         # Build time filter description early for use in all branches
         time_filter_desc = ""
         if time_filter:
@@ -319,7 +318,7 @@ async def search(
                 if date_to:
                     filter_parts.append(f"to {date_to}")
                 time_filter_desc = f" (filtered by: {' '.join(filter_parts)})"
-        
+
         # Format results
         formatted_results = []
         for hit in result['hits']['hits']:
@@ -330,9 +329,9 @@ async def search(
                 "score": score,
                 "source": source
             })
-        
+
         total_results = result['hits']['total']['value']
-        
+
         # Check if no results found and provide helpful suggestions
         if total_results == 0:
             time_suggestions = ""
@@ -344,7 +343,7 @@ async def search(
                     f"   • Check if documents exist in the specified time period\n" +
                     f"   • Use relative dates like '30d' or '6m' for wider ranges\n"
                 )
-            
+
             return (f"🔍 No results found for '{query}' in index '{index}'{time_filter_desc}\n\n" +
                    f"💡 **Search Optimization Suggestions for Agents**:\n\n" +
                    f"🎯 **Try Different Keywords**:\n" +
@@ -368,16 +367,16 @@ async def search(
                    f"   • Check for typos in search terms\n" +
                    f"   • Consider partial word matches" +
                    time_suggestions)
-        
+
         # Add detailed reorganization analysis for too many results
         reorganization_analysis = _analyze_search_results_for_reorganization(formatted_results, query, total_results)
-        
+
         # Build sorting description
         if time_filter:
             sort_desc = f"sorted by time ({sort_by_time}) then relevance"
         else:
             sort_desc = "sorted by relevance and recency"
-        
+
         return (f"Search results for '{query}' in index '{index}'{time_filter_desc} ({sort_desc}):\n\n" +
                json.dumps({
                    "total": total_results,
@@ -410,7 +409,7 @@ async def search(
     except Exception as e:
         # Provide detailed error messages for different types of Elasticsearch errors
         error_message = "❌ Search failed:\n\n"
-        
+
         error_str = str(e).lower()
         if "connection" in error_str or "refused" in error_str:
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
@@ -434,14 +433,14 @@ async def search(
             error_message += f"💡 Try: Use simpler search terms\n\n"
         else:
             error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
-        
+
         error_message += f"🔍 **Technical Details**: {str(e)}"
-        
+
         return error_message
 
 
 # ================================
-# TOOL 2: INDEX_DOCUMENT 
+# TOOL 2: INDEX_DOCUMENT
 # ================================
 
 @app.tool(
@@ -457,23 +456,23 @@ async def index_document(
     """Index a document into Elasticsearch with optional schema validation."""
     try:
         es = get_es_client()
-        
+
         # Validate document structure if requested
         if validate_schema:
             try:
                 # Get base directory from config
                 config = load_config()
                 base_directory = config.get("security", {}).get("allowed_base_directory")
-                
+
                 # Check if this looks like a knowledge base document
                 if isinstance(document, dict) and "id" in document and "title" in document:
                     validated_doc = validate_document_structure(document, base_directory)
                     document = validated_doc
-                    
+
                     # Use the document ID from the validated document if not provided
                     if not doc_id:
                         doc_id = document.get("id")
-                        
+
                 else:
                     # For non-knowledge base documents, still validate with strict mode if enabled
                     validated_doc = validate_document_structure(document, base_directory, is_knowledge_doc=False)
@@ -482,13 +481,13 @@ async def index_document(
                 return f"❌ Validation failed:\n\n{format_validation_error(e)}"
             except Exception as e:
                 return f"❌ Validation error: {str(e)}"
-        
+
         # Index the document
         if doc_id:
             result = es.index(index=index, id=doc_id, body=document)
         else:
             result = es.index(index=index, body=document)
-        
+
         return (f"✅ Document indexed successfully:\n\n" +
                json.dumps(result, indent=2, ensure_ascii=False) +
                f"\n\n💡 **IMPORTANT: Always Update Existing Documents Instead of Creating Duplicates**:\n" +
@@ -504,11 +503,11 @@ async def index_document(
                f"   • Use meaningful document IDs for better organization\n" +
                f"   • Include relevant tags for improved searchability\n" +
                f"   • Set appropriate priority levels for content importance")
-        
+
     except Exception as e:
         # Provide detailed error messages for different types of Elasticsearch errors
         error_message = "❌ Document indexing failed:\n\n"
-        
+
         error_str = str(e).lower()
         if "connection" in error_str or "refused" in error_str:
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
@@ -535,14 +534,14 @@ async def index_document(
             error_message += f"💡 Try: Reduce document size or retry later\n\n"
         else:
             error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
-        
+
         error_message += f"🔍 **Technical Details**: {str(e)}"
-        
+
         return error_message
 
 
 # ================================
-# TOOL 3: DELETE_DOCUMENT 
+# TOOL 3: DELETE_DOCUMENT
 # ================================
 
 @app.tool(
@@ -556,15 +555,15 @@ async def delete_document(
     """Delete a document from Elasticsearch index."""
     try:
         es = get_es_client()
-        
+
         result = es.delete(index=index, id=doc_id)
-        
+
         return f"✅ Document deleted successfully:\n\n{json.dumps(result, indent=2, ensure_ascii=False)}"
-        
+
     except Exception as e:
         # Provide detailed error messages for different types of Elasticsearch errors
         error_message = "❌ Failed to delete document:\n\n"
-        
+
         error_str = str(e).lower()
         if "connection" in error_str or "refused" in error_str:
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
@@ -582,14 +581,14 @@ async def delete_document(
                 error_message += f"💡 Try: Check document ID or use 'search' to find documents\n\n"
         else:
             error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
-        
+
         error_message += f"🔍 **Technical Details**: {str(e)}"
-        
+
         return error_message
 
 
 # ================================
-# TOOL 4: GET_DOCUMENT 
+# TOOL 4: GET_DOCUMENT
 # ================================
 
 @app.tool(
@@ -603,15 +602,15 @@ async def get_document(
     """Retrieve a specific document from Elasticsearch index."""
     try:
         es = get_es_client()
-        
+
         result = es.get(index=index, id=doc_id)
-        
+
         return f"✅ Document retrieved successfully:\n\n{json.dumps(result, indent=2, ensure_ascii=False)}"
-        
+
     except Exception as e:
         # Provide detailed error messages for different types of Elasticsearch errors
         error_message = "❌ Failed to get document:\n\n"
-        
+
         error_str = str(e).lower()
         if "connection" in error_str or "refused" in error_str:
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
@@ -632,14 +631,14 @@ async def get_document(
                 error_message += f"💡 Try: Check document ID or use 'search' to find documents\n\n"
         else:
             error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
-        
+
         error_message += f"🔍 **Technical Details**: {str(e)}"
-        
+
         return error_message
 
 
 # ================================
-# TOOL 5: LIST_INDICES 
+# TOOL 5: LIST_INDICES
 # ================================
 
 @app.tool(
@@ -650,9 +649,9 @@ async def list_indices() -> str:
     """List all available Elasticsearch indices with basic statistics."""
     try:
         es = get_es_client()
-        
+
         indices = es.indices.get_alias(index="*")
-        
+
         # Get stats for each index
         indices_info = []
         for index_name in indices.keys():
@@ -672,13 +671,13 @@ async def list_indices() -> str:
                         "docs": "unknown",
                         "size_bytes": "unknown"
                     })
-        
+
         return f"✅ Available indices:\n\n{json.dumps(indices_info, indent=2, ensure_ascii=False)}"
-        
+
     except Exception as e:
         # Provide detailed error messages for different types of Elasticsearch errors
         error_message = "❌ Failed to list indices:\n\n"
-        
+
         error_str = str(e).lower()
         if "connection" in error_str or "refused" in error_str:
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
@@ -690,14 +689,14 @@ async def list_indices() -> str:
             error_message += f"💡 Try: Wait and retry, or check server status\n\n"
         else:
             error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
-        
+
         error_message += f"🔍 **Technical Details**: {str(e)}"
-        
+
         return error_message
 
 
 # ================================
-# TOOL 6: CREATE_INDEX 
+# TOOL 6: CREATE_INDEX
 # ================================
 
 @app.tool(
@@ -712,19 +711,19 @@ async def create_index(
     """Create a new Elasticsearch index with mapping and optional settings."""
     try:
         es = get_es_client()
-        
+
         body = {"mappings": mapping}
         if settings:
             body["settings"] = settings
-        
+
         result = es.indices.create(index=index, body=body)
-        
+
         return f"✅ Index '{index}' created successfully:\n\n{json.dumps(result, indent=2, ensure_ascii=False)}"
-        
+
     except Exception as e:
         # Provide detailed error messages for different types of Elasticsearch errors
         error_message = "❌ Failed to create index:\n\n"
-        
+
         error_str = str(e).lower()
         if "connection" in error_str or "refused" in error_str:
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
@@ -744,14 +743,14 @@ async def create_index(
             error_message += f"💡 Try: Check Elasticsearch security settings\n\n"
         else:
             error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
-        
+
         error_message += f"🔍 **Technical Details**: {str(e)}"
-        
+
         return error_message
 
 
 # ================================
-# TOOL 7: DELETE_INDEX 
+# TOOL 7: DELETE_INDEX
 # ================================
 
 @app.tool(
@@ -764,15 +763,15 @@ async def delete_index(
     """Delete an Elasticsearch index permanently."""
     try:
         es = get_es_client()
-        
+
         result = es.indices.delete(index=index)
-        
+
         return f"✅ Index '{index}' deleted successfully:\n\n{json.dumps(result, indent=2, ensure_ascii=False)}"
-        
+
     except Exception as e:
         # Provide detailed error messages for different types of Elasticsearch errors
         error_message = "❌ Failed to delete index:\n\n"
-        
+
         error_str = str(e).lower()
         if "connection" in error_str or "refused" in error_str:
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
@@ -788,14 +787,14 @@ async def delete_index(
             error_message += f"💡 Try: Check Elasticsearch security settings\n\n"
         else:
             error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
-        
+
         error_message += f"🔍 **Technical Details**: {str(e)}"
-        
+
         return error_message
 
 
 # ================================
-# TOOL 8: VALIDATE_DOCUMENT_SCHEMA 
+# TOOL 8: VALIDATE_DOCUMENT_SCHEMA
 # ================================
 
 @app.tool(
@@ -810,9 +809,9 @@ async def validate_document_schema(
         # Get base directory from config
         config = load_config()
         base_directory = config.get("security", {}).get("allowed_base_directory")
-        
+
         validated_doc = validate_document_structure(document, base_directory)
-        
+
         return (f"✅ Document validation successful!\n\n" +
                f"Validated document:\n{json.dumps(validated_doc, indent=2, ensure_ascii=False)}\n\n" +
                f"Document is ready to be indexed.\n\n" +
@@ -822,7 +821,7 @@ async def validate_document_schema(
                f"   📏 **Content length check**: If < 1000 chars, store in 'content' field directly\n" +
                f"   📁 **File creation**: Only for truly long content that needs separate storage\n" +
                f"   🎯 **Quality over quantity**: Prevent knowledge base bloat through smart reuse")
-    
+
     except DocumentValidationError as e:
         return format_validation_error(e)
     except Exception as e:
@@ -830,7 +829,7 @@ async def validate_document_schema(
 
 
 # ================================
-# TOOL 9: CREATE_DOCUMENT_TEMPLATE 
+# TOOL 9: CREATE_DOCUMENT_TEMPLATE
 # ================================
 
 @app.tool(
@@ -852,7 +851,7 @@ async def create_document_template(
         # Get base directory from config
         config = load_config()
         base_directory = config.get("security", {}).get("allowed_base_directory")
-        
+
         template = create_document_template(
             title=title,
             file_path=file_path,
@@ -864,7 +863,7 @@ async def create_document_template(
             related=related,
             base_directory=base_directory
         )
-        
+
         return (f"✅ Document template created successfully!\n\n" +
                f"{json.dumps(template, indent=2, ensure_ascii=False)}\n\n" +
                f"This template can be used with the 'index_document' tool.\n\n" +
@@ -875,7 +874,7 @@ async def create_document_template(
                f"   📁 **STEP 4**: For LONG content: Create file only when truly necessary\n" +
                f"   🧹 **STEP 5**: Clean up outdated documents regularly to maintain quality\n" +
                f"   🎯 **Remember**: Knowledge base quality > quantity - avoid bloat!")
-        
+
     except Exception as e:
         return f"❌ Failed to create document template: {str(e)}"
 
@@ -886,7 +885,7 @@ def cli_main():
     print("🚀 Starting AgentKnowledgeMCP Elasticsearch FastMCP server...")
     print("🔍 Tools: search, index_document, delete_document, get_document, list_indices, create_index, delete_index, validate_document_schema, create_document_template")
     print("✅ Status: All 9 Elasticsearch tools completed - Ready for next server!")
-    
+
     app.run()
 
 if __name__ == "__main__":

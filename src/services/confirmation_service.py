@@ -8,7 +8,7 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 # Import existing handlers
-from ..confirmation_handlers import (
+from src.confirmation.confirmation_handlers import (
     handle_user_response, handle_confirmation_status
 )
 
@@ -31,7 +31,7 @@ async def user_response(
         "pending_id": pending_id,
         "response": response
     }
-    
+
     handler_result = await handle_user_response(arguments)
     return handler_result[0].text if handler_result and hasattr(handler_result[0], 'text') else str(handler_result)
 

@@ -3,23 +3,22 @@ AgentKnowledgeMCP Main Server - FastMCP Server Composition
 Modern server composition using FastMCP mounting architecture for modular design.
 """
 import asyncio
-import logging
 from pathlib import Path
 
 from fastmcp import FastMCP
 
 # Import our existing modules for initialization
-from .config import load_config
-from .security import init_security
-from .elasticsearch_client import init_elasticsearch
-from .elasticsearch_setup import auto_setup_elasticsearch
-from .confirmation import initialize_confirmation_manager
+from src.config.config import load_config
+from src.utils.security import init_security
+from src.elasticsearch.elasticsearch_client import init_elasticsearch
+from src.elasticsearch.elasticsearch_setup import auto_setup_elasticsearch
+from src.confirmation.confirmation import initialize_confirmation_manager
 
 # Import individual server modules for mounting
-from . import admin_server
-from . import elasticsearch_server
-from . import file_server
-from . import version_control_server
+from src.admin import admin_server
+from src.elasticsearch import elasticsearch_server
+from src.file import file_server
+from src.version_control import version_control_server
 
 # Load configuration and initialize components
 CONFIG = load_config()
@@ -64,7 +63,7 @@ print("🏗️ Mounting individual servers into main server...")
 app.mount(elasticsearch_server.app, prefix="es")
 print("✅ Mounted elasticsearch_server.app with prefix 'es'")
 
-# Mount File operations server with 'file' prefix  
+# Mount File operations server with 'file' prefix
 # This provides: file_read_file, file_write_file, file_list_directory, etc.
 app.mount(file_server.app, prefix="file")
 print("✅ Mounted file_server.app with prefix 'file'")
@@ -90,25 +89,25 @@ async def setup_compatibility_aliases():
     """Setup backward compatibility aliases for existing tool names."""
     try:
         print("🔗 Setting up backward compatibility aliases...")
-        
+
         # Import core Elasticsearch tools without prefix for compatibility
         await app.import_server(elasticsearch_server.app, prefix=None)
         print("✅ Added compatibility aliases for Elasticsearch tools")
-        
+
         # Import core file operations without prefix
         await app.import_server(file_server.app, prefix=None)
         print("✅ Added compatibility aliases for File operations")
-        
+
         # Import core admin tools without prefix
-        await app.import_server(admin_server.app, prefix=None) 
+        await app.import_server(admin_server.app, prefix=None)
         print("✅ Added compatibility aliases for Admin tools")
-        
+
         # Import version control tools without prefix
         await app.import_server(version_control_server.app, prefix=None)
         print("✅ Added compatibility aliases for Version Control tools")
-        
+
         print("🔗 Backward compatibility setup complete!")
-        
+
     except Exception as e:
         print(f"⚠️ Warning: Could not setup compatibility aliases: {e}")
 
@@ -131,13 +130,13 @@ def cli_main():
     print()
     print("🔗 Compatibility: All tools also available without prefixes")
     print()
-    
+
     # Setup compatibility aliases and run the server
     async def setup_and_run():
         await setup_compatibility_aliases()
         # Start the FastMCP app
         app.run()
-    
+
     # Run the server
     asyncio.run(setup_and_run())
 
