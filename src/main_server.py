@@ -131,14 +131,15 @@ def cli_main():
     print("🔗 Compatibility: All tools also available without prefixes")
     print()
 
-    # Setup compatibility aliases and run the server
-    async def setup_and_run():
+    # Setup compatibility aliases first (async part)
+    async def setup_compatibility():
         await setup_compatibility_aliases()
-        # Start the FastMCP app
-        app.run()
-
-    # Run the server
-    asyncio.run(setup_and_run())
+    
+    # Run async setup
+    asyncio.run(setup_compatibility())
+    
+    # Start the FastMCP app (sync)
+    app.run()
 
 if __name__ == "__main__":
     cli_main()
