@@ -15,10 +15,10 @@ from src.elasticsearch.elasticsearch_setup import auto_setup_elasticsearch
 from src.confirmation.confirmation import initialize_confirmation_manager
 
 # Import individual server modules for mounting
-from src.admin import admin_server
-from src.elasticsearch import elasticsearch_server
-from src.file import file_server
-from src.version_control import version_control_server
+from src.admin.admin_server import app as admin_server_app
+from src.elasticsearch.elasticsearch_server import app as elasticsearch_server_app  
+from src.file.file_server import app as file_server_app
+from src.version_control.version_control_server import app as version_control_server_app
 
 # Load configuration and initialize components
 CONFIG = load_config()
@@ -60,22 +60,22 @@ print("🏗️ Mounting individual servers into main server...")
 
 # Mount Elasticsearch server with 'es' prefix
 # This provides: es_search, es_index_document, es_create_index, etc.
-app.mount(elasticsearch_server.app, prefix="es")
+app.mount(elasticsearch_server_app, prefix="es")
 print("✅ Mounted elasticsearch_server.app with prefix 'es'")
 
-# Mount File operations server with 'file' prefix
+# Mount File operations server with 'file' prefix  
 # This provides: file_read_file, file_write_file, file_list_directory, etc.
-app.mount(file_server.app, prefix="file")
+app.mount(file_server_app, prefix="file")
 print("✅ Mounted file_server.app with prefix 'file'")
 
 # Mount Administrative operations server with 'admin' prefix
 # This provides: admin_get_config, admin_update_config, admin_server_status, etc.
-app.mount(admin_server.app, prefix="admin")
+app.mount(admin_server_app, prefix="admin")
 print("✅ Mounted admin_server.app with prefix 'admin'")
 
 # Mount Version control server with 'vc' prefix
 # This provides: vc_setup_version_control, vc_commit_file, vc_get_previous_file_version
-app.mount(version_control_server.app, prefix="vc")
+app.mount(version_control_server_app, prefix="vc")
 print("✅ Mounted version_control_server.app with prefix 'vc'")
 
 print("🎉 Server composition completed successfully!")
@@ -91,21 +91,21 @@ async def setup_compatibility_aliases():
         print("🔗 Setting up backward compatibility aliases...")
 
         # Import core Elasticsearch tools without prefix for compatibility
-        await app.import_server(elasticsearch_server.app, prefix=None)
+        await app.import_server(elasticsearch_server_app, prefix=None)
         print("✅ Added compatibility aliases for Elasticsearch tools")
-
+        
         # Import core file operations without prefix
-        await app.import_server(file_server.app, prefix=None)
+        await app.import_server(file_server_app, prefix=None)
         print("✅ Added compatibility aliases for File operations")
-
+        
         # Import core admin tools without prefix
-        await app.import_server(admin_server.app, prefix=None)
+        await app.import_server(admin_server_app, prefix=None) 
         print("✅ Added compatibility aliases for Admin tools")
-
+        
         # Import version control tools without prefix
-        await app.import_server(version_control_server.app, prefix=None)
+        await app.import_server(version_control_server_app, prefix=None)
         print("✅ Added compatibility aliases for Version Control tools")
-
+        
         print("🔗 Backward compatibility setup complete!")
 
     except Exception as e:
