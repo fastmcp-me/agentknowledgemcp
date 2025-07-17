@@ -60,23 +60,19 @@ print("🏗️ Mounting individual servers into main server...")
 
 # Mount Elasticsearch server with 'es' prefix
 # This provides: es_search, es_index_document, es_create_index, etc.
-app.mount(elasticsearch_server_app, prefix="es")
-print("✅ Mounted elasticsearch_server.app with prefix 'es'")
+app.mount(elasticsearch_server_app)
 
 # Mount File operations server with 'file' prefix  
 # This provides: file_read_file, file_write_file, file_list_directory, etc.
-app.mount(file_server_app, prefix="file")
-print("✅ Mounted file_server.app with prefix 'file'")
+app.mount(file_server_app)
 
 # Mount Administrative operations server with 'admin' prefix
 # This provides: admin_get_config, admin_update_config, admin_server_status, etc.
-app.mount(admin_server_app, prefix="admin")
-print("✅ Mounted admin_server.app with prefix 'admin'")
+app.mount(admin_server_app)
 
 # Mount Version control server with 'vc' prefix
 # This provides: vc_setup_version_control, vc_commit_file, vc_get_previous_file_version
-app.mount(version_control_server_app, prefix="vc")
-print("✅ Mounted version_control_server.app with prefix 'vc'")
+app.mount(version_control_server_app)
 
 print("🎉 Server composition completed successfully!")
 
@@ -85,31 +81,6 @@ print("🎉 Server composition completed successfully!")
 # ================================
 
 # Add core tools without prefix for backward compatibility using static import
-async def setup_compatibility_aliases():
-    """Setup backward compatibility aliases for existing tool names."""
-    try:
-        print("🔗 Setting up backward compatibility aliases...")
-
-        # Import core Elasticsearch tools without prefix for compatibility
-        await app.import_server(elasticsearch_server_app, prefix=None)
-        print("✅ Added compatibility aliases for Elasticsearch tools")
-        
-        # Import core file operations without prefix
-        await app.import_server(file_server_app, prefix=None)
-        print("✅ Added compatibility aliases for File operations")
-        
-        # Import core admin tools without prefix
-        await app.import_server(admin_server_app, prefix=None) 
-        print("✅ Added compatibility aliases for Admin tools")
-        
-        # Import version control tools without prefix
-        await app.import_server(version_control_server_app, prefix=None)
-        print("✅ Added compatibility aliases for Version Control tools")
-        
-        print("🔗 Backward compatibility setup complete!")
-
-    except Exception as e:
-        print(f"⚠️ Warning: Could not setup compatibility aliases: {e}")
 
 def cli_main():
     """CLI entry point for main FastMCP server."""
@@ -131,13 +102,6 @@ def cli_main():
     print("🔗 Compatibility: All tools also available without prefixes")
     print()
 
-    # Setup compatibility aliases first (async part)
-    async def setup_compatibility():
-        await setup_compatibility_aliases()
-    
-    # Run async setup
-    asyncio.run(setup_compatibility())
-    
     # Start the FastMCP app (sync)
     app.run()
 
