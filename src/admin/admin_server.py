@@ -1146,7 +1146,7 @@ async def get_comprehensive_usage_guide(
     """Get complete comprehensive usage guide with examples, workflows, and best practices."""
     try:
         # Read guide content from markdown file
-        guide_path = Path(__file__).parent / "resources" / "comprehensive_usage_guide.md"
+        guide_path = Path(__file__).parent.parent / "resources" / "comprehensive_usage_guide.md"
 
         if not guide_path.exists():
             return "❌ **Comprehensive Usage Guide Not Found!**\n\n🚨 **Error:** Usage guide file not found\n📍 **Missing File:** `comprehensive_usage_guide.md`\n📁 **Expected Location:** src directory\n\n🛠️ **Resolution Steps:**\n   1. Verify file exists: `src/comprehensive_usage_guide.md`\n   2. Check file permissions and accessibility\n   3. Ensure file is properly installed with the package\n   4. Try reinstalling AgentKnowledgeMCP if file is missing\n\n💡 **Alternative:** Visit the GitHub repository for online documentation:\n   📚 https://github.com/itshare4u/AgentKnowledgeMCP"
