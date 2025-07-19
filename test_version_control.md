@@ -16,3 +16,9 @@
 
 ---
 Version 1.0 - Initial creation
+
+## Cập nhật lần 2
+- Git commit tool hoạt động ✅
+- File đã được commit thành công vào git repo
+- Đang test get_previous_file_version tool
+
