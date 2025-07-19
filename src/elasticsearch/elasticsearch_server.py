@@ -388,11 +388,12 @@ async def search(
         # Limited results guidance (1-3 matches)
         if total_results > 0 and total_results <= 3:
             guidance_messages += (f"💡 **Limited Results Found** ({total_results} matches):\n" +
-                                f"   • Try broader or alternative keywords for more results\n" +
-                                f"   • Ask user for related terms or different perspectives\n" +
-                                f"   • Consider searching in other indices with 'list_indices'\n" +
-                                f"   • Results are sorted by relevance first, then by recency" +
-                                (f"\n   • Consider broader time range if using time filters" if time_filter else "") +
+                                f"   📂 **Check Other Indices**: Use 'list_indices' tool to see all available indices\n" +
+                                f"   🔍 **Search elsewhere**: Try the same query in different indices\n" +
+                                f"   🎯 **Expand keywords**: Try broader or alternative keywords for more results\n" +
+                                f"   🤝 **Ask user**: Request related terms or different perspectives\n" +
+                                f"   📊 **Results info**: Sorted by relevance first, then by recency" +
+                                (f"\n   ⏰ **Time range**: Consider broader time range if using time filters" if time_filter else "") +
                                 f"\n\n")
         
         # Too many results guidance (15+ matches)
