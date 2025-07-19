@@ -346,6 +346,11 @@ async def search(
 
             return (f"🔍 No results found for '{query}' in index '{index}'{time_filter_desc}\n\n" +
                    f"💡 **Search Optimization Suggestions for Agents**:\n\n" +
+                   f"📂 **Try Other Indices**:\n" +
+                   f"   • Use 'list_indices' tool to see all available indices\n" +
+                   f"   • Search the same query in different indices\n" +
+                   f"   • Content might be stored in a different index\n" +
+                   f"   • Check indices with similar names or purposes\n\n" +
                    f"🎯 **Try Different Keywords**:\n" +
                    f"   • Use synonyms and related terms\n" +
                    f"   • Try shorter, more general keywords\n" +
@@ -362,10 +367,10 @@ async def search(
                    f"   • Get context about what they're trying to find\n" +
                    f"   • Ask for alternative ways to describe their query\n\n" +
                    f"🔧 **Technical Tips**:\n" +
-                   f"   • Try searching in different indices with 'list_indices'\n" +
                    f"   • Use broader search terms first, then narrow down\n" +
                    f"   • Check for typos in search terms\n" +
-                   f"   • Consider partial word matches" +
+                   f"   • Consider partial word matches\n" +
+                   f"   • Try fuzzy matching or wildcard searches" +
                    time_suggestions)
 
         # Add detailed reorganization analysis for too many results
