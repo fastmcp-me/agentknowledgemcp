@@ -17,7 +17,7 @@ from src.confirmation.confirmation import initialize_confirmation_manager
 # Import individual server modules for mounting
 from src.admin.admin_server import app as admin_server_app
 from src.elasticsearch.elasticsearch_server import app as elasticsearch_server_app  
-from src.file.file_server import app as file_server_app
+from src.file.unified_file_server import app as unified_file_server_app
 from src.version_control.version_control_server import app as version_control_server_app
 
 # Load configuration and initialize components
@@ -62,9 +62,9 @@ print("🏗️ Mounting individual servers into main server...")
 # This provides: es_search, es_index_document, es_create_index, etc.
 app.mount(elasticsearch_server_app)
 
-# Mount File operations server with 'file' prefix  
-# This provides: file_read_file, file_write_file, file_list_directory, etc.
-app.mount(file_server_app)
+# Mount File operations server with unified edit_file tool  
+# This provides: edit_file (unified tool for all file/directory operations)
+app.mount(unified_file_server_app)
 
 # Mount Administrative operations server with 'admin' prefix
 # This provides: admin_get_config, admin_update_config, admin_server_status, etc.
@@ -92,8 +92,8 @@ def cli_main():
     print("📋 Available Servers (Mounted):")
     print("  🔍 Elasticsearch Server (es_*) - Document search, indexing, and management")
     print("    └─ Tools: search, index_document, create_index, get_document, delete_document, list_indices, delete_index")
-    print("  📁 File Operations Server (file_*) - File and directory operations")
-    print("    └─ Tools: read_file, write_file, append_file, delete_file, move_file, copy_file, list_directory, create_directory, delete_directory, file_info")
+    print("  📁 File Operations Server (unified) - Single edit_file tool for all operations")
+    print("    └─ Tool: edit_file (supports: read, write, append, delete, move, copy, info, list, mkdir, rmdir)")
     print("  ⚙️ Admin Server (admin_*) - Configuration and system management")
     print("    └─ Tools: get_config, update_config, server_status, server_upgrade, setup_elasticsearch, elasticsearch_status, get_comprehensive_usage_guide, validate_config, reset_config, reload_config")
     print("  📜 Version Control Server (vc_*) - File versioning and history")
