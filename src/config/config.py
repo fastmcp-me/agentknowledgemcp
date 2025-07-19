@@ -8,8 +8,8 @@ from typing import Dict, Any
 
 def load_config() -> Dict[str, Any]:
     """Load configuration from config.json with fallback to config.default.json."""
-    config_path = Path(__file__).parent / "config.json"
-    default_config_path = Path(__file__).parent / "config.default.json"
+    config_path = Path(__file__).parent.parent / "config.json"
+    default_config_path = Path(__file__).parent.parent / "config.default.json"
     
     # Try to load config.json first
     try:

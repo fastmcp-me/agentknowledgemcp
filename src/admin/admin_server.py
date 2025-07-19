@@ -94,7 +94,7 @@ async def update_config(
 ) -> str:
     """Update configuration with comprehensive validation and automatic component reinitialization."""
     try:
-        config_path = Path(__file__).parent / "config.json"
+        config_path = Path(__file__).parent.parent / "config.json"
 
         if full_config:
             # Full configuration replacement
@@ -385,7 +385,7 @@ async def setup_elasticsearch(
     """Auto-setup Elasticsearch using Docker with comprehensive Docker container management."""
     try:
         # Get config path for setup
-        config_path = Path(__file__).parent / "config.json"
+        config_path = Path(__file__).parent.parent / "config.json"
         config = load_config()
 
         # Handle force recreate - stop existing containers first

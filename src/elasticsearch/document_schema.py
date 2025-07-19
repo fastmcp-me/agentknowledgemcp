@@ -27,8 +27,8 @@ def load_document_schema() -> Dict[str, Any]:
     Raises:
         RuntimeError: If both config.json and config.default.json are missing or invalid
     """
-    config_path = Path(__file__).parent / "config.json"
-    default_config_path = Path(__file__).parent / "config.default.json"
+    config_path = Path(__file__).parent.parent / "config.json"
+    default_config_path = Path(__file__).parent.parent / "config.default.json"
     
     # Check if config.json exists, fallback to default if missing
     if not config_path.exists():
