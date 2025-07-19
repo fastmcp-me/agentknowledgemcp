@@ -377,35 +377,48 @@ async def search(
         else:
             sort_desc = "sorted by relevance and recency"
 
-        return (f"Search results for '{query}' in index '{index}'{time_filter_desc} ({sort_desc}):\n\n" +
+        # Build guidance messages that will appear BEFORE results
+        guidance_messages = ""
+        
+        # Limited results guidance (1-3 matches)
+        if total_results > 0 and total_results <= 3:
+            guidance_messages += (f"💡 **Limited Results Found** ({total_results} matches):\n" +
+                                f"   • Try broader or alternative keywords for more results\n" +
+                                f"   • Ask user for related terms or different perspectives\n" +
+                                f"   • Consider searching in other indices with 'list_indices'\n" +
+                                f"   • Results are sorted by relevance first, then by recency" +
+                                (f"\n   • Consider broader time range if using time filters" if time_filter else "") +
+                                f"\n\n")
+        
+        # Too many results guidance (15+ matches)
+        if total_results > 15:
+            guidance_messages += (f"🧹 **Too Many Results Found** ({total_results} matches):\n" +
+                                f"   📊 **Consider Knowledge Base Reorganization**:\n" +
+                                f"      • Ask user: 'Would you like to organize the knowledge base better?'\n" +
+                                f"      • List key topics found in search results\n" +
+                                f"      • Ask user to confirm which topics to consolidate/update/delete\n" +
+                                f"      • Suggest merging similar documents into comprehensive ones\n" +
+                                f"      • Propose archiving outdated/redundant information\n" +
+                                f"   🎯 **User Collaboration Steps**:\n" +
+                                f"      1. 'I found {total_results} documents about this topic'\n" +
+                                f"      2. 'Would you like me to help organize them better?'\n" +
+                                f"      3. List main themes/topics from results\n" +
+                                f"      4. Get user confirmation for reorganization plan\n" +
+                                f"      5. Execute: consolidate, update, or delete as agreed\n" +
+                                f"   💡 **Quality Goals**: Fewer, better organized, comprehensive documents" +
+                                (f"\n   • Consider narrower time range to reduce results" if time_filter else "") +
+                                f"\n\n")
+
+        # Add reorganization analysis if present
+        if reorganization_analysis:
+            guidance_messages += reorganization_analysis + "\n\n"
+
+        return (guidance_messages +
+               f"Search results for '{query}' in index '{index}'{time_filter_desc} ({sort_desc}):\n\n" +
                json.dumps({
                    "total": total_results,
                    "results": formatted_results
-               }, indent=2, ensure_ascii=False) +
-               (f"\n\n💡 **Limited Results Found** ({total_results} matches):\n" +
-                f"   • Try broader or alternative keywords for more results\n" +
-                f"   • Ask user for related terms or different perspectives\n" +
-                f"   • Consider searching in other indices with 'list_indices'\n" +
-                f"   • Results are sorted by relevance first, then by recency" +
-                (f"\n   • Consider broader time range if using time filters" if time_filter else "")
-                if total_results > 0 and total_results <= 3 else "") +
-               (f"\n\n🧹 **Too Many Results Found** ({total_results} matches):\n" +
-                f"   📊 **Consider Knowledge Base Reorganization**:\n" +
-                f"      • Ask user: 'Would you like to organize the knowledge base better?'\n" +
-                f"      • List key topics found in search results\n" +
-                f"      • Ask user to confirm which topics to consolidate/update/delete\n" +
-                f"      • Suggest merging similar documents into comprehensive ones\n" +
-                f"      • Propose archiving outdated/redundant information\n" +
-                f"   🎯 **User Collaboration Steps**:\n" +
-                f"      1. 'I found {total_results} documents about this topic'\n" +
-                f"      2. 'Would you like me to help organize them better?'\n" +
-                f"      3. List main themes/topics from results\n" +
-                f"      4. Get user confirmation for reorganization plan\n" +
-                f"      5. Execute: consolidate, update, or delete as agreed\n" +
-                f"   💡 **Quality Goals**: Fewer, better organized, comprehensive documents" +
-                (f"\n   • Consider narrower time range to reduce results" if time_filter else "")
-                if total_results > 15 else "") +
-               reorganization_analysis)
+               }, indent=2, ensure_ascii=False))
     except Exception as e:
         # Provide detailed error messages for different types of Elasticsearch errors
         error_message = "❌ Search failed:\n\n"
