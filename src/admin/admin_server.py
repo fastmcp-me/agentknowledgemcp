@@ -1210,12 +1210,18 @@ async def get_comprehensive_usage_guide(
 async def reset_config() -> str:
     """Reset configuration to defaults, creating backup of current config."""
     try:
-        config_path = Path(__file__).parent / "config.json"
-        default_config_path = Path(__file__).parent / "config.default.json"
-
-        # Check if config.default.json exists
+        import shutil
+        import time
+        from src.config.config import load_config  # Use the working config loader
+        
+        # Use same approach as working update_config function  
+        script_dir = Path(__file__).parent.parent  # /src directory
+        config_path = script_dir / "config.json"
+        default_config_path = script_dir / "config.default.json"
+        
+        # Verify default config exists
         if not default_config_path.exists():
-            return "❌ **Default Configuration File Not Found!**\n\n🚨 **Error:** Missing config.default.json template\n📁 **Expected Location:** src/config.default.json\n\n🛠️ **Resolution Steps:**\n   1. Verify config.default.json exists in src directory\n   2. Check if file was accidentally deleted or moved\n   3. Ensure AgentKnowledgeMCP installation is complete\n   4. Try reinstalling package if default config is missing\n\n💡 **Manual Reset Alternative:**\n   • Download config.default.json from GitHub repository\n   • Copy manually to src directory\n   • Try reset operation again"
+            return f"❌ **Default Configuration File Not Found!**\n\n🚨 **Error:** Cannot find {default_config_path}\n📁 **Absolute Path:** {default_config_path.absolute()}\n\n🛠️ **Resolution Steps:**\n   1. Verify config.default.json exists in src directory\n   2. Check if file was accidentally deleted or moved\n   3. Try reinstalling AgentKnowledgeMCP package\n\n💡 **Manual Reset:** Copy config.default.json to config.json manually"
 
         # Create backup of current config if it exists
         backup_created = False
