@@ -116,8 +116,8 @@ def load_validation_config() -> Dict[str, Any]:
     Raises:
         RuntimeError: If both config files are missing or document_validation section is missing
     """
-    config_path = Path(__file__).parent / "config.json"
-    default_config_path = Path(__file__).parent / "config.default.json"
+    config_path = Path(__file__).parent.parent / "config.json"
+    default_config_path = Path(__file__).parent.parent / "config.default.json"
     
     # Check if config.json exists, fallback to default if missing
     if not config_path.exists():
