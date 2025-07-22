@@ -145,7 +145,7 @@ async def setup_version_control(
             config["version_control"]["type"] = selected_vcs_type
 
             # Save configuration
-            config_path = Path(__file__).parent / "config.json"
+            config_path = Path(__file__).parent.parent / "config.json"
             with open(config_path, "w", encoding='utf-8') as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
 
