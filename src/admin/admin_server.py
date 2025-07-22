@@ -1081,86 +1081,59 @@ async def server_upgrade() -> str:
         return _format_admin_error(e, "upgrade server", "uvx package management and configuration restoration")
 
 
+def extract_section_content(full_content: str, section: str) -> str:
+    """Extract specific section from full guide content."""
+    lines = full_content.split('\n')
+    section_lines = []
+    in_section = False
 
-# ================================
-# PROMPT 1: USAGE_GUIDANCE
-# ================================
-
-@app.prompt(
-    name="usage_guidance",
-    description="Generate contextual guidance for using AgentKnowledgeMCP effectively based on user needs",
-    tags={"admin", "usage", "guide", "documentation", "help"}
-)
-async def usage_guidance(
-    section: Annotated[str, Field(description="Specific section to focus on", enum=["quick_start", "workflows", "advanced", "troubleshooting", "best_practices", "all"])] = "all",
-    user_context: Annotated[str, Field(description="Describe what you're trying to accomplish or any specific challenges you're facing")] = "general usage"
-) -> str:
-    """Generate contextual guidance prompts for AgentKnowledgeMCP based on user needs and specific sections."""
-    
-    # Base guidance content based on section
-    section_guidance = {
-        "quick_start": """I need help getting started with AgentKnowledgeMCP. Please provide:
-- Essential first steps for setup and basic usage
-- Key concepts I should understand
-- Common beginner workflows
-- Basic commands to get productive quickly""",
-        
-        "workflows": """I want to understand AgentKnowledgeMCP workflows. Please explain:
-- Step-by-step processes for common tasks
-- Best practice workflows for knowledge management
-- How to integrate AgentKnowledgeMCP into existing projects
-- Practical examples and use cases""",
-        
-        "advanced": """I need advanced AgentKnowledgeMCP guidance. Please cover:
-- Power user features and capabilities
-- Advanced configuration options
-- Complex workflows and automation
-- Performance optimization techniques
-- Integration with external systems""",
-        
-        "troubleshooting": """I'm experiencing issues with AgentKnowledgeMCP. Please help with:
-- Common problems and their solutions
-- Debugging techniques and error analysis
-- Configuration issues and fixes
-- Performance problems and optimization
-- Recovery from failures""",
-        
-        "best_practices": """I want to follow AgentKnowledgeMCP best practices. Please provide:
-- Recommended patterns and approaches
-- Code organization and structure guidelines
-- Performance and security considerations
-- Maintenance and monitoring practices
-- Team collaboration strategies""",
-        
-        "all": """I need comprehensive guidance on AgentKnowledgeMCP. Please provide an overview covering:
-- Getting started and key concepts
-- Common workflows and use cases
-- Advanced features and capabilities
-- Troubleshooting and problem-solving
-- Best practices and optimization tips"""
+    # Section mappings
+    section_headers = {
+        "quick_start": "## 🚀 **Quick Start",
+        "workflows": "## 📚 **Core Workflows",
+        "advanced": "## ⚡ **Power Commands",
+        "troubleshooting": "## 🔧 **Troubleshooting Guide",
+        "best_practices": "## 🎓 **Best Practices"
     }
-    
-    # Get the appropriate section guidance
-    base_prompt = section_guidance.get(section, section_guidance["all"])
-    
-    # Add user context if provided
-    if user_context and user_context != "general usage":
-        context_addition = f"\n\nSpecific context: {user_context}\nPlease tailor your guidance to address this specific situation or challenge."
-        base_prompt += context_addition
-    
-    # Add helpful resources
-    resources_prompt = f"""\n\nAdditional helpful resources:
-- GitHub Repository: https://github.com/itshare4u/AgentKnowledgeMCP
-- Copilot Instructions: https://github.com/itshare4u/AgentKnowledgeMCP/blob/main/.github/copilot-instructions.md
-- Issues & Support: https://github.com/itshare4u/AgentKnowledgeMCP/issues
 
-Please provide practical, actionable guidance with examples where appropriate."""
-    
-    return base_prompt + resources_prompt
+    target_header = section_headers.get(section)
+    if not target_header:
+        return full_content  # Return full content if section not found
+
+    # Always include the prompting instructions at the beginning
+    prompt_instruction = """# 🚀 AgentKnowledgeMCP - Complete Usage Guide
+
+## ⚡ **Before Getting Started - IMPORTANT!**
+
+> 💡 **Pro Tip for Maximum Effectiveness**: 
+> For the most effective experience with this MCP server, you should attach this instructions file to each prompt:
+> 
+> 📚 **https://github.com/itshare4u/AgentKnowledgeMCP/blob/main/.github/copilot-instructions.md**
+> 
+> This file contains guidelines that help AI assistants understand and use the MCP server optimally!
+
+---
+
+"""
+
+    # Extract specific section
+    for line in lines:
+        if target_header in line:
+            in_section = True
+            section_lines.append(line)
+        elif in_section and line.startswith('## ') and target_header not in line:
+            break  # Stop when we reach the next section
+        elif in_section:
+            section_lines.append(line)
+
+    if section_lines:
+        return prompt_instruction + '\n'.join(section_lines)
+    else:
+        return full_content  # Return full content if section extraction fails
 
 
 # ================================
-# TOOL 10: RESET_CONFIG
+# TOOL 9: RESET_CONFIG
 # ================================
 
 @app.tool(
@@ -1294,8 +1267,7 @@ def cli_main():
     """CLI entry point for Admin FastMCP server."""
     print("🚀 Starting AgentKnowledgeMCP Admin FastMCP server...")
     print("⚙️ Tools: get_config, update_config, validate_config, reload_config, setup_elasticsearch, elasticsearch_status, server_status, server_upgrade, reset_config")
-    print("🎯 Prompts: usage_guidance")
-    print("⏳ Status: Updated with FastMCP prompts - Ready for use...")
+    print("🎯 Admin-only server - Tools for system management and configuration")
 
     app.run()
 
