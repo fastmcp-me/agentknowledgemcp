@@ -1081,122 +1081,82 @@ async def server_upgrade() -> str:
         return _format_admin_error(e, "upgrade server", "uvx package management and configuration restoration")
 
 
-def extract_section_content(full_content: str, section: str) -> str:
-    """Extract specific section from full guide content."""
-    lines = full_content.split('\n')
-    section_lines = []
-    in_section = False
-
-    # Section mappings
-    section_headers = {
-        "quick_start": "## 🚀 **Quick Start",
-        "workflows": "## 📚 **Core Workflows",
-        "advanced": "## ⚡ **Power Commands",
-        "troubleshooting": "## 🔧 **Troubleshooting Guide",
-        "best_practices": "## 🎓 **Best Practices"
-    }
-
-    target_header = section_headers.get(section)
-    if not target_header:
-        return full_content  # Return full content if section not found
-
-    # Always include the prompting instructions at the beginning
-    prompt_instruction = """# 🚀 AgentKnowledgeMCP - Complete Usage Guide
-
-## ⚡ **Before Getting Started - IMPORTANT!**
-
-> 💡 **Pro Tip for Maximum Effectiveness**: 
-> For the most effective experience with this MCP server, you should attach this instructions file to each prompt:
-> 
-> 📚 **https://github.com/itshare4u/AgentKnowledgeMCP/blob/main/.github/copilot-instructions.md**
-> 
-> This file contains guidelines that help AI assistants understand and use the MCP server optimally!
-
----
-
-"""
-
-    # Extract specific section
-    for line in lines:
-        if target_header in line:
-            in_section = True
-            section_lines.append(line)
-        elif in_section and line.startswith('## ') and target_header not in line:
-            break  # Stop when we reach the next section
-        elif in_section:
-            section_lines.append(line)
-
-    if section_lines:
-        return prompt_instruction + '\n'.join(section_lines)
-    else:
-        return full_content  # Return full content if section extraction fails
-
 
 # ================================
-# TOOL 9: GET_COMPREHENSIVE_USAGE_GUIDE
+# PROMPT 1: USAGE_GUIDANCE
 # ================================
 
-@app.tool(
-    description="Get complete comprehensive usage guide for AgentKnowledgeMCP with examples, workflows, best practices, and prompting instructions",
+@app.prompt(
+    name="usage_guidance",
+    description="Generate contextual guidance for using AgentKnowledgeMCP effectively based on user needs",
     tags={"admin", "usage", "guide", "documentation", "help"}
 )
-async def get_comprehensive_usage_guide(
-    section: Annotated[str, Field(description="Specific section to focus on (optional)", enum=["quick_start", "workflows", "advanced", "troubleshooting", "best_practices", "all"])] = "all"
+async def usage_guidance(
+    section: Annotated[str, Field(description="Specific section to focus on", enum=["quick_start", "workflows", "advanced", "troubleshooting", "best_practices", "all"])] = "all",
+    user_context: Annotated[str, Field(description="Describe what you're trying to accomplish or any specific challenges you're facing")] = "general usage"
 ) -> str:
-    """Get complete comprehensive usage guide with examples, workflows, and best practices."""
-    try:
-        # Read guide content from markdown file
-        guide_path = Path(__file__).parent.parent / "resources" / "comprehensive_usage_guide.md"
+    """Generate contextual guidance prompts for AgentKnowledgeMCP based on user needs and specific sections."""
+    
+    # Base guidance content based on section
+    section_guidance = {
+        "quick_start": """I need help getting started with AgentKnowledgeMCP. Please provide:
+- Essential first steps for setup and basic usage
+- Key concepts I should understand
+- Common beginner workflows
+- Basic commands to get productive quickly""",
+        
+        "workflows": """I want to understand AgentKnowledgeMCP workflows. Please explain:
+- Step-by-step processes for common tasks
+- Best practice workflows for knowledge management
+- How to integrate AgentKnowledgeMCP into existing projects
+- Practical examples and use cases""",
+        
+        "advanced": """I need advanced AgentKnowledgeMCP guidance. Please cover:
+- Power user features and capabilities
+- Advanced configuration options
+- Complex workflows and automation
+- Performance optimization techniques
+- Integration with external systems""",
+        
+        "troubleshooting": """I'm experiencing issues with AgentKnowledgeMCP. Please help with:
+- Common problems and their solutions
+- Debugging techniques and error analysis
+- Configuration issues and fixes
+- Performance problems and optimization
+- Recovery from failures""",
+        
+        "best_practices": """I want to follow AgentKnowledgeMCP best practices. Please provide:
+- Recommended patterns and approaches
+- Code organization and structure guidelines
+- Performance and security considerations
+- Maintenance and monitoring practices
+- Team collaboration strategies""",
+        
+        "all": """I need comprehensive guidance on AgentKnowledgeMCP. Please provide an overview covering:
+- Getting started and key concepts
+- Common workflows and use cases
+- Advanced features and capabilities
+- Troubleshooting and problem-solving
+- Best practices and optimization tips"""
+    }
+    
+    # Get the appropriate section guidance
+    base_prompt = section_guidance.get(section, section_guidance["all"])
+    
+    # Add user context if provided
+    if user_context and user_context != "general usage":
+        context_addition = f"\n\nSpecific context: {user_context}\nPlease tailor your guidance to address this specific situation or challenge."
+        base_prompt += context_addition
+    
+    # Add helpful resources
+    resources_prompt = f"""\n\nAdditional helpful resources:
+- GitHub Repository: https://github.com/itshare4u/AgentKnowledgeMCP
+- Copilot Instructions: https://github.com/itshare4u/AgentKnowledgeMCP/blob/main/.github/copilot-instructions.md
+- Issues & Support: https://github.com/itshare4u/AgentKnowledgeMCP/issues
 
-        if not guide_path.exists():
-            return "❌ **Comprehensive Usage Guide Not Found!**\n\n🚨 **Error:** Usage guide file not found\n📍 **Missing File:** `comprehensive_usage_guide.md`\n📁 **Expected Location:** src directory\n\n🛠️ **Resolution Steps:**\n   1. Verify file exists: `src/comprehensive_usage_guide.md`\n   2. Check file permissions and accessibility\n   3. Ensure file is properly installed with the package\n   4. Try reinstalling AgentKnowledgeMCP if file is missing\n\n💡 **Alternative:** Visit the GitHub repository for online documentation:\n   📚 https://github.com/itshare4u/AgentKnowledgeMCP"
-
-        # Read the full guide content
-        try:
-            with open(guide_path, 'r', encoding='utf-8') as f:
-                guide_content = f.read()
-        except UnicodeDecodeError as e:
-            return f"❌ **File Encoding Error!**\n\n🚨 **Error:** Cannot read usage guide due to encoding issues\n🔍 **Details:** {str(e)}\n\n🛠️ **Resolution:**\n   • File may have incorrect encoding (expecting UTF-8)\n   • Try re-downloading or reinstalling AgentKnowledgeMCP\n   • Check if file was corrupted during installation\n\n💡 **Temporary Solution:** Use online documentation while resolving file issues"
-        except PermissionError:
-            return "❌ **File Permission Error!**\n\n🚨 **Error:** Insufficient permissions to read usage guide\n📁 **File:** `comprehensive_usage_guide.md`\n\n🛠️ **Resolution:**\n   • Check file permissions for read access\n   • Ensure user has appropriate file system permissions\n   • Try running with elevated permissions if necessary\n   • Verify file ownership and access rights"
-
-        # Validate guide content is not empty
-        if not guide_content.strip():
-            return "❌ **Empty Usage Guide!**\n\n🚨 **Error:** Usage guide file exists but is empty\n📁 **File:** `comprehensive_usage_guide.md`\n\n🛠️ **Resolution:**\n   • File may be corrupted or incomplete\n   • Try reinstalling AgentKnowledgeMCP package\n   • Download fresh copy from GitHub repository\n   • Check if file was properly included in installation"
-
-        # Filter by section if requested
-        if section != "all":
-            try:
-                guide_content = extract_section_content(guide_content, section)
-            except Exception as e:
-                # If section extraction fails, return full content with warning
-                section_warning = f"⚠️ **Section Extraction Warning:** Could not extract section '{section}' - {str(e)}\n\n📄 **Showing Full Guide Instead:**\n\n"
-                guide_content = section_warning + guide_content
-
-        # Add section indicator if specific section was requested and successfully extracted
-        if section != "all" and "⚠️" not in guide_content:
-            section_header = f"📖 **Comprehensive Usage Guide - Section: {section.replace('_', ' ').title()}**\n\n"
-            guide_content = section_header + guide_content
-
-        # Add usage statistics and helpful footer
-        footer = f"\n\n---\n\n💡 **Usage Tips:**\n"
-        footer += f"   • Use `section='quick_start'` for new users\n"
-        footer += f"   • Use `section='workflows'` for practical examples\n"
-        footer += f"   • Use `section='advanced'` for power user features\n"
-        footer += f"   • Use `section='troubleshooting'` for problem solving\n"
-        footer += f"   • Use `section='best_practices'` for optimization tips\n\n"
-        footer += f"📚 **Additional Resources:**\n"
-        footer += f"   • GitHub Repository: https://github.com/itshare4u/AgentKnowledgeMCP\n"
-        footer += f"   • Copilot Instructions: https://github.com/itshare4u/AgentKnowledgeMCP/blob/main/.github/copilot-instructions.md\n"
-        footer += f"   • Issues & Support: https://github.com/itshare4u/AgentKnowledgeMCP/issues\n\n"
-        footer += f"✅ **Guide Content:** {len(guide_content.split())} words • {len(guide_content.splitlines())} lines • Complete documentation loaded successfully!"
-
-        return guide_content + footer
-
-    except FileNotFoundError as e:
-        return f"❌ **File System Error!**\n\n🚨 **Error:** File system issue accessing usage guide\n🔍 **Details:** {str(e)}\n\n🛠️ **Resolution:**\n   • Check if AgentKnowledgeMCP is properly installed\n   • Verify src directory exists and is accessible\n   • Try reinstalling package if files are missing\n   • Ensure working directory is correct"
-    except Exception as e:
-        return _format_admin_error(e, "get comprehensive usage guide", "documentation file reading and section processing")
+Please provide practical, actionable guidance with examples where appropriate."""
+    
+    return base_prompt + resources_prompt
 
 
 # ================================
@@ -1333,8 +1293,9 @@ async def reset_config() -> str:
 def cli_main():
     """CLI entry point for Admin FastMCP server."""
     print("🚀 Starting AgentKnowledgeMCP Admin FastMCP server...")
-    print("⚙️ Tools: get_config, update_config, validate_config, reload_config, setup_elasticsearch, elasticsearch_status, server_status, server_upgrade, get_comprehensive_usage_guide")
-    print("⏳ Status: Tool #9 - Waiting for confirmation...")
+    print("⚙️ Tools: get_config, update_config, validate_config, reload_config, setup_elasticsearch, elasticsearch_status, server_status, server_upgrade, reset_config")
+    print("🎯 Prompts: usage_guidance")
+    print("⏳ Status: Updated with FastMCP prompts - Ready for use...")
 
     app.run()
 
