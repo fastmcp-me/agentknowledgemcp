@@ -19,6 +19,7 @@ from src.admin.admin_server import app as admin_server_app
 from src.elasticsearch.elasticsearch_server import app as elasticsearch_server_app  
 from src.file.unified_file_server import app as unified_file_server_app
 from src.version_control.version_control_server import app as version_control_server_app
+from src.prompts.usage_server import app as usage_server_app
 
 # Load configuration and initialize components
 CONFIG = load_config()
@@ -74,6 +75,10 @@ app.mount(admin_server_app)
 # This provides: vc_setup_version_control, vc_commit_file, vc_get_previous_file_version
 app.mount(version_control_server_app)
 
+# Mount Usage prompts server for AgentKnowledgeMCP guidance
+# This provides: usage_guide, help_request (prompts for LLM assistance)
+app.mount(usage_server_app)
+
 print("🎉 Server composition completed successfully!")
 
 # ================================
@@ -95,9 +100,11 @@ def cli_main():
     print("  📁 File Operations Server (unified) - Single edit_file tool for all operations")
     print("    └─ Tool: edit_file (supports: read, write, append, delete, move, copy, info, list, mkdir, rmdir)")
     print("  ⚙️ Admin Server (admin_*) - Configuration and system management")
-    print("    └─ Tools: get_config, update_config, server_status, server_upgrade, setup_elasticsearch, elasticsearch_status, get_comprehensive_usage_guide, validate_config, reset_config, reload_config")
+    print("    └─ Tools: get_config, update_config, server_status, server_upgrade, setup_elasticsearch, elasticsearch_status, validate_config, reset_config, reload_config")
     print("  📜 Version Control Server (vc_*) - File versioning and history")
     print("    └─ Tools: setup_version_control, commit_file, get_previous_file_version")
+    print("  📝 Usage Prompts Server - AgentKnowledgeMCP guidance and help")
+    print("    └─ Prompts: usage_guide, help_request")
     print()
     print("🔗 Compatibility: All tools also available without prefixes")
     print()
