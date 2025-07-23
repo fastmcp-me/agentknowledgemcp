@@ -1,5 +1,5 @@
 """
-AgentKnowledgeMCP Usage Guidance Prompts Server
+AgentKnowledgeMCP Prompt Server
 FastMCP server dedicated to providing simple prompts that return comprehensive usage guide content.
 """
 from pathlib import Path
@@ -8,9 +8,9 @@ from typing import Annotated
 from fastmcp import FastMCP
 from pydantic import Field
 
-# Create FastMCP app for usage guidance prompts
+# Create FastMCP app for prompt guidance
 app = FastMCP(
-    name="AgentKnowledgeMCP-Usage-Prompts",
+    name="AgentKnowledgeMCP-Prompts",
     version="1.0.0",
     instructions="Simple prompts that return AgentKnowledgeMCP comprehensive usage guide content for LLM assistance"
 )
@@ -94,8 +94,8 @@ Additional context:
 
 # CLI entry point
 def cli_main():
-    """CLI entry point for Usage Prompts FastMCP server."""
-    print("🚀 Starting AgentKnowledgeMCP Usage Prompts FastMCP server...")
+    """CLI entry point for Prompt FastMCP server."""
+    print("🚀 Starting AgentKnowledgeMCP Prompt FastMCP server...")
     print("📝 Prompts: usage_guide, help_request")
     print("✨ Simple prompts that return markdown content for LLM assistance")
 
