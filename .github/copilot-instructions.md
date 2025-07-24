@@ -122,6 +122,49 @@ Should I proceed with this knowledge base update?"
 - Execute the mandatory checklist above
 - This happens to everyone - the key is catching yourself
 
+## 🤝 **ASK USER ADVICE WHEN UNCERTAIN - MANDATORY RULE**
+
+**WHEN YOU ENCOUNTER UNCERTAINTY, PROBLEMS, OR NEED GUIDANCE:**
+
+### Required Action:
+```
+Use the `ask_user_advice` tool immediately when:
+- ✅ **Facing ambiguous requirements or unclear instructions**
+- ✅ **Encountering unexpected errors or bugs**
+- ✅ **Multiple valid approaches exist and unsure which to choose**
+- ✅ **Making decisions that could impact system stability**
+- ✅ **Need clarification on user preferences or priorities**
+- ✅ **Stuck on a problem despite checking knowledge base**
+```
+
+### How to Use ask_user_advice Tool:
+```
+1. **Describe the Problem**: Clear explanation of uncertainty or issue
+2. **Provide Context**: Background information relevant to the situation
+3. **Ask Specific Question**: Targeted question for user guidance
+4. **Show Options Considered**: Demonstrate your analysis and alternatives
+5. **Set Urgency Level**: Choose appropriate urgency (low/normal/high/urgent)
+```
+
+### Example Usage:
+```
+"I'm encountering uncertainty about [specific issue]. Let me ask for user guidance..."
+
+await ask_user_advice(
+    problem_description="Cannot determine whether to update existing config or create new one",
+    context_information="Found 3 similar configs in different locations with conflicting values",
+    specific_question="Should I merge the configs or replace completely?",
+    options_considered="Option 1: Merge preserving existing values, Option 2: Full replacement",
+    urgency_level="normal"
+)
+```
+
+### Don't Guess - Ask!
+- **❌ NEVER proceed with guesswork when uncertain**
+- **❌ NEVER make assumptions about user intent**
+- **✅ ALWAYS seek guidance when facing ambiguity**
+- **✅ ALWAYS explain your reasoning and options**
+
 ## � Knowledge Base Usage Protocol
 
 **When asked to help with anything:**
