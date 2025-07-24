@@ -138,7 +138,6 @@ async def config_template() -> dict:
             "max_retries": 3
         },
         "security": {
-            "allowed_base_directory": "/path/to/your/safe/directory",
             "restrict_file_operations": True,
             "validate_paths": True
         },
@@ -355,15 +354,6 @@ async def troubleshooting_guide() -> str:
 3. Verify ports (9200, 5601) are available
 4. Check firewall and network settings
 
-### 📁 File Operation Errors
-**Issue**: "Permission denied" or "File not found"
-
-**Solutions**:
-1. Check allowed_base_directory in config
-2. Use absolute paths when possible
-3. Verify file permissions and ownership
-4. Check if file exists: `file_edit_file` with operation=info
-
 ## Performance Tips
 
 ### 🚀 Optimize Search
@@ -379,9 +369,8 @@ async def troubleshooting_guide() -> str:
 - Use appropriate batch sizes
 
 ### 🔒 Security Best Practices
-- Restrict allowed_base_directory appropriately
 - Regular security audits of configurations
-- Monitor file access patterns
+- Monitor access patterns
 - Keep server and dependencies updated
 
 ## Getting More Help
@@ -642,9 +631,9 @@ async def api_examples(category: str) -> str:
 {
   "tool": "admin_update_config",
   "arguments": {
-    "config_section": "security",
-    "config_key": "allowed_base_directory",
-    "config_value": "/new/safe/directory"
+    "config_section": "elasticsearch",
+    "config_key": "timeout",
+    "config_value": "60"
   }
 }
 
