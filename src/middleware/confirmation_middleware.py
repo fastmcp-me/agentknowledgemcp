@@ -68,12 +68,7 @@ class ConfirmationMiddleware(Middleware):
             return await call_next(context)
         
         try:
-            # Build confirmation message
-            rule_name = rule_config.get("description", "Unknown Rule")
-            
-            confirmation_message = f"""🔒 **Confirmation Required: {rule_name}**
-
-📋 **Tool:** {tool_name}
+            confirmation_message = f"""📋 **Tool:** {tool_name}
 
 ⚠️ **This operation requires confirmation before proceeding.**
 
