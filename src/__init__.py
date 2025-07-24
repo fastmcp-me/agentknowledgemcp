@@ -2,7 +2,7 @@
 import asyncio
 from . import main_server
 
-__version__ = "1.0.28"
+__version__ = "2.0.0"
 
 def main():
     """Main entry point for the package."""

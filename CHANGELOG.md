@@ -5,6 +5,82 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-07-24
+
+### 🎉 MAJOR RELEASE: FastMCP Migration
+
+This is a major version release with significant architectural changes and breaking changes.
+
+### ⚠️ BREAKING CHANGES
+- **Complete Migration to FastMCP Framework**: Replaced legacy MCP implementation with modern FastMCP
+- **New Server Architecture**: Redesigned server structure with `main_server.py` as primary entry point
+- **Confirmation Middleware**: Implemented FastMCP-native confirmation middleware with better user experience
+- **Enhanced Prompt Server**: Added comprehensive MCP usage guidance through integrated prompt server
+- **Configuration Changes**: Updated configuration structure for FastMCP compatibility
+
+### Added
+- **FastMCP Framework Integration**: Complete migration from legacy MCP to FastMCP
+  - Modern middleware support with separation of concerns
+  - Enhanced error handling and user interaction patterns
+  - Better tool registration and management
+  - Improved performance and reliability
+
+- **New Main Server Architecture**: `src/main_server.py`
+  - Centralized server composition
+  - FastMCP middleware integration
+  - Streamlined tool mounting and configuration
+  - Better separation between admin and core functionality
+
+- **Advanced Confirmation Middleware**: `src/middleware/confirmation_middleware.py`
+  - FastMCP-native middleware implementation
+  - Configuration-driven confirmation rules
+  - Simplified user experience with clean confirmation dialogs
+  - Python 3.13 compatibility with proper typing
+
+- **Comprehensive MCP Usage Guide**: `src/resources/mcp_usage_instructions.md`
+  - 15,000+ character comprehensive usage documentation
+  - 4 real-world workflow scenarios
+  - 3 progressive difficulty tutorials
+  - Complete tool reference with examples
+  - Troubleshooting and best practices sections
+
+- **Enhanced Prompt Server**: `src/prompts/prompt_server.py`
+  - MCP usage guidance delivery through LLM interactions
+  - English language support for professional documentation
+  - Integration with comprehensive usage instructions
+
+- **Ask User Advice Tool**: Enhanced human-in-the-loop decision making
+  - Multi-level urgency support (low/normal/high/urgent)
+  - Comprehensive request formatting
+  - Context-aware user guidance requests
+
+### Changed
+- **Server Entry Point**: Primary server now runs through `main_server.py` instead of legacy server
+- **Middleware Architecture**: Moved from inline confirmation to proper FastMCP middleware patterns
+- **Tool Organization**: Better separation between admin tools and core functionality
+- **Configuration Management**: Enhanced configuration loading and validation
+- **Error Handling**: Improved error messages and user feedback throughout the system
+
+### Enhanced
+- **User Experience**: Simplified confirmation dialogs and clearer user communication
+- **Documentation**: Comprehensive usage guides and step-by-step tutorials
+- **Development Experience**: Better code organization and maintainability
+- **Performance**: FastMCP framework provides better performance and resource management
+- **Reliability**: Enhanced error handling and graceful failure recovery
+
+### Migration Notes
+- **Existing Users**: This version includes breaking changes in server architecture
+- **Configuration**: May require configuration updates for new FastMCP structure
+- **Tool Usage**: All existing tools remain functional with improved user experience
+- **Installation**: Use `uvx upgrade agent-knowledge-mcp` or reinstall for clean migration
+
+### Technical Details
+- **Framework**: FastMCP 0.15.0+ with full middleware support
+- **Python**: 3.10+ with enhanced 3.13 compatibility
+- **Architecture**: Modular design with proper separation of concerns
+- **Middleware**: Confirmation, prompt delivery, and extensible architecture
+- **Documentation**: Professional English documentation with comprehensive examples
+
 ## [1.0.28] - 2025-07-13
 
 ### Security

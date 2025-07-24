@@ -53,7 +53,7 @@
   },
   "server": {
     "name": "AgentKnowledgeMCP",
-    "version": "1.0.28"
+    "version": "2.0.0"
   },
   "confirmation": {
     "enabled": true,
