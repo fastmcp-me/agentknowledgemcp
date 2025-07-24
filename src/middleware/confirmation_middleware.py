@@ -67,35 +67,28 @@ class ConfirmationMiddleware(Middleware):
             # No FastMCP context available, skip confirmation
             return await call_next(context)
         
-        try:
-            confirmation_message = f"""📋 **Tool:** {tool_name}
+        confirmation_message = f"""📋 **Tool:** {tool_name}
 
 ⚠️ **This operation requires confirmation before proceeding.**
 
 🤔 **Do you want to continue with this operation?**"""
 
-            # Request confirmation from user
-            ctx = context.fastmcp_context
-            result = await ctx.elicit(
-                message=confirmation_message,
-                response_type=None  # Simple accept/decline confirmation
-            )
-            
-            if result.action == "accept":
-                # User confirmed, proceed with tool execution
-                await ctx.info(f"✅ User confirmed execution of {tool_name}")
-                return await call_next(context)
-            elif result.action == "decline":
-                # User declined
-                await ctx.warning(f"❌ User declined execution of {tool_name}")
-                raise ToolError(f"Operation cancelled: User declined to confirm {tool_name} execution")
-            else:  # cancel
-                # User cancelled
-                await ctx.warning(f"🚫 User cancelled execution of {tool_name}")
-                raise ToolError(f"Operation cancelled: User cancelled {tool_name} execution")
-                
-        except Exception as e:
-            # If confirmation fails, default to blocking the operation for security
-            if context.fastmcp_context:
-                await context.fastmcp_context.error(f"❌ Confirmation failed for {tool_name}: {str(e)}")
-            raise ToolError(f"Confirmation failed for {tool_name}: {str(e)}")
+        # Request confirmation from user
+        ctx = context.fastmcp_context
+        result = await ctx.elicit(
+            message=confirmation_message,
+            response_type=None  # Simple accept/decline confirmation
+        )
+        
+        if result.action == "accept":
+            # User confirmed, proceed with tool execution
+            await ctx.info(f"✅ User confirmed execution of {tool_name}")
+            return await call_next(context)
+        elif result.action == "decline":
+            # User declined
+            await ctx.warning(f"❌ User declined execution of {tool_name}")
+            raise ToolError(f"Operation cancelled: User declined to confirm {tool_name} execution")
+        else:  # cancel
+            # User cancelled
+            await ctx.warning(f"🚫 User cancelled execution of {tool_name}")
+            raise ToolError(f"Operation cancelled: User cancelled {tool_name} execution")
