@@ -500,7 +500,7 @@ async def list_indices() -> str:
                         metadata_search = {
                             "query": {
                                 "term": {
-                                    "index_name.keyword": index_name
+                                    "index_name": index_name
                                 }
                             },
                             "size": 1
