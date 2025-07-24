@@ -101,16 +101,6 @@ class ConfirmationMiddleware(Middleware):
         # Always ask for feedback after user makes a decision (accept or decline)
         if result.action == "accept":
             await ctx.info(f"✅ User confirmed execution of {tool_name}")
-            
-            # Request feedback using helper function
-            feedback_context = "You've accepted this operation. You can provide additional context, thoughts, or instructions to help the agent better understand your preferences."
-            user_feedback = await self._collect_user_feedback(ctx, feedback_context)
-            
-            # Log user feedback if provided
-            if user_feedback:
-                await ctx.info(f"📝 User feedback: \"{user_feedback}\"")
-            
-            # Proceed with tool execution
             return await call_next(context)
             
         elif result.action == "decline":

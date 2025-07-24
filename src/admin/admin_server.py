@@ -215,15 +215,6 @@ async def validate_config(
                 if field in doc_config and not isinstance(doc_config[field], bool):
                     errors.append(f"document_validation.{field} must be a boolean")
 
-            # Validate content limits
-            int_fields = ["content_max_length", "content_max_lines"]
-            for field in int_fields:
-                if field in doc_config:
-                    if not isinstance(doc_config[field], int):
-                        errors.append(f"document_validation.{field} must be an integer")
-                    elif doc_config[field] <= 0:
-                        errors.append(f"document_validation.{field} must be positive")
-
         # Validate document_schema section
         if "document_schema" in config:
             schema_config = config["document_schema"]
@@ -286,11 +277,6 @@ async def validate_config(
             message += f"   📝 Allow extra fields: {doc_val.get('allow_extra_fields', True)}\n"
             message += f"   ✅ Required fields only: {doc_val.get('required_fields_only', False)}\n"
             message += f"   🔧 Auto correct paths: {doc_val.get('auto_correct_paths', True)}\n"
-
-            if "content_max_length" in doc_val:
-                message += f"   📏 Max content length: {doc_val['content_max_length']:,} characters\n"
-            if "content_max_lines" in doc_val:
-                message += f"   📄 Max content lines: {doc_val['content_max_lines']:,} lines\n"
 
         # Show section summary
         sections_found = [s for s in required_sections if s in config]

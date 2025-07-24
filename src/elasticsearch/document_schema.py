@@ -230,17 +230,6 @@ def validate_document_structure(document: Dict[str, Any], base_directory: str = 
         if document.get("content"):
             content = document["content"]
             
-            # Check character limit
-            max_length = validation_config.get("content_max_length", 10000)
-            if len(content) > max_length:
-                errors.append(f"Content too long: {len(content)} characters (max: {max_length})")
-            
-            # Check line limit
-            max_lines = validation_config.get("content_max_lines", 500)
-            line_count = len(content.split('\n'))
-            if line_count > max_lines:
-                errors.append(f"Content has too many lines: {line_count} lines (max: {max_lines})")
-                
             # Check for empty content
             if not content.strip():
                 errors.append("Content cannot be empty or contain only whitespace")
