@@ -17,8 +17,6 @@ from src.confirmation.confirmation import initialize_confirmation_manager
 # Import individual server modules for mounting
 from src.admin.admin_server import app as admin_server_app
 from src.elasticsearch.elasticsearch_server import app as elasticsearch_server_app  
-from src.file.unified_file_server import app as unified_file_server_app
-from src.version_control.version_control_server import app as version_control_server_app
 from src.prompts.prompt_server import app as prompt_server_app
 
 # Import middleware
@@ -77,17 +75,9 @@ print("🏗️ Mounting individual servers into main server...")
 # This provides: es_search, es_index_document, es_create_index, etc.
 app.mount(elasticsearch_server_app)
 
-# Mount File operations server with unified edit_file tool  
-# This provides: edit_file (unified tool for all file/directory operations)
-app.mount(unified_file_server_app)
-
 # Mount Administrative operations server with 'admin' prefix
 # This provides: admin_get_config, admin_update_config, admin_server_status, etc.
 app.mount(admin_server_app)
-
-# Mount Version control server with 'vc' prefix
-# This provides: vc_setup_version_control, vc_commit_file, vc_get_previous_file_version
-app.mount(version_control_server_app)
 
 # Mount Prompt server for AgentKnowledgeMCP guidance
 # This provides: usage_guide, help_request (prompts for LLM assistance)
@@ -111,12 +101,8 @@ def cli_main():
     print("📋 Available Servers (Mounted):")
     print("  🔍 Elasticsearch Server (es_*) - Document search, indexing, and management")
     print("    └─ Tools: search, index_document, create_index, get_document, delete_document, list_indices, delete_index")
-    print("  📁 File Operations Server (unified) - Single edit_file tool for all operations")
-    print("    └─ Tool: edit_file (supports: read, write, append, delete, move, copy, info, list, mkdir, rmdir)")
     print("  ⚙️ Admin Server (admin_*) - Configuration and system management")
     print("    └─ Tools: get_config, update_config, server_status, server_upgrade, setup_elasticsearch, elasticsearch_status, validate_config, reset_config, reload_config")
-    print("  📜 Version Control Server (vc_*) - File versioning and history")
-    print("    └─ Tools: setup_version_control, commit_file, get_previous_file_version")
     print("  📝 Prompt Server - AgentKnowledgeMCP guidance and help")
     print("    └─ Prompts: usage_guide, help_request")
     print()

@@ -101,7 +101,7 @@ async def update_config(
             new_config = full_config
 
             # Validate new config structure
-            required_sections = ["elasticsearch", "security", "document_validation", "version_control", "server"]
+            required_sections = ["elasticsearch", "security", "document_validation", "server"]
             for section in required_sections:
                 if section not in new_config:
                     return f"❌ Error: Missing required config section '{section}'\n💡 Required sections: {', '.join(required_sections)}"
@@ -178,7 +178,7 @@ async def validate_config(
         warnings = []
 
         # Validate structure - required sections
-        required_sections = ["elasticsearch", "security", "document_validation", "document_schema", "version_control", "server"]
+        required_sections = ["elasticsearch", "security", "document_validation", "document_schema", "server"]
         for section in required_sections:
             if section not in config:
                 errors.append(f"Missing required section: {section}")
@@ -256,14 +256,6 @@ async def validate_config(
                     errors.append("document_schema.source_types must be a list")
                 elif not schema_config["source_types"]:
                     warnings.append("document_schema.source_types is empty")
-
-        # Validate version_control section
-        if "version_control" in config:
-            vc_config = config["version_control"]
-            if "enabled" in vc_config and not isinstance(vc_config["enabled"], bool):
-                errors.append("version_control.enabled must be a boolean")
-            if "type" in vc_config and vc_config["type"] not in ["git", "svn"]:
-                errors.append("version_control.type must be 'git' or 'svn'")
 
         # Validate server section
         if "server" in config:
@@ -348,13 +340,6 @@ async def reload_config() -> str:
         if "server" in config:
             server_config = config["server"]
             message += f"   🚀 Server: {server_config.get('name', 'AgentKnowledgeMCP')} v{server_config.get('version', '1.0.0')}\n"
-
-        if "version_control" in config:
-            vc_config = config["version_control"]
-            if vc_config.get("enabled", False):
-                message += f"   📝 Version Control: {vc_config.get('type', 'git')} (enabled)\n"
-            else:
-                message += f"   📝 Version Control: disabled\n"
 
         message += f"\n💡 All system components now use the updated configuration from config.json"
 

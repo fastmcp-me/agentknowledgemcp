@@ -286,13 +286,9 @@ async def index_document(
         # Validate document structure if requested
         if validate_schema:
             try:
-                # Get base directory from config
-                config = load_config()
-                base_directory = config.get("security", {}).get("allowed_base_directory")
-
                 # Check if this looks like a knowledge base document
                 if isinstance(document, dict) and "id" in document and "title" in document:
-                    validated_doc = validate_document_structure(document, base_directory)
+                    validated_doc = validate_document_structure(document)
                     document = validated_doc
 
                     # Use the document ID from the validated document if not provided
@@ -301,7 +297,7 @@ async def index_document(
 
                 else:
                     # For non-knowledge base documents, still validate with strict mode if enabled
-                    validated_doc = validate_document_structure(document, base_directory, is_knowledge_doc=False)
+                    validated_doc = validate_document_structure(document, is_knowledge_doc=False)
                     document = validated_doc
             except DocumentValidationError as e:
                 return f"❌ Validation failed:\n\n{format_validation_error(e)}"
@@ -878,11 +874,7 @@ async def validate_document_schema(
 ) -> str:
     """Validate document structure against knowledge base schema standards."""
     try:
-        # Get base directory from config
-        config = load_config()
-        base_directory = config.get("security", {}).get("allowed_base_directory")
-
-        validated_doc = validate_document_structure(document, base_directory)
+        validated_doc = validate_document_structure(document)
 
         return (f"✅ Document validation successful!\n\n" +
                f"Validated document:\n{json.dumps(validated_doc, indent=2, ensure_ascii=False)}\n\n" +
@@ -1087,9 +1079,7 @@ async def batch_index_directory(
                 # Validate document if requested
                 if validate_schema:
                     try:
-                        config = load_config()
-                        base_directory = config.get("security", {}).get("allowed_base_directory")
-                        validated_doc = validate_document_structure(document, base_directory)
+                        validated_doc = validate_document_structure(document)
                         document = validated_doc
                     except DocumentValidationError as e:
                         failed.append((file_name, f"Validation error: {str(e)}"))
@@ -1213,7 +1203,7 @@ async def batch_index_directory(
         elif "permission" in error_str or "access denied" in error_str:
             error_message += f"🔒 **Permission Error**: Access denied to directory or files\n"
             error_message += f"📍 Insufficient permissions to read directory or files\n"
-            error_message += f"💡 Try: Check directory permissions or change allowed_base_directory\n\n"
+            error_message += f"💡 Try: Check directory permissions or verify file access rights\n\n"
         else:
             error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
         

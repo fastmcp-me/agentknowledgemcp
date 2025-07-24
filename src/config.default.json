@@ -48,15 +48,10 @@
     "source_types": [
       "markdown",
       "code",
-      "config",
+      "config", 
       "documentation",
       "tutorial"
     ]
-  },
-  "version_control": {
-    "enabled": true,
-    "type": "git",
-    "auto_commit": false
   },
   "server": {
     "name": "AgentKnowledgeMCP",

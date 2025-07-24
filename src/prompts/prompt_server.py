@@ -147,11 +147,6 @@ async def config_template() -> dict:
             "auto_correct_paths": True,
             "require_summary": True
         },
-        "version_control": {
-            "type": "git",
-            "auto_commit": False,
-            "commit_message_template": "docs: {action} {file_name}"
-        },
         "confirmation": {
             "enabled": True,
             "require_confirmation_for": ["delete", "overwrite", "destructive_operations"]
@@ -291,18 +286,9 @@ async def tools_reference() -> dict:
                     {"name": "setup_elasticsearch", "description": "Auto-configure Elasticsearch"},
                     {"name": "elasticsearch_status", "description": "Check Elasticsearch connectivity"}
                 ]
-            },
-            "version_control": {
-                "description": "File versioning and change tracking",
-                "prefix": "vc_",
-                "tools": [
-                    {"name": "setup_version_control", "description": "Initialize Git or SVN repository"},
-                    {"name": "commit_file", "description": "Commit changes with automatic staging"},
-                    {"name": "get_previous_file_version", "description": "Retrieve historical file versions"}
-                ]
             }
         },
-        "total_tools": 34,
+        "total_tools": 25,
         "backward_compatibility": "All tools available without prefixes for compatibility"
     }
 
@@ -377,15 +363,6 @@ async def troubleshooting_guide() -> str:
 2. Use absolute paths when possible
 3. Verify file permissions and ownership
 4. Check if file exists: `file_edit_file` with operation=info
-
-### 🔄 Version Control Issues
-**Issue**: "Git not initialized" or "Commit failed"
-
-**Solutions**:
-1. Setup version control: `vc_setup_version_control`
-2. Check Git installation and configuration
-3. Verify repository permissions
-4. Use proper commit messages and file paths
 
 ## Performance Tips
 
@@ -489,7 +466,6 @@ async def example_workflows() -> dict:
                 "description": "Initialize new project with knowledge management",
                 "steps": [
                     {"action": "configure", "command": "admin_update_config", "example": "Set project-specific settings"},
-                    {"action": "initialize", "command": "vc_setup_version_control", "example": "Setup Git repository"},
                     {"action": "create_index", "command": "es_create_index", "example": "Create project-specific index"},
                     {"action": "template", "command": "es_create_document_template", "example": "Setup document templates"}
                 ]
@@ -701,47 +677,10 @@ async def api_examples(category: str) -> str:
   "tool": "admin_elasticsearch_status",
   "arguments": {}
 }
-```""",
-
-        "version_control": """# 📜 Version Control API Examples
-
-## Repository Setup
-```json
-{
-  "tool": "vc_setup_version_control",
-  "arguments": {
-    "vcs_type": "git",
-    "initial_commit": true,
-    "force": false
-  }
-}
-```
-
-## Commit Changes
-```json
-{
-  "tool": "vc_commit_file",
-  "arguments": {
-    "file_path": "docs/updated-guide.md",
-    "message": "Update API documentation with new examples",
-    "add_if_new": true
-  }
-}
-```
-
-## File History
-```json
-{
-  "tool": "vc_get_previous_file_version",
-  "arguments": {
-    "file_path": "config/settings.json",
-    "commits_back": 2
-  }
-}
 ```"""
     }
     
-    return examples.get(category, f"# API Examples for '{category}'\n\nCategory not found. Available categories: elasticsearch, file, admin, version_control")
+    return examples.get(category, f"# API Examples for '{category}'\n\nCategory not found. Available categories: elasticsearch, admin")
 
 
 # ================================
