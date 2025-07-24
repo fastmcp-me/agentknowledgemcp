@@ -486,19 +486,126 @@ async def list_indices() -> str:
                     stats = es.indices.stats(index=index_name)
                     doc_count = stats['indices'][index_name]['total']['docs']['count']
                     size = stats['indices'][index_name]['total']['store']['size_in_bytes']
-                    indices_info.append({
+                    
+                    # Initialize basic index info
+                    index_info = {
                         "name": index_name,
                         "docs": doc_count,
-                        "size_bytes": size
-                    })
+                        "size_bytes": size,
+                        "description": "No description available",
+                        "purpose": "Not documented",
+                        "data_types": [],
+                        "usage_pattern": "Unknown",
+                        "created_date": "Unknown"
+                    }
+                    
+                    # Try to get metadata for this index
+                    try:
+                        metadata_search = {
+                            "query": {
+                                "term": {
+                                    "index_name.keyword": index_name
+                                }
+                            },
+                            "size": 1
+                        }
+                        
+                        metadata_result = es.search(index="index_metadata", body=metadata_search)
+                        
+                        if metadata_result['hits']['total']['value'] > 0:
+                            metadata = metadata_result['hits']['hits'][0]['_source']
+                            # Merge metadata into index info
+                            index_info.update({
+                                "description": metadata.get('description', 'No description available'),
+                                "purpose": metadata.get('purpose', 'Not documented'),
+                                "data_types": metadata.get('data_types', []),
+                                "usage_pattern": metadata.get('usage_pattern', 'Unknown'),
+                                "created_date": metadata.get('created_date', 'Unknown'),
+                                "retention_policy": metadata.get('retention_policy', 'Not specified'),
+                                "related_indices": metadata.get('related_indices', []),
+                                "tags": metadata.get('tags', []),
+                                "created_by": metadata.get('created_by', 'Unknown'),
+                                "has_metadata": True
+                            })
+                        else:
+                            index_info["has_metadata"] = False
+                            
+                    except Exception:
+                        # If metadata index doesn't exist or search fails, keep basic info
+                        index_info["has_metadata"] = False
+                    
+                    indices_info.append(index_info)
+                    
                 except:
                     indices_info.append({
                         "name": index_name,
                         "docs": "unknown",
-                        "size_bytes": "unknown"
+                        "size_bytes": "unknown",
+                        "description": "Statistics unavailable",
+                        "has_metadata": False
                     })
 
-        return f"✅ Available indices:\n\n{json.dumps(indices_info, indent=2, ensure_ascii=False)}"
+        # Sort indices: metadata-documented first, then by name
+        indices_info.sort(key=lambda x: (not x.get('has_metadata', False), x['name']))
+
+        # Format the output with metadata information
+        result = "✅ Available indices with metadata:\n\n"
+        
+        # Count documented vs undocumented
+        documented = sum(1 for idx in indices_info if idx.get('has_metadata', False))
+        undocumented = len(indices_info) - documented
+        
+        result += f"📊 **Index Overview**:\n"
+        result += f"   📋 Total indices: {len(indices_info)}\n"
+        result += f"   ✅ Documented: {documented}\n"
+        result += f"   ❌ Undocumented: {undocumented}\n\n"
+        
+        if undocumented > 0:
+            result += f"🚨 **Governance Alert**: {undocumented} indices lack metadata documentation\n"
+            result += f"   💡 Use 'create_index_metadata' tool to document missing indices\n"
+            result += f"   🎯 Proper documentation improves index management and team collaboration\n\n"
+        
+        # Group indices by documentation status
+        documented_indices = [idx for idx in indices_info if idx.get('has_metadata', False)]
+        undocumented_indices = [idx for idx in indices_info if not idx.get('has_metadata', False)]
+        
+        if documented_indices:
+            result += f"📋 **Documented Indices** ({len(documented_indices)}):\n\n"
+            for idx in documented_indices:
+                size_mb = idx['size_bytes'] / 1048576 if isinstance(idx['size_bytes'], (int, float)) else 0
+                result += f"🟢 **{idx['name']}**\n"
+                result += f"   📝 Description: {idx['description']}\n"
+                result += f"   🎯 Purpose: {idx['purpose']}\n"
+                result += f"   📊 Documents: {idx['docs']}, Size: {size_mb:.1f} MB\n"
+                result += f"   📂 Data Types: {', '.join(idx.get('data_types', [])) or 'Not specified'}\n"
+                result += f"   🔄 Usage: {idx.get('usage_pattern', 'Unknown')}\n"
+                result += f"   📅 Created: {idx.get('created_date', 'Unknown')}\n"
+                if idx.get('tags'):
+                    result += f"   🏷️ Tags: {', '.join(idx['tags'])}\n"
+                if idx.get('related_indices'):
+                    result += f"   🔗 Related: {', '.join(idx['related_indices'])}\n"
+                result += "\n"
+        
+        if undocumented_indices:
+            result += f"❌ **Undocumented Indices** ({len(undocumented_indices)}) - Need Metadata:\n\n"
+            for idx in undocumented_indices:
+                size_mb = idx['size_bytes'] / 1048576 if isinstance(idx['size_bytes'], (int, float)) else 0
+                result += f"🔴 **{idx['name']}**\n"
+                result += f"   📊 Documents: {idx['docs']}, Size: {size_mb:.1f} MB\n"
+                result += f"   ⚠️ Status: No metadata documentation found\n"
+                result += f"   🔧 Action: Use 'create_index_metadata' to document this index\n\n"
+        
+        # Add metadata improvement suggestions
+        if undocumented > 0:
+            result += f"💡 **Metadata Improvement Suggestions**:\n"
+            result += f"   📋 Document each index's purpose and data types\n"
+            result += f"   🎯 Define usage patterns and access frequencies\n"
+            result += f"   📅 Record creation dates and retention policies\n"
+            result += f"   🔗 Link related indices for better organization\n"
+            result += f"   🏷️ Add relevant tags for categorization\n"
+            result += f"   👤 Track ownership and responsibility\n\n"
+        
+        return result
 
     except Exception as e:
         # Provide detailed error messages for different types of Elasticsearch errors
@@ -538,6 +645,92 @@ async def create_index(
     try:
         es = get_es_client()
 
+        # Special case: Allow creating index_metadata without validation
+        if index == "index_metadata":
+            body = {"mappings": mapping}
+            if settings:
+                body["settings"] = settings
+
+            result = es.indices.create(index=index, body=body)
+
+            return (f"✅ Index metadata system initialized successfully!\n\n" +
+                   f"📋 **Metadata Index Created**: {index}\n" +
+                   f"🔧 **System Status**: Index metadata management now active\n" +
+                   f"✅ **Next Steps**:\n" +
+                   f"   1. Use 'create_index_metadata' to document your indices\n" +
+                   f"   2. Then use 'create_index' to create actual indices\n" +
+                   f"   3. Use 'list_indices' to see metadata integration\n\n" +
+                   f"🎯 **Benefits Unlocked**:\n" +
+                   f"   • Index governance and documentation enforcement\n" +
+                   f"   • Enhanced index listing with descriptions\n" +
+                   f"   • Proper cleanup workflows for index deletion\n" +
+                   f"   • Team collaboration through shared index understanding\n\n" +
+                   f"📋 **Technical Details**:\n{json.dumps(result, indent=2, ensure_ascii=False)}")
+
+        # Check if metadata document exists for this index
+        metadata_index = "index_metadata"
+        try:
+            # Search for existing metadata document
+            search_body = {
+                "query": {
+                    "term": {
+                        "index_name.keyword": index
+                    }
+                },
+                "size": 1
+            }
+            
+            metadata_result = es.search(index=metadata_index, body=search_body)
+            
+            if metadata_result['hits']['total']['value'] == 0:
+                return (f"❌ Index creation blocked - Missing metadata documentation!\n\n" +
+                       f"🚨 **MANDATORY: Create Index Metadata First**:\n" +
+                       f"   📋 **Required Action**: Before creating index '{index}', you must document it\n" +
+                       f"   🔧 **Use This Tool**: Call 'create_index_metadata' tool first\n" +
+                       f"   📝 **Required Information**:\n" +
+                       f"      • Index purpose and description\n" +
+                       f"      • Data types and content it will store\n" +
+                       f"      • Usage patterns and access frequency\n" +
+                       f"      • Retention policies and lifecycle\n" +
+                       f"      • Related indices and dependencies\n\n" +
+                       f"💡 **Workflow**:\n" +
+                       f"   1. Call 'create_index_metadata' with index name and description\n" +
+                       f"   2. Then call 'create_index' again to create the actual index\n" +
+                       f"   3. This ensures proper documentation and governance\n\n" +
+                       f"🎯 **Why This Matters**:\n" +
+                       f"   • Prevents orphaned indices without documentation\n" +
+                       f"   • Ensures team understands index purpose\n" +
+                       f"   • Facilitates better index management and cleanup\n" +
+                       f"   • Provides context for future maintenance")
+            
+        except Exception as metadata_error:
+            # If metadata index doesn't exist, that's also a problem
+            if "index_not_found" in str(metadata_error).lower():
+                return (f"❌ Index creation blocked - Metadata system not initialized!\n\n" +
+                       f"🚨 **SETUP REQUIRED**: Index metadata system needs initialization\n" +
+                       f"   📋 **Step 1**: Create metadata index first using 'create_index' with name 'index_metadata'\n" +
+                       f"   📝 **Step 2**: Use this mapping for metadata index:\n" +
+                       f"```json\n" +
+                       f"{{\n" +
+                       f"  \"properties\": {{\n" +
+                       f"    \"index_name\": {{\"type\": \"keyword\"}},\n" +
+                       f"    \"description\": {{\"type\": \"text\"}},\n" +
+                       f"    \"purpose\": {{\"type\": \"text\"}},\n" +
+                       f"    \"data_types\": {{\"type\": \"keyword\"}},\n" +
+                       f"    \"created_by\": {{\"type\": \"keyword\"}},\n" +
+                       f"    \"created_date\": {{\"type\": \"date\"}},\n" +
+                       f"    \"usage_pattern\": {{\"type\": \"keyword\"}},\n" +
+                       f"    \"retention_policy\": {{\"type\": \"text\"}},\n" +
+                       f"    \"related_indices\": {{\"type\": \"keyword\"}},\n" +
+                       f"    \"tags\": {{\"type\": \"keyword\"}}\n" +
+                       f"  }}\n" +
+                       f"}}\n" +
+                       f"```\n" +
+                       f"   🔧 **Step 3**: Then use 'create_index_metadata' to document your index\n" +
+                       f"   ✅ **Step 4**: Finally create your actual index\n\n" +
+                       f"💡 **This is a one-time setup** - once metadata index exists, normal workflow applies")
+
+        # If we get here, metadata exists - proceed with index creation
         body = {"mappings": mapping}
         if settings:
             body["settings"] = settings
@@ -590,6 +783,59 @@ async def delete_index(
     try:
         es = get_es_client()
 
+        # Check if metadata document exists for this index
+        metadata_index = "index_metadata"
+        try:
+            # Search for existing metadata document
+            search_body = {
+                "query": {
+                    "term": {
+                        "index_name.keyword": index
+                    }
+                },
+                "size": 1
+            }
+            
+            metadata_result = es.search(index=metadata_index, body=search_body)
+            
+            if metadata_result['hits']['total']['value'] > 0:
+                metadata_doc = metadata_result['hits']['hits'][0]
+                metadata_id = metadata_doc['_id']
+                metadata_source = metadata_doc['_source']
+                
+                return (f"❌ Index deletion blocked - Metadata cleanup required!\n\n" +
+                       f"🚨 **MANDATORY: Remove Index Metadata First**:\n" +
+                       f"   📋 **Found Metadata Document**: {metadata_id}\n" +
+                       f"   📝 **Index Description**: {metadata_source.get('description', 'No description')}\n" +
+                       f"   🔧 **Required Action**: Delete metadata document before removing index\n\n" +
+                       f"💡 **Cleanup Workflow**:\n" +
+                       f"   1. Call 'delete_index_metadata' with index name '{index}'\n" +
+                       f"   2. Then call 'delete_index' again to remove the actual index\n" +
+                       f"   3. This ensures proper cleanup and audit trail\n\n" +
+                       f"📊 **Metadata Details**:\n" +
+                       f"   • Purpose: {metadata_source.get('purpose', 'Not specified')}\n" +
+                       f"   • Data Types: {', '.join(metadata_source.get('data_types', []))}\n" +
+                       f"   • Created: {metadata_source.get('created_date', 'Unknown')}\n" +
+                       f"   • Usage: {metadata_source.get('usage_pattern', 'Not specified')}\n\n" +
+                       f"🎯 **Why This Matters**:\n" +
+                       f"   • Maintains clean metadata registry\n" +
+                       f"   • Prevents orphaned documentation\n" +
+                       f"   • Ensures proper audit trail for deletions\n" +
+                       f"   • Confirms intentional removal with full context")
+            
+        except Exception as metadata_error:
+            # If metadata index doesn't exist, warn but allow deletion
+            if "index_not_found" in str(metadata_error).lower():
+                # Proceed with deletion but warn about missing metadata system
+                result = es.indices.delete(index=index)
+                
+                return (f"⚠️ Index '{index}' deleted but metadata system is missing:\n\n" +
+                       f"{json.dumps(result, indent=2, ensure_ascii=False)}\n\n" +
+                       f"🚨 **Warning**: No metadata tracking system found\n" +
+                       f"   📋 Consider setting up 'index_metadata' index for better governance\n" +
+                       f"   💡 Use 'create_index_metadata' tool for future index documentation")
+
+        # If we get here, no metadata found - proceed with deletion
         result = es.indices.delete(index=index)
 
         return f"✅ Index '{index}' deleted successfully:\n\n{json.dumps(result, indent=2, ensure_ascii=False)}"
@@ -1088,12 +1334,376 @@ async def create_document_template(
         return f"❌ Failed to create document template: {str(e)}"
 
 
+# ================================
+# TOOL 11: CREATE_INDEX_METADATA
+# ================================
+
+@app.tool(
+    description="Create metadata documentation for an Elasticsearch index to ensure proper governance and documentation",
+    tags={"elasticsearch", "metadata", "documentation", "governance"}
+)
+async def create_index_metadata(
+    index_name: Annotated[str, Field(description="Name of the index to document")],
+    description: Annotated[str, Field(description="Detailed description of the index purpose and content")],
+    purpose: Annotated[str, Field(description="Primary purpose and use case for this index")],
+    data_types: Annotated[List[str], Field(description="Types of data stored in this index (e.g., 'documents', 'logs', 'metrics')")] = [],
+    usage_pattern: Annotated[str, Field(description="How the index is accessed (e.g., 'read-heavy', 'write-heavy', 'mixed')")] = "mixed",
+    retention_policy: Annotated[str, Field(description="Data retention policy and lifecycle management")] = "No specific policy",
+    related_indices: Annotated[List[str], Field(description="Names of related or dependent indices")] = [],
+    tags: Annotated[List[str], Field(description="Tags for categorizing and organizing indices")] = [],
+    created_by: Annotated[str, Field(description="Team or person responsible for this index")] = "Unknown"
+) -> str:
+    """Create comprehensive metadata documentation for an Elasticsearch index."""
+    try:
+        es = get_es_client()
+        
+        # Check if metadata index exists
+        metadata_index = "index_metadata"
+        try:
+            es.indices.get(index=metadata_index)
+        except Exception:
+            # Create metadata index if it doesn't exist
+            metadata_mapping = {
+                "properties": {
+                    "index_name": {"type": "keyword"},
+                    "description": {"type": "text"},
+                    "purpose": {"type": "text"},
+                    "data_types": {"type": "keyword"},
+                    "created_by": {"type": "keyword"},
+                    "created_date": {"type": "date"},
+                    "usage_pattern": {"type": "keyword"},
+                    "retention_policy": {"type": "text"},
+                    "related_indices": {"type": "keyword"},
+                    "tags": {"type": "keyword"},
+                    "last_updated": {"type": "date"},
+                    "updated_by": {"type": "keyword"}
+                }
+            }
+            
+            try:
+                es.indices.create(index=metadata_index, body={"mappings": metadata_mapping})
+            except Exception as create_error:
+                if "already exists" not in str(create_error).lower():
+                    return f"❌ Failed to create metadata index: {str(create_error)}"
+        
+        # Check if metadata already exists for this index
+        search_body = {
+            "query": {
+                "term": {
+                    "index_name.keyword": index_name
+                }
+            },
+            "size": 1
+        }
+        
+        existing_result = es.search(index=metadata_index, body=search_body)
+        
+        if existing_result['hits']['total']['value'] > 0:
+            existing_doc = existing_result['hits']['hits'][0]
+            existing_id = existing_doc['_id']
+            existing_data = existing_doc['_source']
+            
+            return (f"⚠️ Index metadata already exists for '{index_name}'!\n\n" +
+                   f"📋 **Existing Metadata** (ID: {existing_id}):\n" +
+                   f"   📝 Description: {existing_data.get('description', 'No description')}\n" +
+                   f"   🎯 Purpose: {existing_data.get('purpose', 'No purpose')}\n" +
+                   f"   📂 Data Types: {', '.join(existing_data.get('data_types', []))}\n" +
+                   f"   👤 Created By: {existing_data.get('created_by', 'Unknown')}\n" +
+                   f"   📅 Created: {existing_data.get('created_date', 'Unknown')}\n\n" +
+                   f"💡 **Options**:\n" +
+                   f"   🔄 **Update**: Use 'update_index_metadata' to modify existing documentation\n" +
+                   f"   🗑️ **Replace**: Use 'delete_index_metadata' then 'create_index_metadata'\n" +
+                   f"   ✅ **Keep**: Current metadata is sufficient, proceed with 'create_index'\n\n" +
+                   f"🚨 **Note**: You can now create the index '{index_name}' since metadata exists")
+        
+        # Create new metadata document
+        current_time = datetime.now().isoformat()
+        
+        metadata_doc = {
+            "index_name": index_name,
+            "description": description,
+            "purpose": purpose,
+            "data_types": data_types,
+            "created_by": created_by,
+            "created_date": current_time,
+            "usage_pattern": usage_pattern,
+            "retention_policy": retention_policy,
+            "related_indices": related_indices,
+            "tags": tags,
+            "last_updated": current_time,
+            "updated_by": created_by
+        }
+        
+        # Generate a consistent document ID
+        metadata_id = f"metadata_{index_name}"
+        
+        result = es.index(index=metadata_index, id=metadata_id, body=metadata_doc)
+        
+        return (f"✅ Index metadata created successfully!\n\n" +
+               f"📋 **Metadata Details**:\n" +
+               f"   🎯 Index: {index_name}\n" +
+               f"   📝 Description: {description}\n" +
+               f"   🎯 Purpose: {purpose}\n" +
+               f"   📂 Data Types: {', '.join(data_types) if data_types else 'None specified'}\n" +
+               f"   🔄 Usage Pattern: {usage_pattern}\n" +
+               f"   📅 Retention: {retention_policy}\n" +
+               f"   🔗 Related Indices: {', '.join(related_indices) if related_indices else 'None'}\n" +
+               f"   🏷️ Tags: {', '.join(tags) if tags else 'None'}\n" +
+               f"   👤 Created By: {created_by}\n" +
+               f"   📅 Created: {current_time}\n\n" +
+               f"✅ **Next Steps**:\n" +
+               f"   🔧 You can now use 'create_index' to create the actual index '{index_name}'\n" +
+               f"   📊 Use 'list_indices' to see this metadata in the index listing\n" +
+               f"   🔄 Use 'update_index_metadata' if you need to modify this documentation\n\n" +
+               f"🎯 **Benefits Achieved**:\n" +
+               f"   • Index purpose is clearly documented\n" +
+               f"   • Team collaboration is improved through shared understanding\n" +
+               f"   • Future maintenance is simplified with proper context\n" +
+               f"   • Index governance and compliance are maintained")
+        
+    except Exception as e:
+        error_message = "❌ Failed to create index metadata:\n\n"
+        
+        error_str = str(e).lower()
+        if "connection" in error_str or "refused" in error_str:
+            error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
+            error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
+            error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
+        else:
+            error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
+        
+        error_message += f"🔍 **Technical Details**: {str(e)}"
+        return error_message
+
+
+# ================================
+# TOOL 12: UPDATE_INDEX_METADATA
+# ================================
+
+@app.tool(
+    description="Update existing metadata documentation for an Elasticsearch index",
+    tags={"elasticsearch", "metadata", "update", "documentation"}
+)
+async def update_index_metadata(
+    index_name: Annotated[str, Field(description="Name of the index to update metadata for")],
+    description: Annotated[Optional[str], Field(description="Updated description of the index purpose and content")] = None,
+    purpose: Annotated[Optional[str], Field(description="Updated primary purpose and use case")] = None,
+    data_types: Annotated[Optional[List[str]], Field(description="Updated types of data stored in this index")] = None,
+    usage_pattern: Annotated[Optional[str], Field(description="Updated access pattern")] = None,
+    retention_policy: Annotated[Optional[str], Field(description="Updated data retention policy")] = None,
+    related_indices: Annotated[Optional[List[str]], Field(description="Updated related or dependent indices")] = None,
+    tags: Annotated[Optional[List[str]], Field(description="Updated tags for categorization")] = None,
+    updated_by: Annotated[str, Field(description="Person or team making this update")] = "Unknown"
+) -> str:
+    """Update existing metadata documentation for an Elasticsearch index."""
+    try:
+        es = get_es_client()
+        metadata_index = "index_metadata"
+        
+        # Search for existing metadata
+        search_body = {
+            "query": {
+                "term": {
+                    "index_name.keyword": index_name
+                }
+            },
+            "size": 1
+        }
+        
+        existing_result = es.search(index=metadata_index, body=search_body)
+        
+        if existing_result['hits']['total']['value'] == 0:
+            return (f"❌ No metadata found for index '{index_name}'!\n\n" +
+                   f"🚨 **Missing Metadata**: Cannot update non-existent documentation\n" +
+                   f"   💡 **Solution**: Use 'create_index_metadata' to create documentation first\n" +
+                   f"   📋 **Required**: Provide description, purpose, and data types\n" +
+                   f"   ✅ **Then**: Use this update tool for future modifications\n\n" +
+                   f"🔍 **Alternative**: Use 'list_indices' to see all documented indices")
+        
+        # Get existing document
+        existing_doc = existing_result['hits']['hits'][0]
+        existing_id = existing_doc['_id']
+        existing_data = existing_doc['_source']
+        
+        # Prepare update data - only update provided fields
+        update_data = {
+            "last_updated": datetime.now().isoformat(),
+            "updated_by": updated_by
+        }
+        
+        if description is not None:
+            update_data["description"] = description
+        if purpose is not None:
+            update_data["purpose"] = purpose
+        if data_types is not None:
+            update_data["data_types"] = data_types
+        if usage_pattern is not None:
+            update_data["usage_pattern"] = usage_pattern
+        if retention_policy is not None:
+            update_data["retention_policy"] = retention_policy
+        if related_indices is not None:
+            update_data["related_indices"] = related_indices
+        if tags is not None:
+            update_data["tags"] = tags
+        
+        # Update the document
+        result = es.update(index=metadata_index, id=existing_id, body={"doc": update_data})
+        
+        # Get updated document to show changes
+        updated_result = es.get(index=metadata_index, id=existing_id)
+        updated_data = updated_result['_source']
+        
+        # Build change summary
+        changes_made = []
+        if description is not None:
+            changes_made.append(f"   📝 Description: {existing_data.get('description', 'None')} → {description}")
+        if purpose is not None:
+            changes_made.append(f"   🎯 Purpose: {existing_data.get('purpose', 'None')} → {purpose}")
+        if data_types is not None:
+            old_types = ', '.join(existing_data.get('data_types', []))
+            new_types = ', '.join(data_types)
+            changes_made.append(f"   📂 Data Types: {old_types or 'None'} → {new_types}")
+        if usage_pattern is not None:
+            changes_made.append(f"   🔄 Usage Pattern: {existing_data.get('usage_pattern', 'None')} → {usage_pattern}")
+        if retention_policy is not None:
+            changes_made.append(f"   📅 Retention: {existing_data.get('retention_policy', 'None')} → {retention_policy}")
+        if related_indices is not None:
+            old_related = ', '.join(existing_data.get('related_indices', []))
+            new_related = ', '.join(related_indices)
+            changes_made.append(f"   🔗 Related: {old_related or 'None'} → {new_related}")
+        if tags is not None:
+            old_tags = ', '.join(existing_data.get('tags', []))
+            new_tags = ', '.join(tags)
+            changes_made.append(f"   🏷️ Tags: {old_tags or 'None'} → {new_tags}")
+        
+        return (f"✅ Index metadata updated successfully!\n\n" +
+               f"📋 **Updated Metadata for '{index_name}'**:\n" +
+               (f"🔄 **Changes Made**:\n" + '\n'.join(changes_made) + "\n\n" if changes_made else "") +
+               f"📊 **Current Metadata**:\n" +
+               f"   📝 Description: {updated_data.get('description', 'No description')}\n" +
+               f"   🎯 Purpose: {updated_data.get('purpose', 'No purpose')}\n" +
+               f"   📂 Data Types: {', '.join(updated_data.get('data_types', [])) if updated_data.get('data_types') else 'None'}\n" +
+               f"   🔄 Usage Pattern: {updated_data.get('usage_pattern', 'Unknown')}\n" +
+               f"   📅 Retention: {updated_data.get('retention_policy', 'Not specified')}\n" +
+               f"   🔗 Related Indices: {', '.join(updated_data.get('related_indices', [])) if updated_data.get('related_indices') else 'None'}\n" +
+               f"   🏷️ Tags: {', '.join(updated_data.get('tags', [])) if updated_data.get('tags') else 'None'}\n" +
+               f"   👤 Last Updated By: {updated_by}\n" +
+               f"   📅 Last Updated: {update_data['last_updated']}\n\n" +
+               f"✅ **Benefits**:\n" +
+               f"   • Index documentation stays current and accurate\n" +
+               f"   • Team has updated context for index usage\n" +
+               f"   • Change history is tracked with timestamps\n" +
+               f"   • Governance and compliance are maintained")
+        
+    except Exception as e:
+        error_message = "❌ Failed to update index metadata:\n\n"
+        
+        error_str = str(e).lower()
+        if "connection" in error_str or "refused" in error_str:
+            error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
+            error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
+            error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
+        elif ("not_found" in error_str or "not found" in error_str) and "index" in error_str:
+            error_message += f"📁 **Index Error**: Metadata index 'index_metadata' does not exist\n"
+            error_message += f"📍 The metadata system has not been initialized\n"
+            error_message += f"💡 Try: Use 'create_index_metadata' to set up metadata system\n\n"
+        else:
+            error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
+        
+        error_message += f"🔍 **Technical Details**: {str(e)}"
+        return error_message
+
+
+# ================================
+# TOOL 13: DELETE_INDEX_METADATA
+# ================================
+
+@app.tool(
+    description="Delete metadata documentation for an Elasticsearch index",
+    tags={"elasticsearch", "metadata", "delete", "cleanup"}
+)
+async def delete_index_metadata(
+    index_name: Annotated[str, Field(description="Name of the index to remove metadata for")]
+) -> str:
+    """Delete metadata documentation for an Elasticsearch index."""
+    try:
+        es = get_es_client()
+        metadata_index = "index_metadata"
+        
+        # Search for existing metadata
+        search_body = {
+            "query": {
+                "term": {
+                    "index_name.keyword": index_name
+                }
+            },
+            "size": 1
+        }
+        
+        existing_result = es.search(index=metadata_index, body=search_body)
+        
+        if existing_result['hits']['total']['value'] == 0:
+            return (f"⚠️ No metadata found for index '{index_name}'!\n\n" +
+                   f"📋 **Status**: Index metadata does not exist\n" +
+                   f"   ✅ **Good**: No cleanup required for metadata\n" +
+                   f"   🔧 **Safe**: You can proceed with 'delete_index' if needed\n" +
+                   f"   🔍 **Check**: Use 'list_indices' to see all documented indices\n\n" +
+                   f"💡 **This is Normal If**:\n" +
+                   f"   • Index was created before metadata system was implemented\n" +
+                   f"   • Index was created without using 'create_index_metadata' first\n" +
+                   f"   • Metadata was already deleted in a previous cleanup")
+        
+        # Get existing document details before deletion
+        existing_doc = existing_result['hits']['hits'][0]
+        existing_id = existing_doc['_id']
+        existing_data = existing_doc['_source']
+        
+        # Delete the metadata document
+        result = es.delete(index=metadata_index, id=existing_id)
+        
+        return (f"✅ Index metadata deleted successfully!\n\n" +
+               f"🗑️ **Deleted Metadata for '{index_name}'**:\n" +
+               f"   📋 Document ID: {existing_id}\n" +
+               f"   📝 Description: {existing_data.get('description', 'No description')}\n" +
+               f"   🎯 Purpose: {existing_data.get('purpose', 'No purpose')}\n" +
+               f"   📂 Data Types: {', '.join(existing_data.get('data_types', [])) if existing_data.get('data_types') else 'None'}\n" +
+               f"   👤 Created By: {existing_data.get('created_by', 'Unknown')}\n" +
+               f"   📅 Created: {existing_data.get('created_date', 'Unknown')}\n\n" +
+               f"✅ **Cleanup Complete**:\n" +
+               f"   🗑️ Metadata documentation removed from registry\n" +
+               f"   🔧 You can now safely use 'delete_index' to remove the actual index\n" +
+               f"   📊 Use 'list_indices' to verify metadata removal\n\n" +
+               f"🎯 **Next Steps**:\n" +
+               f"   1. Proceed with 'delete_index {index_name}' to remove the actual index\n" +
+               f"   2. Or use 'create_index_metadata' if you want to re-document this index\n" +
+               f"   3. Clean up any related indices mentioned in metadata\n\n" +
+               f"⚠️ **Important**: This only deleted the documentation, not the actual index")
+        
+    except Exception as e:
+        error_message = "❌ Failed to delete index metadata:\n\n"
+        
+        error_str = str(e).lower()
+        if "connection" in error_str or "refused" in error_str:
+            error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
+            error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
+            error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
+        elif ("not_found" in error_str or "not found" in error_str) and "index" in error_str:
+            error_message += f"📁 **Index Error**: Metadata index 'index_metadata' does not exist\n"
+            error_message += f"📍 The metadata system has not been initialized\n"
+            error_message += f"💡 This means no metadata exists to delete - you can proceed safely\n\n"
+        else:
+            error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
+        
+        error_message += f"🔍 **Technical Details**: {str(e)}"
+        return error_message
+
+
 # CLI entry point
 def cli_main():
     """CLI entry point for Elasticsearch FastMCP server."""
     print("🚀 Starting AgentKnowledgeMCP Elasticsearch FastMCP server...")
-    print("🔍 Tools: search, index_document, delete_document, get_document, list_indices, create_index, delete_index, batch_index_directory, validate_document_schema, create_document_template")
-    print("✅ Status: All 10 Elasticsearch tools completed - Ready for production!")
+    print("🔍 Tools: search, index_document, delete_document, get_document, list_indices, create_index, delete_index, batch_index_directory, validate_document_schema, create_document_template, create_index_metadata, update_index_metadata, delete_index_metadata")
+    print("✅ Status: All 13 Elasticsearch tools completed with Index Metadata Management - Ready for production!")
 
     app.run()
 
