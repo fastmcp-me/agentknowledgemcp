@@ -70,30 +70,39 @@
   },
   "confirmation": {
     "enabled": true,
-    "default_timeout_minutes": 30,
-    "max_pending_per_session": 10,
-    "auto_cleanup_interval_minutes": 5,
-    "audit_log_enabled": true,
     "rules": {
       "admin_tools": {
-        "tools": ["update_config", "reset_config", "setup_elasticsearch"],
-        "require_confirmation": true,
-        "timeout_minutes": 60
+        "tools": [
+          "update_config",
+          "reset_config",
+          "setup_elasticsearch"
+        ],
+        "require_confirmation": true
       },
       "destructive_operations": {
-        "tools": ["delete_file", "delete_directory", "delete_index", "delete_document"],
-        "require_confirmation": true,
-        "timeout_minutes": 30
+        "tools": [
+          "delete_file",
+          "delete_directory",
+          "delete_index",
+          "delete_document"
+        ],
+        "require_confirmation": true
       },
       "file_write_operations": {
-        "tools": ["write_file", "move_file", "copy_file", "append_file"],
-        "require_confirmation": true,
-        "timeout_minutes": 15
+        "tools": [
+          "write_file",
+          "move_file",
+          "copy_file",
+          "append_file"
+        ],
+        "require_confirmation": true
       },
       "elasticsearch_write": {
-        "tools": ["index_document", "create_index"],
-        "require_confirmation": true,
-        "timeout_minutes": 20
+        "tools": [
+          "index_document",
+          "create_index"
+        ],
+        "require_confirmation": true
       }
     }
   }
