@@ -21,6 +21,9 @@ from src.file.unified_file_server import app as unified_file_server_app
 from src.version_control.version_control_server import app as version_control_server_app
 from src.prompts.prompt_server import app as prompt_server_app
 
+# Import middleware
+from src.middleware.confirmation_middleware import ConfirmationMiddleware
+
 # Load configuration and initialize components
 CONFIG = load_config()
 init_security(CONFIG["security"]["allowed_base_directory"])
@@ -52,6 +55,17 @@ app = FastMCP(
     version=CONFIG["server"]["version"],
     instructions="🏗️ AgentKnowledgeMCP - Modern FastMCP server with modular composition architecture for knowledge management, Elasticsearch operations, file management, and system administration"
 )
+
+# ================================
+# MIDDLEWARE CONFIGURATION
+# ================================
+
+print("🔒 Adding confirmation middleware...")
+
+# Add confirmation middleware to main server
+app.add_middleware(ConfirmationMiddleware())
+
+print("✅ Confirmation middleware added successfully!")
 
 # ================================
 # SERVER COMPOSITION - MOUNTING

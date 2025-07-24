@@ -8,7 +8,7 @@ from typing import List, Optional, Annotated
 import subprocess
 import json
 
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 from pydantic import Field
 
 from src.config.config import load_config
