@@ -923,18 +923,13 @@ async def batch_index_directory(
     try:
         from pathlib import Path
         import os
-        from src.utils.security import validate_path, SecurityError
         
-        # Validate directory path
-        try:
-            validated_dir = validate_path(directory_path)
-        except SecurityError as e:
-            return f"❌ Security error: {str(e)}"
-        
-        if not validated_dir.exists():
+        # Check directory exists and is valid
+        directory = Path(directory_path)
+        if not directory.exists():
             return f"❌ Directory not found: {directory_path}\n💡 Check the directory path spelling and location"
         
-        if not validated_dir.is_dir():
+        if not directory.is_dir():
             return f"❌ Path is not a directory: {directory_path}\n💡 Provide a directory path, not a file path"
         
         # Get Elasticsearch client
@@ -942,9 +937,9 @@ async def batch_index_directory(
         
         # Find all matching files
         if recursive:
-            files = list(validated_dir.rglob(file_pattern))
+            files = list(directory.rglob(file_pattern))
         else:
-            files = list(validated_dir.glob(file_pattern))
+            files = list(directory.glob(file_pattern))
         
         if not files:
             return f"❌ No files found matching pattern '{file_pattern}' in directory: {directory_path}\n💡 Try a different file pattern like '*.txt', '*.json', or '*'"
@@ -971,19 +966,19 @@ async def batch_index_directory(
         existing_docs = set()
         if skip_existing:
             try:
-                # Search for existing documents by file names
+                # Search for existing documents by titles
                 search_body = {
                     "query": {"match_all": {}},
                     "size": 10000,  # Get many docs to check
-                    "_source": ["file_name", "file_path"]
+                    "_source": ["title", "id"]
                 }
                 existing_result = es.search(index=index, body=search_body)
                 for hit in existing_result['hits']['hits']:
                     source = hit.get('_source', {})
-                    if 'file_name' in source:
-                        existing_docs.add(source['file_name'])
-                    if 'file_path' in source:
-                        existing_docs.add(os.path.basename(source['file_path']))
+                    if 'title' in source:
+                        existing_docs.add(source['title'])
+                    if 'id' in source:
+                        existing_docs.add(source['id'])
             except Exception:
                 # If we can't check existing docs, proceed anyway
                 pass
@@ -996,9 +991,10 @@ async def batch_index_directory(
         for file_path in valid_files:
             try:
                 file_name = file_path.name
+                title = file_path.stem.replace('_', ' ').replace('-', ' ').title()
                 
-                # Skip if file already exists in index
-                if skip_existing and file_name in existing_docs:
+                # Skip if document with same title already exists in index
+                if skip_existing and title in existing_docs:
                     skipped_existing.append(file_name)
                     continue
                 
@@ -1019,22 +1015,19 @@ async def batch_index_directory(
                     continue
                 
                 # Create document from file
-                relative_path = file_path.relative_to(validated_dir)
+                relative_path = file_path.relative_to(directory)
                 doc_id = f"{file_path.stem}_{hash(str(relative_path)) % 100000}"  # Create unique ID
-                
-                title = file_path.stem.replace('_', ' ').replace('-', ' ').title()
                 
                 # Initialize basic tags and key points
                 base_tags = [
                     "batch-indexed",
                     file_path.suffix[1:] if file_path.suffix else "no-extension",
-                    validated_dir.name
+                    directory.name
                 ]
                 
                 base_key_points = [
-                    f"File size: {file_path.stat().st_size} bytes",
-                    f"File type: {file_path.suffix or 'no extension'}",
-                    f"Directory: {file_path.parent.name}"
+                    f"Content length: {len(content)} characters",
+                    f"Source directory: {directory.name}"
                 ]
                 
                 final_tags = base_tags.copy()
@@ -1083,9 +1076,6 @@ async def batch_index_directory(
                     "title": title,
                     "summary": final_summary,
                     "content": content,
-                    "file_path": str(file_path),
-                    "file_name": file_name,
-                    "directory": str(file_path.parent),
                     "last_modified": datetime.now().isoformat(),
                     "priority": "medium",
                     "tags": final_tags,
@@ -1241,7 +1231,6 @@ async def batch_index_directory(
 )
 async def create_document_template(
     title: Annotated[str, Field(description="Document title for the knowledge base entry")],
-    file_path: Annotated[str, Field(description="File path where the document content will be stored")],
     content: Annotated[str, Field(description="Document content for AI analysis and metadata generation")] = "",
     priority: Annotated[str, Field(description="Priority level for the document", pattern="^(high|medium|low)$")] = "medium",
     source_type: Annotated[str, Field(description="Type of source content", pattern="^(markdown|code|config|documentation|tutorial)$")] = "markdown",
@@ -1254,10 +1243,6 @@ async def create_document_template(
 ) -> str:
     """Create a properly structured document template for knowledge base indexing with AI-generated metadata."""
     try:
-        # Get base directory from config
-        config = load_config()
-        base_directory = config.get("security", {}).get("allowed_base_directory")
-
         # Initialize metadata
         final_tags = list(tags)  # Copy manual tags
         final_key_points = list(key_points)  # Copy manual key points
@@ -1304,14 +1289,12 @@ async def create_document_template(
 
         template = create_doc_template_base(
             title=title,
-            file_path=file_path,
             priority=priority,
             source_type=source_type,
             tags=final_tags,
             summary=summary,
             key_points=final_key_points,
-            related=related,
-            base_directory=base_directory
+            related=related
         )
 
         ai_info = ""
