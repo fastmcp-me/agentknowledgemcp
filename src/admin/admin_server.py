@@ -6,10 +6,14 @@ File 3/4: Admin Server
 
 import json
 import subprocess
+import time
+import shutil
+import importlib.metadata
+import requests
 from pathlib import Path
 from typing import Dict, Any, Optional, Annotated
 
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 from pydantic import Field
 
 from src.config.config import load_config
@@ -1104,7 +1108,115 @@ def extract_section_content(full_content: str, section: str) -> str:
 
 
 # ================================
-# TOOL 9: RESET_CONFIG
+# TOOL 10: ASK_USER_ADVICE
+# ================================
+
+@app.tool(
+    description="Ask user for advice when agent encounters uncertainty, problems, or needs guidance. Use this when you're unsure about something or need human input to proceed properly.",
+    tags={"admin", "user", "advice", "guidance", "help", "interaction"}
+)
+async def ask_user_advice(
+    problem_description: Annotated[str, Field(description="Clear description of the problem or uncertainty you're facing")] = "",
+    context_information: Annotated[Optional[str], Field(description="Additional context or information that might help the user understand the situation")] = None,
+    specific_question: Annotated[Optional[str], Field(description="Specific question you want to ask the user")] = None,
+    options_considered: Annotated[Optional[str], Field(description="Options or approaches you've already considered")] = None,
+    urgency_level: Annotated[str, Field(description="Urgency level of the advice needed")] = "normal",
+    ctx: Context = None  # Type-hinted Context for dependency injection
+) -> str:
+    """
+    Ask user for advice when agent encounters uncertainty or problems.
+    
+    This tool allows agents to interact with users when they need guidance,
+    encounter unexpected situations, or are uncertain about the best course of action.
+    """
+    try:
+        # FastMCP automatically injects Context as ctx parameter
+        if not ctx:
+            return "❌ **Context Error**: Cannot access FastMCP context for user interaction\n💡 This tool requires an active FastMCP context to communicate with user"
+        
+        # Build the advice request message
+        urgency_icon = {
+            "low": "💭",
+            "normal": "🤔", 
+            "high": "⚠️",
+            "urgent": "🚨"
+        }.get(urgency_level.lower(), "🤔")
+
+        advice_message = f"{urgency_icon} **Agent Advice Request** {urgency_icon}\n\n"
+
+        advice_message = f"{urgency_icon} **Agent Advice Request** {urgency_icon}\n\n"
+        
+        if problem_description:
+            advice_message += f"🔍 **Problem/Uncertainty:**\n{problem_description}\n\n"
+        
+        if context_information:
+            advice_message += f"📋 **Context:**\n{context_information}\n\n"
+        
+        if specific_question:
+            advice_message += f"❓ **Specific Question:**\n{specific_question}\n\n"
+        
+        if options_considered:
+            advice_message += f"⚙️ **Options I've Considered:**\n{options_considered}\n\n"
+        
+        # Set urgency-based timeout
+        timeout_minutes = {
+            "low": 30,
+            "normal": 15,
+            "high": 10,
+            "urgent": 5
+        }.get(urgency_level.lower(), 15)
+        
+        advice_message += f"💡 **Your advice would be very helpful!**\n"
+        advice_message += f"🕒 Please respond within {timeout_minutes} minutes if possible.\n\n"
+        advice_message += f"**What would you recommend I do?**"
+
+        # Request advice from user using FastMCP elicitation
+        result = await ctx.elicit(
+            message=advice_message,
+            response_type=str
+        )
+
+        # Format the user's advice response
+        if result and hasattr(result, 'data') and result.data:
+            user_advice = result.data.strip()
+            
+            response_message = f"✅ **User Advice Received!**\n\n"
+            response_message += f"👤 **User's Response:**\n{user_advice}\n\n"
+            response_message += f"💡 **Next Steps:**\n"
+            response_message += f"   • Follow the user's guidance\n"
+            response_message += f"   • Document any lessons learned\n"
+            response_message += f"   • Update knowledge base if applicable\n"
+            response_message += f"   • Thank the user for their help!\n\n"
+            response_message += f"🎯 **Agent Action:** Proceed according to user's advice above"
+            
+            return response_message
+        
+        elif result and hasattr(result, 'action') and result.action == "decline":
+            return f"ℹ️ **User Declined to Provide Advice**\n\n" \
+                   f"📍 **Status:** User chose not to provide advice at this time\n\n" \
+                   f"💡 **Agent Options:**\n" \
+                   f"   • Proceed with your best judgment\n" \
+                   f"   • Use available documentation/knowledge base\n" \
+                   f"   • Try a conservative/safe approach\n" \
+                   f"   • Ask again later if the issue persists\n\n" \
+                   f"🤝 **Note:** Respect user's choice and proceed independently"
+        
+        else:
+            return f"⚠️ **No Response Received**\n\n" \
+                   f"📍 **Status:** User didn't respond within the expected timeframe\n\n" \
+                   f"💡 **Agent Guidance:**\n" \
+                   f"   • Proceed with your best available knowledge\n" \
+                   f"   • Use conservative approach to avoid issues\n" \
+                   f"   • Document the situation for future reference\n" \
+                   f"   • Consider asking for advice again later if needed\n\n" \
+                   f"🎯 **Recommendation:** Make the safest choice available"
+
+    except Exception as e:
+        return _format_admin_error(e, "request user advice", f"problem: {problem_description[:100]}...")
+
+
+# ================================
+# TOOL 11: RESET_CONFIG
 # ================================
 
 @app.tool(
@@ -1237,7 +1349,7 @@ async def reset_config() -> str:
 def cli_main():
     """CLI entry point for Admin FastMCP server."""
     print("🚀 Starting AgentKnowledgeMCP Admin FastMCP server...")
-    print("⚙️ Tools: get_config, update_config, validate_config, reload_config, setup_elasticsearch, elasticsearch_status, server_status, server_upgrade, reset_config")
+    print("⚙️ Tools: get_config, update_config, validate_config, reload_config, setup_elasticsearch, elasticsearch_status, server_status, server_upgrade, ask_user_advice, reset_config")
     print("🎯 Admin-only server - Tools for system management and configuration")
 
     app.run()
