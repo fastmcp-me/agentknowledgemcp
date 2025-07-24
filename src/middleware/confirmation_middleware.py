@@ -51,6 +51,24 @@ class ConfirmationMiddleware(Middleware):
         
         return False, {}
 
+    async def _collect_user_feedback(self, ctx, feedback_context: str) -> str:
+        """Helper method to collect optional user feedback with consistent messaging."""
+        feedback_message = f"""💬 **Do you want to say something to the agent?**
+
+{feedback_context}
+
+✍️ **Your message (optional):**"""
+        
+        feedback_result = await ctx.elicit(
+            message=feedback_message,
+            response_type=str  # Allow text input for user feedback
+        )
+        
+        # Return feedback text if provided, empty string otherwise
+        if feedback_result.action == "accept" and feedback_result.data and feedback_result.data.strip():
+            return feedback_result.data.strip()
+        return ""
+
     async def on_call_tool(self, context: MiddlewareContext, call_next):
         """Hook called when tools are being executed - check for confirmation requirements."""
         tool_name = context.message.name
@@ -80,14 +98,36 @@ class ConfirmationMiddleware(Middleware):
             response_type=None  # Simple accept/decline confirmation
         )
         
+        # Always ask for feedback after user makes a decision (accept or decline)
         if result.action == "accept":
-            # User confirmed, proceed with tool execution
             await ctx.info(f"✅ User confirmed execution of {tool_name}")
+            
+            # Request feedback using helper function
+            feedback_context = "You've accepted this operation. You can provide additional context, thoughts, or instructions to help the agent better understand your preferences."
+            user_feedback = await self._collect_user_feedback(ctx, feedback_context)
+            
+            # Log user feedback if provided
+            if user_feedback:
+                await ctx.info(f"📝 User feedback: \"{user_feedback}\"")
+            
+            # Proceed with tool execution
             return await call_next(context)
+            
         elif result.action == "decline":
-            # User declined
-            await ctx.warning(f"❌ User declined execution of {tool_name}")
-            raise ToolError(f"Operation cancelled: User declined to confirm {tool_name} execution")
+            # User declined - ask for additional feedback
+            await ctx.info(f"❌ User declined execution of {tool_name}")
+            
+            # Request feedback using helper function
+            feedback_context = "Since you declined the operation, you can provide additional context or instructions to help the agent understand what you'd like to do instead."
+            user_feedback = await self._collect_user_feedback(ctx, feedback_context)
+            
+            # Prepare the cancellation message with user feedback
+            error_message = f"Operation cancelled: User declined to confirm {tool_name} execution."
+            if user_feedback:
+                error_message += f" User feedback: \"{user_feedback}\""
+            
+            await ctx.warning(error_message)
+            raise ToolError(error_message)
         else:  # cancel
             # User cancelled
             await ctx.warning(f"🚫 User cancelled execution of {tool_name}")
