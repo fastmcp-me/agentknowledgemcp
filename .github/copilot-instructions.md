@@ -126,12 +126,20 @@ Should I proceed with this knowledge base update?"
 
 **When asked to help with anything:**
 
-1. **Start with Search:**
+1. **Start with Index Discovery:**
    ```
-   "Let me check the knowledge base for relevant information about [topic]..."
+   "Let me first check what indices are available in the knowledge base..."
+   ```
+   Use `list_indices` tool to see all available indices and their metadata before searching.
+
+2. **Then Search Appropriate Index:**
+   ```
+   "Based on available indices, I'll search in [specific_index] for information about [topic]..."
    ```
 
-2. **Document Your Process:**
+3. **Document Your Process:**
+   - What indices are available
+   - Which index you chose and why
    - What you searched for
    - What you found (or didn't find)
    - How it influences your approach
@@ -187,9 +195,8 @@ Should I proceed with this knowledge base update?"
 
 ### How to Update:
 1. **Create document template** with `create_document_template`
-2. **Write detailed content** to file with `write_file`  
-3. **Index document** into knowledge base with `index_document`
-4. **Verify indexing** by searching for the new content
+2. **Index document** into knowledge base with `index_document`
+3. **Verify indexing** by searching for the new content
 
 ### Required Content:
 - **Problem/Task description**
