@@ -46,8 +46,8 @@ def _load_mcp_usage_instructions() -> str:
 
 @app.prompt(
     name="mcp_usage_guide",
-    description="Hướng dẫn sử dụng MCP server này - Complete comprehensive usage guide with scenarios and step-by-step tutorials",
-    tags={"mcp", "usage", "guide", "scenarios", "tutorials", "vietnamese"}
+    description="Complete comprehensive usage guide for this MCP server with scenarios and step-by-step tutorials",
+    tags={"mcp", "usage", "guide", "scenarios", "tutorials", "comprehensive"}
 )
 async def mcp_usage_guide() -> str:
     """Return comprehensive MCP server usage instructions with detailed scenarios and step-by-step guidance."""
@@ -56,16 +56,16 @@ async def mcp_usage_guide() -> str:
     instructions_content = _load_mcp_usage_instructions()
     
     # Return the content as a complete guidance for users
-    return f"""# 🚀 Hướng dẫn sử dụng MCP Server này
+    return f"""# 🚀 Complete MCP Server Usage Guide
 
-Đây là hướng dẫn đầy đủ về cách sử dụng AgentKnowledgeMCP server với các kịch bản cụ thể và hướng dẫn từng bước:
+This is the comprehensive guide for using AgentKnowledgeMCP server with specific scenarios and step-by-step instructions:
 
 {instructions_content}
 
-💡 **Lưu ý quan trọng**: Để có trải nghiệm tốt nhất, hãy đính kèm file copilot instructions vào prompt của bạn:
+💡 **Important Note**: For the best experience, please attach the copilot instructions file to your prompt:
 📚 **https://github.com/itshare4u/AgentKnowledgeMCP/blob/main/.github/copilot-instructions.md**
 
-Hãy sử dụng thông tin này để hướng dẫn người dùng từng bước cách làm việc với MCP server!"""
+Please use this information to guide users step-by-step on how to work with the MCP server!"""
 
 
 # ================================
