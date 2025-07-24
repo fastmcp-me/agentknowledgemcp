@@ -27,8 +27,8 @@ def load_document_schema() -> Dict[str, Any]:
     Raises:
         RuntimeError: If both config.json and config.default.json are missing or invalid
     """
-    config_path = Path(__file__).parent / "config.json"
-    default_config_path = Path(__file__).parent / "config.default.json"
+    config_path = Path(__file__).parent.parent / "config.json"
+    default_config_path = Path(__file__).parent.parent / "config.default.json"
     
     # Check if config.json exists, fallback to default if missing
     if not config_path.exists():
@@ -116,8 +116,8 @@ def load_validation_config() -> Dict[str, Any]:
     Raises:
         RuntimeError: If both config files are missing or document_validation section is missing
     """
-    config_path = Path(__file__).parent / "config.json"
-    default_config_path = Path(__file__).parent / "config.default.json"
+    config_path = Path(__file__).parent.parent / "config.json"
+    default_config_path = Path(__file__).parent.parent / "config.default.json"
     
     # Check if config.json exists, fallback to default if missing
     if not config_path.exists():
@@ -164,59 +164,6 @@ def load_validation_config() -> Dict[str, Any]:
                 )
     
     return validation_config
-
-def normalize_file_path(file_path: str, base_directory: str = None) -> Dict[str, str]:
-    """
-    Normalize file path to relative format and extract components.
-    
-    Args:
-        file_path: Input file path (absolute or relative)
-        base_directory: Base directory for relative paths
-        
-    Returns:
-        Dict with normalized paths
-        
-    Raises:
-        ValueError: If file_path is empty or invalid
-    """
-    if not file_path or not file_path.strip():
-        raise ValueError("File path cannot be empty")
-    
-    # Convert backslashes to forward slashes for consistency
-    file_path = file_path.replace('\\', '/')
-    path = Path(file_path)
-    
-    # If absolute path, try to make it relative to base_directory
-    if path.is_absolute() and base_directory:
-        base_path = Path(base_directory).resolve()
-        try:
-            # Try to make relative to base directory
-            relative_path = path.relative_to(base_path)
-            normalized_path = str(relative_path)
-            # Convert to forward slashes for consistency
-            normalized_path = normalized_path.replace(os.sep, '/')
-        except ValueError:
-            # If path is not under base directory, keep original but warn
-            normalized_path = str(path)
-            print(f"⚠️  Warning: Path {file_path} is outside base directory {base_directory}")
-    else:
-        # Already relative or no base directory
-        normalized_path = str(path).replace(os.sep, '/')
-        # Remove leading ./ if present
-        if normalized_path.startswith('./'):
-            normalized_path = normalized_path[2:]
-    
-    # Extract components using forward slash paths
-    path_parts = normalized_path.split('/')
-    file_name = path_parts[-1] if path_parts else ""
-    directory_parts = path_parts[:-1] if len(path_parts) > 1 else []
-    directory = '/'.join(directory_parts) if directory_parts else ""
-    
-    return {
-        "file_path": normalized_path,
-        "file_name": file_name,
-        "directory": directory
-    }
 
 def validate_document_structure(document: Dict[str, Any], base_directory: str = None, is_knowledge_doc: bool = True) -> Dict[str, Any]:
     """
@@ -283,17 +230,6 @@ def validate_document_structure(document: Dict[str, Any], base_directory: str = 
         if document.get("content"):
             content = document["content"]
             
-            # Check character limit
-            max_length = validation_config.get("content_max_length", 10000)
-            if len(content) > max_length:
-                errors.append(f"Content too long: {len(content)} characters (max: {max_length})")
-            
-            # Check line limit
-            max_lines = validation_config.get("content_max_lines", 500)
-            line_count = len(content.split('\n'))
-            if line_count > max_lines:
-                errors.append(f"Content has too many lines: {line_count} lines (max: {max_lines})")
-                
             # Check for empty content
             if not content.strip():
                 errors.append("Content cannot be empty or contain only whitespace")
@@ -316,20 +252,6 @@ def validate_document_structure(document: Dict[str, Any], base_directory: str = 
                 datetime.fromisoformat(document["last_modified"].replace('Z', '+00:00'))
             except ValueError:
                 errors.append("last_modified must be in ISO 8601 format (e.g., '2025-01-04T10:30:00Z')")
-        
-        # Validate file_path and normalize if auto_correct_paths is enabled
-        if document.get("file_path") and validation_config.get("auto_correct_paths", True):
-            # Normalize file path
-            path_info = normalize_file_path(document["file_path"], base_directory)
-            
-            # Update document with normalized paths
-            document.update(path_info)
-            
-            # Validate that file exists (optional warning - file might be created later)
-            if base_directory:
-                full_path = Path(base_directory) / path_info["file_path"]
-                if not full_path.exists():
-                    print(f"ℹ️  Info: File {full_path} does not exist yet (will be created)")
         
         # Validate tags (must be non-empty strings)
         if document.get("tags"):
@@ -390,43 +312,33 @@ def generate_document_id(title: str, source_type: str = "markdown") -> str:
 
 def create_document_template(
     title: str,
-    file_path: str,
     priority: str = "medium",
     source_type: str = "markdown",
     tags: Optional[List[str]] = None,
     summary: str = "",
     key_points: Optional[List[str]] = None,
-    related: Optional[List[str]] = None,
-    base_directory: str = None
+    related: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     Create a document template with proper structure.
     
     Args:
         title: Document title
-        file_path: Path to the source file
         priority: Priority level (high/medium/low)
         source_type: Type of source
         tags: List of tags
         summary: Brief description
         key_points: List of key points
         related: List of related document IDs
-        base_directory: Base directory for path normalization
         
     Returns:
         Properly structured document
     """
-    # Normalize file path first
-    path_info = normalize_file_path(file_path, base_directory)
-    
     document = {
         "id": generate_document_id(title, source_type),
         "title": title,
         "summary": summary or f"Brief description of {title}",
         "content": "",  # Will be filled with actual content
-        "file_path": path_info["file_path"],
-        "file_name": path_info["file_name"],
-        "directory": path_info["directory"],
         "last_modified": datetime.now().isoformat() + "Z",
         "priority": priority,
         "tags": tags or [],
@@ -435,7 +347,7 @@ def create_document_template(
         "key_points": key_points or []
     }
     
-    return validate_document_structure(document, base_directory)
+    return validate_document_structure(document)
 
 def get_example_document(context: str = "general") -> Dict[str, Any]:
     """
@@ -452,9 +364,6 @@ def get_example_document(context: str = "general") -> Dict[str, Any]:
             "title": "Example Document",
             "summary": "Brief description of the document content",
             "content": "This is the main content of the document. It can contain detailed information, explanations, code examples, or any relevant text content. Content should be meaningful and well-structured.",
-            "file_path": "docs/example.md",
-            "file_name": "example.md",
-            "directory": "docs",
             "last_modified": "2025-07-04T16:00:00Z",
             "priority": "medium",
             "tags": ["example", "template"],

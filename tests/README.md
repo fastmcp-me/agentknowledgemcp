@@ -7,12 +7,9 @@ This directory contains all test files and demo scripts for the Agent Knowledge 
 ### Core Functionality Tests
 - **`test_file_paths.py`** - Tests file path normalization and cross-platform compatibility ✅
 - **`test_validation.py`** - Tests document schema validation and error handling
-- **`test_version_control.py`** - Comprehensive version control system tests ✅
-- **`test_simple_vcs.py`** - Simple VCS functionality demonstration ✅
 
 ### Demo Scripts
 - **`demo_agent_workflow.py`** - Complete agent workflow demonstration
-- **`demo_version_control.py`** - Version control features demo
 
 ### Test Configuration
 - **`test_config.json`** - Test configuration with generic paths (no personal info)
@@ -38,12 +35,6 @@ python3 tests/test_file_paths.py
 # Test document validation
 python3 tests/test_validation.py
 
-# Test version control (comprehensive) (PASSING ✅)
-python3 tests/test_version_control.py
-
-# Test version control (simple demo) (PASSING ✅)
-python3 tests/test_simple_vcs.py
-
 # Quick functionality check
 python3 tests/quick_test.py
 ```
@@ -52,9 +43,6 @@ python3 tests/quick_test.py
 ```bash
 # Run complete workflow demo
 python3 tests/demo_agent_workflow.py
-
-# Run version control demo
-python3 tests/demo_version_control.py
 ```
 
 ## Test Configuration

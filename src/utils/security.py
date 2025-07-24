@@ -8,6 +8,11 @@ from typing import Union
 _ALLOWED_BASE_DIR = None
 
 
+class SecurityError(Exception):
+    """Custom exception for security-related errors."""
+    pass
+
+
 def init_security(allowed_base_dir: Union[str, Path]) -> None:
     """Initialize security with allowed base directory."""
     global _ALLOWED_BASE_DIR
@@ -41,5 +46,13 @@ def is_path_allowed(file_path: str) -> bool:
 def get_safe_path(file_path: str) -> Path:
     """Get a safe path within the allowed directory."""
     if not is_path_allowed(file_path):
-        raise ValueError(f"Access denied: Path '{file_path}' is outside allowed directory '{_ALLOWED_BASE_DIR}'")
+        raise SecurityError(f"Access denied: Path '{file_path}' is outside allowed directory '{_ALLOWED_BASE_DIR}'")
     return Path(file_path).resolve()
+
+
+def validate_path(file_path: str) -> Path:
+    """Validate and return a safe path within the allowed directory.
+    
+    Alias for get_safe_path for backward compatibility.
+    """
+    return get_safe_path(file_path)

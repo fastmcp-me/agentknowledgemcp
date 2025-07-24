@@ -1,12 +1,12 @@
 # MCP Server package
 import asyncio
-from . import server
+from . import main_server
 
-__version__ = "1.0.28"
+__version__ = "2.0.0"
 
 def main():
     """Main entry point for the package."""
-    asyncio.run(server.main())
+    main_server.cli_main()
 
 # Optionally expose other important items at package level
-__all__ = ['main', 'server', '__version__']
+__all__ = ['main', 'main_server', '__version__']

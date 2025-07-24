@@ -1,6 +1,6 @@
 [project]
 name = "agent-knowledge-mcp"
-version = "1.0.28"
+version = "2.0.0"
 description = "A comprehensive MCP server for AI knowledge management with Elasticsearch, file operations, and version control"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -21,6 +21,8 @@ classifiers = [
 
 dependencies = [
     "mcp>=1.10.1",
+    "fastmcp>=0.15.0",
+    "pydantic>=2.0.0",
     "elasticsearch>=7.0.0,<8.0.0",
     "docker>=7.0.0",
     "requests>=2.32.0",
@@ -64,8 +66,8 @@ include = [
 ]
 
 [project.scripts]
-agent-knowledge-mcp = "src.server:cli_main"
-elasticsearch-mcp = "src.server:cli_main"
+agent-knowledge-mcp = "src.fastmcp_server:cli_main"
+elasticsearch-mcp = "src.fastmcp_server:cli_main"
 akm-dev = "scripts.dev:main"
 
 [tool.black]
