@@ -8,14 +8,14 @@ from typing import List, Dict, Any, Optional, Annotated
 from datetime import datetime, timedelta
 import re
 
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 from pydantic import Field
 
 from src.elasticsearch.elasticsearch_client import get_es_client
 from src.elasticsearch.document_schema import (
     validate_document_structure,
     DocumentValidationError,
-    create_document_template,
+    create_document_template as create_doc_template_base,
     format_validation_error
 )
 from src.config.config import load_config
@@ -26,6 +26,125 @@ app = FastMCP(
     version="1.0.0",
     instructions="Elasticsearch tools for knowledge management"
 )
+
+async def _generate_smart_metadata(title: str, content: str, ctx: Context) -> Dict[str, Any]:
+    """Generate intelligent tags and key_points using LLM sampling."""
+    try:
+        # Create prompt for generating metadata and smart content
+        prompt = f"""Analyze the following document and provide comprehensive smart metadata and content:
+
+Title: {title}
+
+Content: {content[:2000]}{"..." if len(content) > 2000 else ""}
+
+Please provide:
+1. Relevant tags (3-8 tags, lowercase, hyphen-separated)
+2. Key points (3-6 important points from the content)
+3. Smart summary (2-3 sentences capturing the essence)
+4. Enhanced content (improved/structured version if content is brief or unclear)
+
+Respond in JSON format:
+{{
+  "tags": ["tag1", "tag2", "tag3"],
+  "key_points": ["Point 1", "Point 2", "Point 3"],
+  "smart_summary": "Brief 2-3 sentence summary of the document",
+  "enhanced_content": "Improved/structured content if original is brief, otherwise keep original"
+}}
+
+Focus on:
+- Technical concepts and technologies mentioned
+- Main topics and themes
+- Document type and purpose
+- Key features or functionalities discussed
+- Clear, professional language for summary and content
+- Maintain accuracy while improving clarity"""
+
+        # Request LLM analysis with controlled parameters and model preferences
+        response = await ctx.sample(
+            messages=prompt,
+            system_prompt="You are an expert document analyzer and content enhancer. Generate accurate, relevant metadata and improve content quality while maintaining original meaning. Always respond with valid JSON.",
+            model_preferences=["claude-3-opus", "claude-3-sonnet", "gpt-4"],  # Prefer reasoning models for analysis
+            temperature=0.3,  # Low randomness for consistency
+            max_tokens=600   # Increased for smart content generation
+        )
+        
+        # Parse the JSON response
+        try:
+            metadata = json.loads(response.text.strip())
+            
+            # Validate and clean the response
+            tags = metadata.get("tags", [])
+            key_points = metadata.get("key_points", [])
+            smart_summary = metadata.get("smart_summary", "")
+            enhanced_content = metadata.get("enhanced_content", "")
+            
+            # Ensure we have reasonable limits and clean data
+            tags = [tag.lower().strip() for tag in tags[:8] if tag and isinstance(tag, str)]
+            key_points = [point.strip() for point in key_points[:6] if point and isinstance(point, str)]
+            
+            # Clean and validate smart content
+            smart_summary = smart_summary.strip() if isinstance(smart_summary, str) else ""
+            enhanced_content = enhanced_content.strip() if isinstance(enhanced_content, str) else ""
+            
+            return {
+                "tags": tags,
+                "key_points": key_points,
+                "smart_summary": smart_summary,
+                "enhanced_content": enhanced_content
+            }
+            
+        except json.JSONDecodeError:
+            # Fallback if JSON parsing fails
+            await ctx.warning("LLM response was not valid JSON, using fallback metadata generation")
+            return _generate_fallback_metadata(title, content)
+            
+    except Exception as e:
+        # Fallback for any sampling errors
+        await ctx.warning(f"LLM sampling failed ({str(e)}), using fallback metadata generation")
+        return _generate_fallback_metadata(title, content)
+
+def _generate_fallback_metadata(title: str, content: str) -> Dict[str, Any]:
+    """Generate basic metadata when LLM sampling is not available."""
+    # Basic tags based on title and content analysis
+    title_lower = title.lower()
+    content_lower = content.lower()[:1000]  # First 1000 chars for analysis
+    
+    tags = ["document"]
+    
+    # Add file type tags
+    if any(word in title_lower for word in ["readme", "documentation", "docs"]):
+        tags.append("documentation")
+    if any(word in title_lower for word in ["config", "configuration", "settings"]):
+        tags.append("configuration")
+    if any(word in title_lower for word in ["test", "testing", "spec"]):
+        tags.append("testing")
+    if any(word in content_lower for word in ["python", "def ", "class ", "import "]):
+        tags.append("python")
+    if any(word in content_lower for word in ["javascript", "function", "const ", "let "]):
+        tags.append("javascript")
+    if any(word in content_lower for word in ["api", "endpoint", "request", "response"]):
+        tags.append("api")
+    
+    # Basic key points
+    key_points = [
+        f"Document title: {title}",
+        f"Content length: {len(content)} characters"
+    ]
+    
+    # Add content-based points
+    if "implementation" in content_lower:
+        key_points.append("Contains implementation details")
+    if "example" in content_lower or "demo" in content_lower:
+        key_points.append("Includes examples or demonstrations")
+    if "error" in content_lower or "exception" in content_lower:
+        key_points.append("Discusses error handling")
+    
+    return {
+        "tags": tags[:6],  # Limit to 6 tags
+        "key_points": key_points[:4],  # Limit to 4 points
+        "smart_summary": f"Fallback document: {title}",
+        "enhanced_content": content[:500] + "..." if len(content) > 500 else content
+    }
 
 def _parse_time_parameters(date_from: Optional[str] = None, date_to: Optional[str] = None,
                           time_period: Optional[str] = None) -> Dict[str, Any]:
@@ -852,8 +971,8 @@ async def validate_document_schema(
 # ================================
 
 @app.tool(
-    description="Batch index all documents from a directory into Elasticsearch with comprehensive file processing and validation",
-    tags={"elasticsearch", "batch", "directory", "index", "bulk"}
+    description="Batch index all documents from a directory into Elasticsearch with AI-enhanced metadata generation and comprehensive file processing",
+    tags={"elasticsearch", "batch", "directory", "index", "bulk", "ai-enhanced"}
 )
 async def batch_index_directory(
     index: Annotated[str, Field(description="Name of the Elasticsearch index to store the documents")],
@@ -862,7 +981,9 @@ async def batch_index_directory(
     validate_schema: Annotated[bool, Field(description="Whether to validate document structure for knowledge base format")] = True,
     recursive: Annotated[bool, Field(description="Whether to search subdirectories recursively")] = True,
     skip_existing: Annotated[bool, Field(description="Skip files that already exist in index (check by filename)")] = False,
-    max_file_size: Annotated[int, Field(description="Maximum file size in bytes to process", ge=1, le=10485760)] = 1048576  # 1MB default
+    max_file_size: Annotated[int, Field(description="Maximum file size in bytes to process", ge=1, le=10485760)] = 1048576,  # 1MB default
+    use_ai_enhancement: Annotated[bool, Field(description="Use AI to generate intelligent tags and key points for each document")] = True,
+    ctx: Context = None
 ) -> str:
     """Batch index all documents from a directory into Elasticsearch."""
     try:
@@ -967,28 +1088,76 @@ async def batch_index_directory(
                 relative_path = file_path.relative_to(validated_dir)
                 doc_id = f"{file_path.stem}_{hash(str(relative_path)) % 100000}"  # Create unique ID
                 
+                title = file_path.stem.replace('_', ' ').replace('-', ' ').title()
+                
+                # Initialize basic tags and key points
+                base_tags = [
+                    "batch-indexed",
+                    file_path.suffix[1:] if file_path.suffix else "no-extension",
+                    validated_dir.name
+                ]
+                
+                base_key_points = [
+                    f"File size: {file_path.stat().st_size} bytes",
+                    f"File type: {file_path.suffix or 'no extension'}",
+                    f"Directory: {file_path.parent.name}"
+                ]
+                
+                final_tags = base_tags.copy()
+                final_key_points = base_key_points.copy()
+                final_summary = f"Document from {file_name}"
+                
+                # Use AI enhancement if requested and context is available
+                if use_ai_enhancement and ctx and content.strip():
+                    try:
+                        await ctx.info(f"🤖 Generating AI metadata and smart content for: {file_name}")
+                        ai_metadata = await _generate_smart_metadata(title, content, ctx)
+                        
+                        # Merge AI-generated tags with base tags
+                        ai_tags = ai_metadata.get("tags", [])
+                        for tag in ai_tags:
+                            if tag not in final_tags:
+                                final_tags.append(tag)
+                        
+                        # Merge AI-generated key points with base points
+                        ai_key_points = ai_metadata.get("key_points", [])
+                        for point in ai_key_points:
+                            if point not in final_key_points:
+                                final_key_points.append(point)
+                        
+                        # Use AI-generated smart summary and enhanced content
+                        ai_summary = ai_metadata.get("smart_summary", "")
+                        ai_enhanced_content = ai_metadata.get("enhanced_content", "")
+                        
+                        if ai_summary:
+                            final_summary = ai_summary
+                        elif len(content) > 100:
+                            # Fallback to content preview if no AI summary
+                            content_preview = content[:300].strip()
+                            if content_preview:
+                                final_summary = content_preview + ("..." if len(content) > 300 else "")
+                        
+                        # Use enhanced content if available and substantially different
+                        if ai_enhanced_content and len(ai_enhanced_content) > len(content) * 0.8:
+                            content = ai_enhanced_content
+                                
+                    except Exception as e:
+                        await ctx.warning(f"AI enhancement failed for {file_name}: {str(e)}")
+                
                 document = {
                     "id": doc_id,
-                    "title": file_path.stem.replace('_', ' ').replace('-', ' ').title(),
-                    "summary": f"Document from {file_name}",
+                    "title": title,
+                    "summary": final_summary,
                     "content": content,
                     "file_path": str(file_path),
                     "file_name": file_name,
                     "directory": str(file_path.parent),
                     "last_modified": datetime.now().isoformat(),
                     "priority": "medium",
-                    "tags": [
-                        "batch-indexed",
-                        file_path.suffix[1:] if file_path.suffix else "no-extension",
-                        validated_dir.name
-                    ],
+                    "tags": final_tags,
                     "related": [],
                     "source_type": "documentation",
-                    "key_points": [
-                        f"File size: {file_path.stat().st_size} bytes",
-                        f"File type: {file_path.suffix or 'no extension'}",
-                        f"Directory: {file_path.parent.name}"
-                    ]
+                    "key_points": final_key_points
                 }
                 
                 # Validate document if requested
@@ -1035,7 +1204,15 @@ async def batch_index_directory(
         if skipped_size:
             result_summary += f"   📏 Skipped (too large): {len(skipped_size)}\n"
         
-        result_summary += f"   🎯 Index: {index}\n\n"
+        result_summary += f"   🎯 Index: {index}\n"
+        
+        # AI Enhancement info
+        if use_ai_enhancement and ctx:
+            result_summary += f"   🤖 AI Enhancement: Enabled (generated intelligent tags and key points)\n"
+        else:
+            result_summary += f"   🤖 AI Enhancement: Disabled (using basic metadata)\n"
+        
+        result_summary += "\n"
         
         # Successful indexing details
         if successful:
@@ -1079,7 +1256,13 @@ async def batch_index_directory(
             result_summary += f"   🔄 Use skip_existing=True to avoid reindexing\n"
             result_summary += f"   📂 Process subdirectories separately for better control\n"
             result_summary += f"   🔍 Use specific file patterns (*.md, *.txt) for faster processing\n"
-            result_summary += f"   📏 Adjust max_file_size based on your content needs\n\n"
+            result_summary += f"   📏 Adjust max_file_size based on your content needs\n"
+            if use_ai_enhancement:
+                result_summary += f"   🤖 AI enhancement adds ~2-3 seconds per file but greatly improves metadata quality\n"
+                result_summary += f"   ⚡ Set use_ai_enhancement=False for faster processing with basic metadata\n"
+            else:
+                result_summary += f"   🤖 Enable use_ai_enhancement=True for intelligent tags and key points\n"
+            result_summary += "\n"
         
         # Knowledge base recommendations
         if len(successful) > 20:
@@ -1119,40 +1302,92 @@ async def batch_index_directory(
 # ================================
 
 @app.tool(
-    description="Create a properly structured document template for knowledge base with metadata and formatting",
-    tags={"elasticsearch", "document", "template", "knowledge-base"}
+    description="Create a properly structured document template for knowledge base with AI-generated metadata and formatting",
+    tags={"elasticsearch", "document", "template", "knowledge-base", "ai-enhanced"}
 )
 async def create_document_template(
     title: Annotated[str, Field(description="Document title for the knowledge base entry")],
     file_path: Annotated[str, Field(description="File path where the document content will be stored")],
+    content: Annotated[str, Field(description="Document content for AI analysis and metadata generation")] = "",
     priority: Annotated[str, Field(description="Priority level for the document", pattern="^(high|medium|low)$")] = "medium",
     source_type: Annotated[str, Field(description="Type of source content", pattern="^(markdown|code|config|documentation|tutorial)$")] = "markdown",
-    tags: Annotated[List[str], Field(description="List of tags for categorizing and searching the document")] = [],
+    tags: Annotated[List[str], Field(description="Additional manual tags (will be merged with AI-generated tags)")] = [],
     summary: Annotated[str, Field(description="Brief summary description of the document content")] = "",
-    key_points: Annotated[List[str], Field(description="List of key points or important highlights")] = [],
-    related: Annotated[List[str], Field(description="List of related document IDs or references")] = []
+    key_points: Annotated[List[str], Field(description="Additional manual key points (will be merged with AI-generated points)")] = [],
+    related: Annotated[List[str], Field(description="List of related document IDs or references")] = [],
+    use_ai_enhancement: Annotated[bool, Field(description="Use AI to generate intelligent tags and key points")] = True,
+    ctx: Context = None
 ) -> str:
-    """Create a properly structured document template for knowledge base indexing."""
+    """Create a properly structured document template for knowledge base indexing with AI-generated metadata."""
     try:
         # Get base directory from config
         config = load_config()
         base_directory = config.get("security", {}).get("allowed_base_directory")
 
-        template = create_document_template(
+        # Initialize metadata
+        final_tags = list(tags)  # Copy manual tags
+        final_key_points = list(key_points)  # Copy manual key points
+        
+        # Use AI enhancement if requested and content is provided
+        if use_ai_enhancement and content.strip() and ctx:
+            try:
+                await ctx.info("🤖 Generating intelligent metadata and smart content using AI...")
+                ai_metadata = await _generate_smart_metadata(title, content, ctx)
+                
+                # Merge AI-generated tags with manual tags
+                ai_tags = ai_metadata.get("tags", [])
+                for tag in ai_tags:
+                    if tag not in final_tags:
+                        final_tags.append(tag)
+                
+                # Merge AI-generated key points with manual points
+                ai_key_points = ai_metadata.get("key_points", [])
+                for point in ai_key_points:
+                    if point not in final_key_points:
+                        final_key_points.append(point)
+                
+                # Use AI-generated smart summary if available
+                ai_summary = ai_metadata.get("smart_summary", "")
+                if ai_summary and not summary:
+                    summary = ai_summary
+                
+                # Use AI-enhanced content if available and better
+                ai_enhanced_content = ai_metadata.get("enhanced_content", "")
+                if ai_enhanced_content and len(ai_enhanced_content) > len(content) * 0.8:
+                    content = ai_enhanced_content
+                        
+                await ctx.info(f"✅ AI generated {len(ai_tags)} tags, {len(ai_key_points)} key points, smart summary, and enhanced content")
+                
+            except Exception as e:
+                await ctx.warning(f"AI enhancement failed: {str(e)}, using manual metadata only")
+        
+        # Generate auto-summary if not provided and content is available
+        if not summary and content.strip():
+            if len(content) > 200:
+                summary = content[:200].strip() + "..."
+            else:
+                summary = content.strip()
+
+        template = create_doc_template_base(
             title=title,
             file_path=file_path,
             priority=priority,
             source_type=source_type,
-            tags=tags,
+            tags=final_tags,
             summary=summary,
-            key_points=key_points,
+            key_points=final_key_points,
             related=related,
             base_directory=base_directory
         )
 
-        return (f"✅ Document template created successfully!\n\n" +
-               f"{json.dumps(template, indent=2, ensure_ascii=False)}\n\n" +
-               f"This template can be used with the 'index_document' tool.\n\n" +
+        ai_info = ""
+        if use_ai_enhancement and ctx:
+            ai_info = f"\n🤖 **AI Enhancement Used**: Generated {len(final_tags)} total tags and {len(final_key_points)} total key points\n"
+
+        return (f"✅ Document template created successfully with AI-enhanced metadata!\n\n" +
+               f"{json.dumps(template, indent=2, ensure_ascii=False)}\n" +
+               ai_info +
+               f"\nThis template can be used with the 'index_document' tool.\n\n" +
                f"⚠️ **CRITICAL: Search Before Creating - Avoid Duplicates**:\n" +
                f"   🔍 **STEP 1**: Use 'search' tool to check if similar content already exists\n" +
                f"   🔄 **STEP 2**: If found, UPDATE existing document instead of creating new one\n" +
