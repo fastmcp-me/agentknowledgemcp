@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2025-07-25
+
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.4] - 2025-07-25
+
+### 🔧 Fixed
+- **PyPI Entry Point**: Fixed incorrect entry point in published package (was pointing to non-existent `src.fastmcp_server`)
+- **Import Error**: Resolved `ModuleNotFoundError: No module named 'src.fastmcp_server'` when installing from PyPI
+- **Package Consistency**: Ensured all entry points correctly reference `src.main_server:cli_main`
+
+### 🚀 Improved  
+- **Build Process**: Enhanced package building with proper validation of entry points
+- **Version Management**: Updated version consistency across all package files
+- **Documentation**: Added PyPI installation troubleshooting guidance
+
+### 📚 Technical Details
+- **Entry Point**: `agent-knowledge-mcp = "src.main_server:cli_main"`
+- **Affected Installs**: uvx, pip, and other PyPI-based installations
+- **Fix Status**: Immediately available on PyPI v2.0.4+
+
+## [2.0.3] - 2025-07-25
+
+### 🔧 Fixed
+- **Version Consistency**: Updated pyproject.toml version from 2.0.2 to 2.0.3 for consistency
+- **Build Process**: Ensured all version references are synchronized across package files
+- **PyPI Publishing**: Successfully published with consistent version management
+
+### 🚀 Improved
+- **Package Metadata**: Enhanced package configuration with proper version alignment
+- **Changelog**: Added comprehensive release documentation with build improvements
+
+### 📚 Technical Details
+- **pyproject.toml**: Version updated to maintain consistency with src/__init__.py
+- **Build Output**: Generated agent_knowledge_mcp-2.0.3-py3-none-any.whl and .tar.gz
+- **PyPI URL**: https://pypi.org/project/agent-knowledge-mcp/2.0.3/
+
 ## [2.0.0] - 2025-07-24
 
 ### 🎉 MAJOR RELEASE: FastMCP Migration

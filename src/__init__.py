@@ -1,4 +1,4 @@
-# MCP Server package
+# MCP __version__ = "2.0.4"erver package
 import asyncio
 from . import main_server
 
