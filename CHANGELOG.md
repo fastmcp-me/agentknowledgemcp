@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.4] - 2025-07-25
 
+### ✨ Added
+- **New Prompt**: Added `copilot_instructions` prompt to provide AI assistants direct access to behavioral guidelines
+- **Enhanced Prompt Server**: Now includes both `mcp_usage_guide` and `copilot_instructions` prompts
+- **AI Assistant Guidelines**: Complete behavioral protocols and mandatory workflows accessible via MCP
+
 ### 🔧 Fixed
 - **PyPI Entry Point**: Fixed incorrect entry point in published package (was pointing to non-existent `src.fastmcp_server`)
 - **Import Error**: Resolved `ModuleNotFoundError: No module named 'src.fastmcp_server'` when installing from PyPI
@@ -25,9 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Build Process**: Enhanced package building with proper validation of entry points
 - **Version Management**: Updated version consistency across all package files
 - **Documentation**: Added PyPI installation troubleshooting guidance
+- **CLI Output**: Updated to show both available prompts clearly
 
 ### 📚 Technical Details
 - **Entry Point**: `agent-knowledge-mcp = "src.main_server:cli_main"`
+- **New Helper Function**: `_load_copilot_instructions()` for secure file loading
+- **Error Handling**: Comprehensive error handling for copilot instructions file access
 - **Affected Installs**: uvx, pip, and other PyPI-based installations
 - **Fix Status**: Immediately available on PyPI v2.0.4+
 
