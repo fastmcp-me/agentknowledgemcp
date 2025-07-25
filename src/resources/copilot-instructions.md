@@ -26,6 +26,7 @@ This is a **HARD RULE**, not a suggestion. Violation = Failed Task.
 - [ ] "Creating document for: [task/discovery/solution]"
 - [ ] "Indexing new knowledge with tags: [relevant tags]"
 - [ ] "Knowledge base updated and verified"
+- [ ] "MUST call ask_user_advice tool to get direction for next steps - NOT OPTIONAL"
 ```
 
 **When USER CORRECTS YOU, you MUST:**
