@@ -2,7 +2,9 @@
 import asyncio
 from . import main_server
 
-__version__ = "2.0.0"
+"""AgentKnowledgeMCP - Advanced Knowledge Management for AI Agents."""
+
+__version__ = "2.0.2"
 
 def main():
     """Main entry point for the package."""
