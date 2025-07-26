@@ -3,6 +3,10 @@
 **Complete knowledge management for AI assistants**  
 MCP server with Elasticsearch search and document management.
 
+<a href="https://glama.ai/mcp/servers/@itshare4u/AgentKnowledgeMCP">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@itshare4u/AgentKnowledgeMCP/badge" alt="Agent Knowledge MCP server" />
+</a>
+
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
