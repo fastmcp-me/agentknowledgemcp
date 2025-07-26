@@ -1,10 +1,10 @@
-# MCP __version__ = "2.0.4"erver package
+# AgentKnowledgeMCP - Advanced Knowledge Management for AI Agents
 import asyncio
 from . import main_server
 
 """AgentKnowledgeMCP - Advanced Knowledge Management for AI Agents."""
 
-__version__ = "2.0.4"
+__version__ = "2.0.5"
 
 def main():
     """Main entry point for the package."""
