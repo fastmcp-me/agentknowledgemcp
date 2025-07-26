@@ -104,7 +104,7 @@ def cli_main():
     print("  ⚙️ Admin Server (admin_*) - Configuration and system management")
     print("    └─ Tools: get_config, update_config, server_status, server_upgrade, setup_elasticsearch, elasticsearch_status, validate_config, reset_config, reload_config")
     print("  📝 Prompt Server - AgentKnowledgeMCP guidance and help")
-    print("    └─ Prompts: usage_guide, help_request")
+    print("    └─ Prompts: usage_guide, copilot_instructions")
     print()
     print("🔗 Compatibility: All tools also available without prefixes")
     print()

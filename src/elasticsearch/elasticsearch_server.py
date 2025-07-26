@@ -21,9 +21,17 @@ from src.elasticsearch.elasticsearch_helper import (
     generate_smart_metadata, 
     generate_fallback_metadata,
     parse_time_parameters,
-    analyze_search_results_for_reorganization
+    analyze_search_results_for_reorganization,
+    generate_smart_doc_id,
+    check_title_duplicates,
+    get_existing_document_ids,
+    check_content_similarity_with_ai
 )
 from src.config.config import load_config
+import hashlib
+import json
+import re
+import time
 
 # Create FastMCP app
 app = FastMCP(
@@ -270,18 +278,126 @@ async def search(
 # ================================
 
 @app.tool(
-    description="Index a document into Elasticsearch with optional schema validation and intelligent duplicate prevention",
-    tags={"elasticsearch", "index", "document", "validation"}
+    description="Index a document into Elasticsearch with smart duplicate prevention and intelligent document ID generation",
+    tags={"elasticsearch", "index", "document", "validation", "duplicate-prevention"}
 )
 async def index_document(
     index: Annotated[str, Field(description="Name of the Elasticsearch index to store the document")],
     document: Annotated[Dict[str, Any], Field(description="Document data to index as JSON object")],
-    doc_id: Annotated[Optional[str], Field(description="Optional document ID - if not provided, Elasticsearch will auto-generate")] = None,
-    validate_schema: Annotated[bool, Field(description="Whether to validate document structure for knowledge base format")] = True
+    doc_id: Annotated[Optional[str], Field(description="Optional document ID - if not provided, smart ID will be generated")] = None,
+    validate_schema: Annotated[bool, Field(description="Whether to validate document structure for knowledge base format")] = True,
+    check_duplicates: Annotated[bool, Field(description="Check for existing documents with similar title before indexing")] = True,
+    force_index: Annotated[bool, Field(description="Force indexing even if potential duplicates are found")] = False,
+    use_ai_similarity: Annotated[bool, Field(description="Use AI to analyze content similarity and provide intelligent recommendations")] = True,
+    ctx: Context = None
 ) -> str:
-    """Index a document into Elasticsearch with optional schema validation."""
+    """Index a document into Elasticsearch with smart duplicate prevention."""
     try:
         es = get_es_client()
+
+        # Smart duplicate checking if enabled
+        if check_duplicates and not force_index:
+            title = document.get('title', '')
+            content = document.get('content', '')
+            
+            if title:
+                # First check simple title duplicates
+                dup_check = check_title_duplicates(es, index, title)
+                if dup_check['found']:
+                    duplicates_info = "\n".join([
+                        f"   📄 {dup['title']} (ID: {dup['id']})\n      📝 {dup['summary']}\n      📅 {dup['last_modified']}"
+                        for dup in dup_check['duplicates'][:3]
+                    ])
+                    
+                    # Use AI similarity analysis if enabled and content is substantial
+                    if use_ai_similarity and content and len(content) > 200 and ctx:
+                        try:
+                            ai_analysis = await check_content_similarity_with_ai(es, index, title, content, ctx)
+                            
+                            action = ai_analysis.get('action', 'CREATE')
+                            confidence = ai_analysis.get('confidence', 0.5)
+                            reasoning = ai_analysis.get('reasoning', 'AI analysis completed')
+                            target_doc = ai_analysis.get('target_document_id', '')
+                            
+                            ai_message = f"\n\n🤖 **AI Content Analysis** (Confidence: {confidence:.0%}):\n"
+                            ai_message += f"   🎯 **Recommended Action**: {action}\n"
+                            ai_message += f"   💭 **AI Reasoning**: {reasoning}\n"
+                            
+                            if action == "UPDATE" and target_doc:
+                                ai_message += f"   📄 **Target Document**: {target_doc}\n"
+                                ai_message += f"   💡 **Suggestion**: Update existing document instead of creating new one\n"
+                                
+                            elif action == "DELETE":
+                                ai_message += f"   🗑️ **AI Recommendation**: Existing content is superior, consider not creating this document\n"
+                                
+                            elif action == "MERGE" and target_doc:
+                                ai_message += f"   🔄 **Merge Target**: {target_doc}\n"
+                                ai_message += f"   📝 **Strategy**: {ai_analysis.get('merge_strategy', 'Combine unique information from both documents')}\n"
+                                
+                            elif action == "CREATE":
+                                ai_message += f"   ✅ **AI Approval**: Content is sufficiently unique to create new document\n"
+                                # If AI says CREATE, allow automatic indexing
+                                pass
+                            
+                            # Show similar documents found by AI
+                            similar_docs = ai_analysis.get('similar_docs', [])
+                            if similar_docs:
+                                ai_message += f"\n   📋 **Similar Documents Analyzed**:\n"
+                                for i, doc in enumerate(similar_docs[:2], 1):
+                                    ai_message += f"      {i}. {doc['title']} (Score: {doc.get('elasticsearch_score', 0):.1f})\n"
+                            
+                            # If AI recommends CREATE with high confidence, proceed automatically
+                            if action == "CREATE" and confidence > 0.8:
+                                # Continue with indexing - don't return early
+                                pass
+                            else:
+                                # Return AI analysis for user review
+                                return (f"⚠️ **Potential Duplicates Found** - {dup_check['count']} similar document(s):\n\n" +
+                                       f"{duplicates_info}\n" +
+                                       f"{ai_message}\n\n" +
+                                       f"🤔 **What would you like to do?**\n" +
+                                       f"   1️⃣ **FOLLOW AI RECOMMENDATION**: {action} as suggested by AI\n" +
+                                       f"   2️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
+                                       f"   3️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
+                                       f"   4️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
+                                       f"💡 **AI Recommendation**: {reasoning}\n" +
+                                       f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
+                                       f"⚡ **To force indexing**: Call again with force_index=True")
+                        
+                        except Exception as ai_error:
+                            # Fallback to simple duplicate check if AI fails
+                            return (f"⚠️ **Potential Duplicates Found** - {dup_check['count']} similar document(s):\n\n" +
+                                   f"{duplicates_info}\n\n" +
+                                   f"⚠️ **AI Analysis Failed**: {str(ai_error)}\n\n" +
+                                   f"🤔 **What would you like to do?**\n" +
+                                   f"   1️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
+                                   f"   2️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
+                                   f"   3️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
+                                   f"💡 **Recommendation**: Update existing documents to prevent knowledge base bloat\n" +
+                                   f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
+                                   f"⚡ **To force indexing**: Call again with force_index=True")
+                    
+                    else:
+                        # Simple duplicate check without AI
+                        return (f"⚠️ **Potential Duplicates Found** - {dup_check['count']} similar document(s):\n\n" +
+                               f"{duplicates_info}\n\n" +
+                               f"🤔 **What would you like to do?**\n" +
+                               f"   1️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
+                               f"   2️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
+                               f"   3️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
+                               f"💡 **Recommendation**: Update existing documents to prevent knowledge base bloat\n" +
+                               f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
+                               f"⚡ **To force indexing**: Call again with force_index=True")
+
+        # Generate smart document ID if not provided
+        if not doc_id:
+            existing_ids = get_existing_document_ids(es, index)
+            doc_id = generate_smart_doc_id(
+                document.get('title', 'untitled'), 
+                document.get('content', ''), 
+                existing_ids
+            )
+            document['id'] = doc_id  # Ensure document has the ID
 
         # Validate document structure if requested
         if validate_schema:
@@ -291,7 +407,7 @@ async def index_document(
                     validated_doc = validate_document_structure(document)
                     document = validated_doc
 
-                    # Use the document ID from the validated document if not provided
+                    # Use the document ID from the validated document if not provided earlier
                     if not doc_id:
                         doc_id = document.get("id")
 
@@ -305,26 +421,36 @@ async def index_document(
                 return f"❌ Validation error: {str(e)}"
 
         # Index the document
-        if doc_id:
-            result = es.index(index=index, id=doc_id, body=document)
-        else:
-            result = es.index(index=index, body=document)
+        result = es.index(index=index, id=doc_id, body=document)
 
-        return (f"✅ Document indexed successfully:\n\n" +
-               json.dumps(result, indent=2, ensure_ascii=False) +
-               f"\n\n💡 **IMPORTANT: Always Update Existing Documents Instead of Creating Duplicates**:\n" +
-               f"   🔍 **BEFORE indexing new content**: Use 'search' tool to find similar documents\n" +
-               f"   🔄 **UPDATE existing documents** instead of creating duplicates\n" +
-               f"   📝 **For SHORT content**: Store directly in document 'content' field (recommended)\n" +
-               f"   📁 **For LONG content**: Create separate files only when absolutely necessary\n" +
-               f"   🧹 **Regular cleanup**: Delete outdated/superseded documents to maintain quality\n" +
-               f"   🎯 **Search first, create last**: Avoid knowledge base bloat by reusing existing structure\n\n" +
-               f"🤝 **Agent Best Practices**:\n" +
-               f"   • Always search before creating to prevent duplicates\n" +
-               f"   • Ask user: 'Should I update existing document X instead?'\n" +
-               f"   • Use meaningful document IDs for better organization\n" +
-               f"   • Include relevant tags for improved searchability\n" +
-               f"   • Set appropriate priority levels for content importance")
+        success_message = f"✅ Document indexed successfully:\n\n{json.dumps(result, indent=2, ensure_ascii=False)}"
+        
+        # Add smart guidance based on indexing result
+        if result.get('result') == 'created':
+            success_message += f"\n\n🎉 **New Document Created**:\n"
+            success_message += f"   📄 **Document ID**: {doc_id}\n"
+            success_message += f"   🆔 **ID Strategy**: {'User-provided' if 'doc_id' in locals() and doc_id else 'Smart-generated'}\n"
+            if check_duplicates:
+                success_message += f"   ✅ **Duplicate Check**: Passed - no similar titles found\n"
+        else:
+            success_message += f"\n\n🔄 **Document Updated**:\n"
+            success_message += f"   📄 **Document ID**: {doc_id}\n"
+            success_message += f"   ⚡ **Action**: Replaced existing document with same ID\n"
+
+        success_message += (f"\n\n💡 **Smart Duplicate Prevention Active**:\n" +
+                          f"   🔍 **Auto-Check**: {'Enabled' if check_duplicates else 'Disabled'} - searches for similar titles\n" +
+                          f"   🤖 **AI Analysis**: {'Enabled' if use_ai_similarity else 'Disabled'} - intelligent content similarity detection\n" +
+                          f"   🆔 **Smart IDs**: Auto-generated from title with collision detection\n" +
+                          f"   ⚡ **Force Option**: Use force_index=True to bypass duplicate warnings\n" +
+                          f"   🔄 **Update Recommended**: Modify existing documents instead of creating duplicates\n\n" +
+                          f"🤝 **Best Practices**:\n" +
+                          f"   • Search before creating: 'search(index=\"{index}\", query=\"your topic\")'\n" +
+                          f"   • Update existing documents when possible\n" +
+                          f"   • Use descriptive titles for better smart ID generation\n" +
+                          f"   • AI will analyze content similarity for intelligent recommendations\n" +
+                          f"   • Set force_index=True only when content is truly unique")
+
+        return success_message
 
     except Exception as e:
         # Provide detailed error messages for different types of Elasticsearch errors
@@ -860,7 +986,6 @@ async def delete_index(
 
         return error_message
 
-
 # ================================
 # TOOL 8: VALIDATE_DOCUMENT_SCHEMA
 # ================================
@@ -879,8 +1004,8 @@ async def validate_document_schema(
         return (f"✅ Document validation successful!\n\n" +
                f"Validated document:\n{json.dumps(validated_doc, indent=2, ensure_ascii=False)}\n\n" +
                f"Document is ready to be indexed.\n\n" +
-               f"🚨 **MANDATORY: Check for Existing Documents First**:\n" +
-               f"   🔍 **Search for similar content**: Use 'search' tool with relevant keywords\n" +
+               f"🚨 **RECOMMENDED: Check for Duplicates First**:\n" +
+               f"   🔍 **Use index_document**: Built-in AI-powered duplicate detection\n" +
                f"   🔄 **Update instead of duplicate**: Modify existing documents when possible\n" +
                f"   📏 **Content length check**: If < 1000 chars, store in 'content' field directly\n" +
                f"   📁 **File creation**: Only for truly long content that needs separate storage\n" +
@@ -983,7 +1108,11 @@ async def batch_index_directory(
         for file_path in valid_files:
             try:
                 file_name = file_path.name
-                title = file_path.stem.replace('_', ' ').replace('-', ' ').title()
+                # Handle files with multiple dots properly (e.g., .post.md, .get.md)
+                clean_stem = file_path.name
+                if file_path.suffix:
+                    clean_stem = file_path.name[:-len(file_path.suffix)]
+                title = clean_stem.replace('_', ' ').replace('-', ' ').replace('.', ' ').title()
                 
                 # Skip if document with same title already exists in index
                 if skip_existing and title in existing_docs:
@@ -1008,7 +1137,11 @@ async def batch_index_directory(
                 
                 # Create document from file
                 relative_path = file_path.relative_to(directory)
-                doc_id = f"{file_path.stem}_{hash(str(relative_path)) % 100000}"  # Create unique ID
+                # Handle files with multiple dots (e.g., .post.md, .get.md) by using the full name without final extension
+                clean_stem = file_path.name
+                if file_path.suffix:
+                    clean_stem = file_path.name[:-len(file_path.suffix)]
+                doc_id = f"{clean_stem.replace('.', '_')}_{hash(str(relative_path)) % 100000}"  # Create unique ID
                 
                 # Initialize basic tags and key points
                 base_tags = [
@@ -1212,7 +1345,7 @@ async def batch_index_directory(
 
 
 # ================================
-# TOOL 9: CREATE_DOCUMENT_TEMPLATE
+# TOOL 11: CREATE_DOCUMENT_TEMPLATE
 # ================================
 
 @app.tool(
@@ -1308,7 +1441,7 @@ async def create_document_template(
 
 
 # ================================
-# TOOL 11: CREATE_INDEX_METADATA
+# TOOL 12: CREATE_INDEX_METADATA
 # ================================
 
 @app.tool(
@@ -1450,7 +1583,7 @@ async def create_index_metadata(
 
 
 # ================================
-# TOOL 12: UPDATE_INDEX_METADATA
+# TOOL 13: UPDATE_INDEX_METADATA
 # ================================
 
 @app.tool(

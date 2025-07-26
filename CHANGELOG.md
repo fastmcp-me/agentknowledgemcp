@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.6] - 2025-07-26
+
+### 🚀 Enhanced
+- **AI-Powered Content Similarity Detection**: Implemented advanced AI-powered content similarity detection using LLM sampling for intelligent duplicate prevention
+- **Smart Duplicate Management**: Enhanced index_document tool with use_ai_similarity parameter for automatic content analysis
+- **Intelligent Recommendations**: AI provides UPDATE, DELETE, CREATE, or MERGE recommendations with confidence scores and detailed reasoning
+- **Enhanced Helper Functions**: Added check_content_similarity_with_ai() function for intelligent content analysis and recommendations
+
+### ✨ Added
+- **AI Analysis Integration**: Direct integration of AI content analysis into index_document workflow
+- **Confidence-Based Processing**: High-confidence (>80%) AI recommendations proceed automatically
+- **Smart Content Organization**: AI helps maintain clean, well-organized knowledge base through intelligent duplicate detection
+- **Comprehensive AI Feedback**: Detailed reasoning and similarity analysis for better decision making
+
+### 🔧 Improved
+- **Duplicate Prevention**: Goes beyond title matching to analyze actual content similarity
+- **Knowledge Base Quality**: AI-powered recommendations improve overall knowledge base organization
+- **User Experience**: Intelligent guidance reduces manual duplicate checking workload
+- **Decision Support**: AI confidence scores and reasoning help users make informed choices
+
+### 📚 Technical Details
+- **AI Integration**: Uses FastMCP Context for LLM sampling with Claude-3-opus, Claude-3-sonnet, GPT-4 model preferences
+- **Helper Function**: check_content_similarity_with_ai() with elasticsearch search + AI analysis
+- **Hybrid Approach**: Combines Elasticsearch similarity search with AI content evaluation
+- **Enhanced Tools**: index_document tool now supports intelligent AI-powered duplicate detection
+
+## [2.0.5] - 2025-07-25
+
+### ✨ Added
+- **New Prompt**: Added `copilot_instructions` prompt to provide AI assistants direct access to behavioral guidelines
+- **Enhanced Prompt Server**: Now includes both `mcp_usage_guide` and `copilot_instructions` prompts
+- **AI Assistant Guidelines**: Complete behavioral protocols and mandatory workflows accessible via MCP
+
+### 🔧 Fixed
+- **PyPI Entry Point**: Fixed incorrect entry point in published package (was pointing to non-existent `src.fastmcp_server`)
+- **Import Error**: Resolved `ModuleNotFoundError: No module named 'src.fastmcp_server'` when installing from PyPI
+- **Package Consistency**: Ensured all entry points correctly reference `src.main_server:cli_main`
+
+### 🚀 Improved  
+- **Build Process**: Enhanced package building with proper validation of entry points
+- **Version Management**: Updated version consistency across all package files
+- **Documentation**: Added PyPI installation troubleshooting guidance
+- **CLI Output**: Updated to show both available prompts clearly
+
+### 📚 Technical Details
+- **Entry Point**: `agent-knowledge-mcp = "src.main_server:cli_main"`
+- **New Helper Function**: `_load_copilot_instructions()` for secure file loading
+- **Error Handling**: Comprehensive error handling for copilot instructions file access
+- **Affected Installs**: uvx, pip, and other PyPI-based installations
+- **Fix Status**: Immediately available on PyPI v2.0.4+
+
+## [2.0.3] - 2025-07-25
+
+### 🔧 Fixed
+- **Version Consistency**: Updated pyproject.toml version from 2.0.2 to 2.0.3 for consistency
+- **Build Process**: Ensured all version references are synchronized across package files
+- **PyPI Publishing**: Successfully published with consistent version management
+
+### 🚀 Improved
+- **Package Metadata**: Enhanced package configuration with proper version alignment
+- **Changelog**: Added comprehensive release documentation with build improvements
+
+### 📚 Technical Details
+- **pyproject.toml**: Version updated to maintain consistency with src/__init__.py
+- **Build Output**: Generated agent_knowledge_mcp-2.0.3-py3-none-any.whl and .tar.gz
+- **PyPI URL**: https://pypi.org/project/agent-knowledge-mcp/2.0.3/
+
 ## [2.0.0] - 2025-07-24
 
 ### 🎉 MAJOR RELEASE: FastMCP Migration

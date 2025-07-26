@@ -1,7 +1,7 @@
 [project]
 name = "agent-knowledge-mcp"
-version = "2.0.0"
-description = "A comprehensive MCP server for AI knowledge management with Elasticsearch, file operations, and version control"
+version = "2.0.6"
+description = "AgentKnowledgeMCP - Advanced Knowledge Management for AI Agents"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -66,9 +66,7 @@ include = [
 ]
 
 [project.scripts]
-agent-knowledge-mcp = "src.fastmcp_server:cli_main"
-elasticsearch-mcp = "src.fastmcp_server:cli_main"
-akm-dev = "scripts.dev:main"
+agent-knowledge-mcp = "src.main_server:cli_main"
 
 [tool.black]
 line-length = 88

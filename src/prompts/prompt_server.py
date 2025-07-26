@@ -40,6 +40,30 @@ def _load_mcp_usage_instructions() -> str:
         return f"Error loading MCP instructions: {str(e)}. Please refer to GitHub documentation: https://github.com/itshare4u/AgentKnowledgeMCP"
 
 
+def _load_copilot_instructions() -> str:
+    """Load the copilot instructions content for AI assistants."""
+    try:
+        instructions_path = Path(__file__).parent.parent / "resources" / "copilot-instructions.md"
+        
+        if not instructions_path.exists():
+            return "Copilot instructions not found. Please refer to the GitHub repository: https://github.com/itshare4u/AgentKnowledgeMCP"
+        
+        with open(instructions_path, 'r', encoding='utf-8') as f:
+            content = f.read().strip()
+            
+        if not content:
+            return "Copilot instructions file is empty. Please check the installation or refer to online documentation."
+            
+        return content
+        
+    except UnicodeDecodeError:
+        return "Error reading copilot instructions (encoding issue). Please reinstall AgentKnowledgeMCP or check file integrity."
+    except PermissionError:
+        return "Permission denied reading copilot instructions. Please check file permissions for the AgentKnowledgeMCP installation."
+    except Exception as e:
+        return f"Error loading copilot instructions: {str(e)}. Please refer to GitHub documentation: https://github.com/itshare4u/AgentKnowledgeMCP"
+
+
 # ================================
 # MAIN PROMPT: MCP_USAGE_GUIDE
 # ================================
@@ -68,14 +92,37 @@ This is the comprehensive guide for using AgentKnowledgeMCP server with specific
 Please use this information to guide users step-by-step on how to work with the MCP server!"""
 
 
+@app.prompt(
+    name="copilot_instructions",
+    description="AI Assistant instructions for optimal AgentKnowledgeMCP usage - Complete behavioral guidelines and mandatory protocols",
+    tags={"copilot", "instructions", "ai", "assistant", "guidelines", "protocols", "behavioral"}
+)
+async def copilot_instructions() -> str:
+    """Return the complete copilot instructions content for AI assistants working with AgentKnowledgeMCP."""
+    
+    # Load the copilot instructions content
+    instructions_content = _load_copilot_instructions()
+    
+    # Return the content with additional context
+    return f"""# 🤖 AI Assistant Instructions for AgentKnowledgeMCP
+
+These are the complete behavioral guidelines and mandatory protocols for AI assistants working with AgentKnowledgeMCP:
+
+{instructions_content}
+
+💡 **Usage Note**: These instructions establish the behavioral framework that AI assistants should follow when working with the AgentKnowledgeMCP system to ensure optimal knowledge management and user interaction."""
+
+
 # ================================
 # CLI ENTRY POINT
 # ================================
 def cli_main():
     """CLI entry point for Prompt FastMCP server."""
     print("🚀 Starting AgentKnowledgeMCP Prompt FastMCP server...")
-    print("📝 Available prompt: mcp_usage_guide")
-    print("✨ Returns comprehensive usage guide with scenarios and tutorials")
+    print("📝 Available prompts:")
+    print("  • mcp_usage_guide - Comprehensive usage guide with scenarios and tutorials")
+    print("  • copilot_instructions - AI assistant behavioral guidelines and protocols")
+    print("✨ Returns complete guidance content for optimal MCP server usage")
 
     app.run()
 
