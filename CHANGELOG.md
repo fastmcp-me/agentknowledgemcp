@@ -5,16 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.3] - 2025-07-25
+## [2.0.6] - 2025-07-26
 
-# Changelog
+### 🚀 Enhanced
+- **AI-Powered Content Similarity Detection**: Implemented advanced AI-powered content similarity detection using LLM sampling for intelligent duplicate prevention
+- **Smart Duplicate Management**: Enhanced index_document tool with use_ai_similarity parameter for automatic content analysis
+- **Intelligent Recommendations**: AI provides UPDATE, DELETE, CREATE, or MERGE recommendations with confidence scores and detailed reasoning
+- **Enhanced Helper Functions**: Added check_content_similarity_with_ai() function for intelligent content analysis and recommendations
 
-All notable changes to this project will be documented in this file.
+### ✨ Added
+- **AI Analysis Integration**: Direct integration of AI content analysis into index_document workflow
+- **Confidence-Based Processing**: High-confidence (>80%) AI recommendations proceed automatically
+- **Smart Content Organization**: AI helps maintain clean, well-organized knowledge base through intelligent duplicate detection
+- **Comprehensive AI Feedback**: Detailed reasoning and similarity analysis for better decision making
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### 🔧 Improved
+- **Duplicate Prevention**: Goes beyond title matching to analyze actual content similarity
+- **Knowledge Base Quality**: AI-powered recommendations improve overall knowledge base organization
+- **User Experience**: Intelligent guidance reduces manual duplicate checking workload
+- **Decision Support**: AI confidence scores and reasoning help users make informed choices
 
-## [2.0.4] - 2025-07-25
+### 📚 Technical Details
+- **AI Integration**: Uses FastMCP Context for LLM sampling with Claude-3-opus, Claude-3-sonnet, GPT-4 model preferences
+- **Helper Function**: check_content_similarity_with_ai() with elasticsearch search + AI analysis
+- **Hybrid Approach**: Combines Elasticsearch similarity search with AI content evaluation
+- **Enhanced Tools**: index_document tool now supports intelligent AI-powered duplicate detection
+
+## [2.0.5] - 2025-07-25
 
 ### ✨ Added
 - **New Prompt**: Added `copilot_instructions` prompt to provide AI assistants direct access to behavioral guidelines
