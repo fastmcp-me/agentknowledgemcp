@@ -5,6 +5,8 @@ Utility functions for AI-enhanced metadata generation and content processing.
 
 import json
 import re
+import hashlib
+import time
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 from fastmcp import Context
@@ -328,3 +330,221 @@ def analyze_search_results_for_reorganization(results: List[Dict], query_text: s
     suggestion += f"   • Improve searchability and knowledge quality"
 
     return suggestion
+
+
+# ================================
+# DUPLICATE PREVENTION HELPERS
+# ================================
+
+def generate_smart_doc_id(title: str, content: str = "", existing_ids: set = None) -> str:
+    """Generate a smart document ID with collision detection."""
+    if existing_ids is None:
+        existing_ids = set()
+    
+    # Step 1: Generate base ID from title
+    base_id = re.sub(r'[^a-zA-Z0-9\-_]', '_', title.lower())
+    base_id = re.sub(r'_+', '_', base_id).strip('_')
+    
+    # Truncate if too long
+    if len(base_id) > 50:
+        base_id = base_id[:50].rstrip('_')
+    
+    # Step 2: Check if base ID is unique
+    if base_id not in existing_ids:
+        return base_id
+    
+    # Step 3: Add content hash if duplicate title
+    if content:
+        content_hash = hashlib.md5(content.encode()).hexdigest()[:8]
+        return f"{base_id}_{content_hash}"
+    
+    # Step 4: Add timestamp hash as fallback
+    timestamp_hash = hashlib.md5(str(time.time()).encode()).hexdigest()[:8]
+    return f"{base_id}_{timestamp_hash}"
+
+
+def check_title_duplicates(es, index: str, title: str) -> dict:
+    """Check for existing documents with similar titles."""
+    try:
+        # Check exact title match
+        exact_query = {
+            "query": {
+                "bool": {
+                    "should": [
+                        {"match_phrase": {"title": title}},
+                        {"term": {"title.keyword": title}} if hasattr(es.indices.get_mapping(index=index), 'keyword') else {"match": {"title": title}}
+                    ]
+                }
+            },
+            "size": 5,
+            "_source": ["title", "id", "summary", "last_modified"]
+        }
+        
+        result = es.search(index=index, body=exact_query)
+        
+        duplicates = []
+        for hit in result['hits']['hits']:
+            source = hit['_source']
+            duplicates.append({
+                "id": hit['_id'],
+                "title": source.get('title', ''),
+                "summary": source.get('summary', '')[:100] + "..." if len(source.get('summary', '')) > 100 else source.get('summary', ''),
+                "last_modified": source.get('last_modified', ''),
+                "score": hit['_score']
+            })
+        
+        return {
+            "found": len(duplicates) > 0,
+            "count": len(duplicates),
+            "duplicates": duplicates
+        }
+    except Exception:
+        return {"found": False, "count": 0, "duplicates": []}
+
+
+def get_existing_document_ids(es, index: str) -> set:
+    """Get all existing document IDs from the index."""
+    try:
+        result = es.search(
+            index=index,
+            body={
+                "query": {"match_all": {}},
+                "size": 10000,
+                "_source": False
+            }
+        )
+        return {hit['_id'] for hit in result['hits']['hits']}
+    except Exception:
+        return set()
+
+
+async def check_content_similarity_with_ai(es, index: str, title: str, content: str, ctx: Context, similarity_threshold: float = 0.7) -> dict:
+    """
+    Advanced content similarity checking using AI analysis.
+    Returns recommendations for UPDATE, DELETE, CREATE, or MERGE actions.
+    """
+    try:
+        # First, find potentially similar documents using Elasticsearch
+        similar_docs = []
+        
+        # Search for documents with similar titles or content
+        if len(content) > 100:
+            search_query = {
+                "query": {
+                    "bool": {
+                        "should": [
+                            {"match": {"title": {"query": title, "boost": 3.0}}},
+                            {"match": {"content": {"query": content[:500], "boost": 1.0}}},
+                            {"more_like_this": {
+                                "fields": ["content", "title"],
+                                "like": content[:1000],
+                                "min_term_freq": 1,
+                                "max_query_terms": 8,
+                                "minimum_should_match": "30%"
+                            }}
+                        ]
+                    }
+                },
+                "size": 5,
+                "_source": ["title", "summary", "content", "last_modified", "id"]
+            }
+            
+            result = es.search(index=index, body=search_query)
+            
+            # Collect similar documents
+            for hit in result['hits']['hits']:
+                source = hit['_source']
+                similar_docs.append({
+                    "id": hit['_id'],
+                    "title": source.get('title', ''),
+                    "summary": source.get('summary', '')[:200] + "..." if len(source.get('summary', '')) > 200 else source.get('summary', ''),
+                    "content_preview": source.get('content', '')[:300] + "..." if len(source.get('content', '')) > 300 else source.get('content', ''),
+                    "last_modified": source.get('last_modified', ''),
+                    "elasticsearch_score": hit['_score']
+                })
+        
+        # If no similar documents found, recommend CREATE
+        if not similar_docs:
+            return {
+                "action": "CREATE",
+                "confidence": 0.95,
+                "reason": "No similar content found in knowledge base",
+                "similar_docs": [],
+                "ai_analysis": "Content appears to be unique and should be created as new document"
+            }
+        
+        # Use AI to analyze content similarity and recommend action
+        ai_prompt = f"""You are an intelligent duplicate detection system. Analyze the new document against existing similar documents and recommend the best action.
+
+NEW DOCUMENT:
+Title: {title}
+Content: {content[:1500]}{"..." if len(content) > 1500 else ""}
+
+EXISTING SIMILAR DOCUMENTS:
+"""
+        
+        for i, doc in enumerate(similar_docs[:3], 1):
+            ai_prompt += f"""
+Document {i}: {doc['title']} (ID: {doc['id']})
+Summary: {doc['summary']}
+Content Preview: {doc['content_preview']}
+Last Modified: {doc['last_modified']}
+---"""
+        
+        ai_prompt += f"""
+
+Please analyze and provide:
+1. Content similarity percentage (0-100%) for each existing document
+2. Recommended action: UPDATE, DELETE, CREATE, or MERGE
+3. Detailed reasoning for your recommendation
+4. Which specific document to update/merge with (if applicable)
+
+Guidelines:
+- UPDATE: If new content is an improved version of existing content (>70% similar)
+- DELETE: If existing content is clearly superior and new content adds no value (>85% similar)  
+- MERGE: If both contents have valuable unique information (40-70% similar)
+- CREATE: If content is sufficiently different and valuable (<40% similar)
+
+Respond in JSON format:
+{{
+  "similarity_scores": [85, 60, 20],
+  "recommended_action": "UPDATE|DELETE|CREATE|MERGE",
+  "confidence": 0.85,
+  "target_document_id": "doc-id-if-update-or-merge",
+  "reasoning": "Detailed explanation of why this action is recommended",
+  "merge_strategy": "How to combine documents if MERGE is recommended"
+}}
+
+Consider:
+- Content quality and completeness
+- Information uniqueness and value
+- Documentation freshness and accuracy
+- Knowledge base organization"""
+
+        # Get AI analysis
+        response = await ctx.sample(
+            messages=ai_prompt,
+            system_prompt="You are an expert knowledge management AI. Analyze content similarity and recommend the optimal action to maintain a high-quality, organized knowledge base. Always respond with valid JSON.",
+            model_preferences=["claude-3-opus", "claude-3-sonnet", "gpt-4"],
+            temperature=0.3,
+            max_tokens=600
+        )
+        
+        # Parse AI response
+        ai_analysis = json.loads(response.text.strip())
+        
+        # Add similar documents to response
+        ai_analysis["similar_docs"] = similar_docs
+        ai_analysis["ai_analysis"] = response.text
+        
+        return ai_analysis
+        
+    except Exception as e:
+        # Fallback to simple duplicate check if AI analysis fails
+        return {
+            "action": "CREATE",
+            "confidence": 0.6,
+            "reason": f"AI analysis failed ({str(e)}), defaulting to CREATE",
+            "similar_docs": similar_docs if 'similar_docs' in locals() else [],
+            "ai_analysis": f"Error during AI analysis: {str(e)}"
+        }
