@@ -366,152 +366,6 @@ async def batch_index_directory(
         return error_message
 
 
-# ================================
-# TOOL 2: CREATE_DOCUMENT_TEMPLATE
-# ================================
-
-@app.tool(
-    description="Create a properly structured document template for knowledge base with AI-generated metadata and formatting",
-    tags={"elasticsearch", "document", "template", "knowledge-base", "ai-enhanced"}
-)
-async def create_document_template(
-    title: Annotated[str, Field(description="Document title for the knowledge base entry")],
-    content: Annotated[str, Field(description="Document content for AI analysis and metadata generation")] = "",
-    priority: Annotated[str, Field(description="Priority level for the document", pattern="^(high|medium|low)$")] = "medium",
-    source_type: Annotated[str, Field(description="Type of source content", pattern="^(markdown|code|config|documentation|tutorial)$")] = "markdown",
-    tags: Annotated[List[str], Field(description="Additional manual tags (will be merged with AI-generated tags)")] = [],
-    summary: Annotated[str, Field(description="Brief summary description of the document content")] = "",
-    key_points: Annotated[List[str], Field(description="Additional manual key points (will be merged with AI-generated points)")] = [],
-    related: Annotated[List[str], Field(description="List of related document IDs or references")] = [],
-    use_ai_enhancement: Annotated[bool, Field(description="Use AI to generate intelligent tags and key points")] = True
-) -> str:
-    """Create a properly structured document template for knowledge base indexing with AI-generated metadata."""
-    try:
-        # Initialize metadata
-        final_tags = list(tags)  # Copy manual tags
-        final_key_points = list(key_points)  # Copy manual key points
-        
-        # Use AI enhancement if requested and content is provided
-        if use_ai_enhancement and content.strip():
-            try:
-                # Note: Full AI enhancement would require context parameter
-                # For now, we'll use pattern-based enhancement
-                
-                content_lower = content.lower()
-                
-                # Generate intelligent tags based on content analysis
-                ai_tags = []
-                if any(word in content_lower for word in ['class', 'function', 'def', 'import', 'var ', 'const ']):
-                    ai_tags.extend(["code", "programming"])
-                if any(word in content_lower for word in ['config', 'setting', 'parameter', 'option']):
-                    ai_tags.extend(["configuration", "settings"])
-                if any(word in content_lower for word in ['# ', '## ', '### ', 'documentation', 'guide']):
-                    ai_tags.extend(["documentation", "guide"])
-                if any(word in content_lower for word in ['test', 'example', 'demo', 'sample']):
-                    ai_tags.extend(["example", "testing"])
-                if any(word in content_lower for word in ['api', 'endpoint', 'request', 'response']):
-                    ai_tags.extend(["api", "integration"])
-                if any(word in content_lower for word in ['error', 'bug', 'fix', 'debug']):
-                    ai_tags.extend(["troubleshooting", "debugging"])
-                if any(word in content_lower for word in ['install', 'setup', 'configure']):
-                    ai_tags.extend(["setup", "installation"])
-                
-                # Merge AI-generated tags with manual tags
-                for tag in ai_tags:
-                    if tag not in final_tags:
-                        final_tags.append(tag)
-                
-                # Generate intelligent key points
-                ai_key_points = []
-                lines = content.split('\n')
-                non_empty_lines = [line.strip() for line in lines if line.strip()]
-                
-                if non_empty_lines:
-                    ai_key_points.append(f"Content length: {len(content)} characters")
-                    ai_key_points.append(f"Number of lines: {len(non_empty_lines)}")
-                
-                # Look for headers/titles in markdown
-                headers = [line for line in non_empty_lines if line.startswith('#')]
-                if headers:
-                    ai_key_points.append(f"Contains {len(headers)} headers/sections")
-                    # Add first few headers as key points
-                    for header in headers[:3]:
-                        clean_header = header.lstrip('#').strip()
-                        if clean_header:
-                            ai_key_points.append(f"Section: {clean_header}")
-                
-                # Look for code blocks
-                code_blocks = content.count('```')
-                if code_blocks >= 2:
-                    ai_key_points.append(f"Contains {code_blocks // 2} code blocks")
-                
-                # Look for lists
-                list_items = [line for line in non_empty_lines if line.startswith(('- ', '* ', '+ '))]
-                if list_items:
-                    ai_key_points.append(f"Contains {len(list_items)} list items")
-                
-                # Merge AI-generated key points with manual points
-                for point in ai_key_points:
-                    if point not in final_key_points:
-                        final_key_points.append(point)
-                
-                # Generate smart summary if not provided
-                if not summary and content.strip():
-                    if len(content) > 200:
-                        # Try to find first meaningful paragraph
-                        paragraphs = [p.strip() for p in content.split('\n\n') if p.strip() and not p.strip().startswith('#')]
-                        if paragraphs:
-                            first_para = paragraphs[0]
-                            if len(first_para) > 50:
-                                summary = first_para[:200] + ("..." if len(first_para) > 200 else "")
-                            else:
-                                summary = content[:200].strip() + "..."
-                        else:
-                            summary = content[:200].strip() + "..."
-                    else:
-                        summary = content.strip()
-                        
-            except Exception as e:
-                # AI enhancement failed, continue with manual metadata only
-                pass
-        
-        # Generate auto-summary if still not provided and content is available
-        if not summary and content.strip():
-            if len(content) > 200:
-                summary = content[:200].strip() + "..."
-            else:
-                summary = content.strip()
-
-        template = create_doc_template_base(
-            title=title,
-            priority=priority,
-            source_type=source_type,
-            tags=final_tags,
-            summary=summary,
-            key_points=final_key_points,
-            related=related
-        )
-
-        ai_info = ""
-        if use_ai_enhancement:
-            ai_info = f"\n🤖 **AI Enhancement Used**: Generated {len(final_tags)} total tags and {len(final_key_points)} total key points\n"
-
-        return (f"✅ Document template created successfully with AI-enhanced metadata!\n\n" +
-               f"{json.dumps(template, indent=2, ensure_ascii=False)}\n" +
-               ai_info +
-               f"\nThis template can be used with the 'index_document' tool.\n\n" +
-               f"⚠️ **CRITICAL: Search Before Creating - Avoid Duplicates**:\n" +
-               f"   🔍 **STEP 1**: Use 'search' tool to check if similar content already exists\n" +
-               f"   🔄 **STEP 2**: If found, UPDATE existing document instead of creating new one\n" +
-               f"   📝 **STEP 3**: For SHORT content (< 1000 chars): Add directly to 'content' field\n" +
-               f"   📁 **STEP 4**: For LONG content: Create file only when truly necessary\n" +
-               f"   🧹 **STEP 5**: Clean up outdated documents regularly to maintain quality\n" +
-               f"   🎯 **Remember**: Knowledge base quality > quantity - avoid bloat!")
-
-    except Exception as e:
-        return f"❌ Failed to create document template: {str(e)}"
-
-
 # CLI Entry Point
 def main():
     """Main entry point for elasticsearch batch server."""
@@ -522,14 +376,15 @@ def main():
             return
         elif sys.argv[1] == "--help":
             print("Elasticsearch Batch Server - FastMCP Implementation")
-            print("Handles batch operations and document template creation.")
+            print("Handles batch operations for bulk document processing.")
             print("\nTools provided:")
             print("  - batch_index_directory: Batch index documents from directory")
-            print("  - create_document_template: Create structured document templates")
             return
     
     print("🚀 Starting Elasticsearch Batch Server...")
-    print("🔍 Tools: batch_index_directory, create_document_template")
+    print("🔍 Tools: batch_index_directory")
+    print("🎯 Purpose: Bulk operations for efficient mass document processing")
+    print("✅ Status: 1 Batch tool completed - Ready for production!")
     app.run()
 
 if __name__ == "__main__":

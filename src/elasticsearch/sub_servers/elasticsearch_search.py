@@ -1,7 +1,7 @@
 """
 Elasticsearch Search FastMCP Server
-Search and validation operations extracted from main elasticsearch server.
-Handles document search and schema validation operations.
+Search operations extracted from main elasticsearch server.
+Handles advanced document search operations.
 """
 import json
 from typing import List, Dict, Any, Optional, Annotated
@@ -11,11 +11,6 @@ from fastmcp import FastMCP, Context
 from pydantic import Field
 
 from src.elasticsearch.elasticsearch_client import get_es_client
-from src.elasticsearch.document_schema import (
-    validate_document_structure,
-    DocumentValidationError,
-    format_validation_error
-)
 from src.elasticsearch.elasticsearch_helper import (
     parse_time_parameters,
     analyze_search_results_for_reorganization
@@ -26,7 +21,7 @@ from src.config.config import load_config
 app = FastMCP(
     name="AgentKnowledgeMCP-Search",
     version="1.0.0",
-    instructions="Elasticsearch search and validation tools"
+    instructions="Elasticsearch search tools for advanced document queries"
 )
 
 
@@ -228,84 +223,17 @@ async def search(
 
 
 # ================================
-# TOOL 2: VALIDATE_DOCUMENT_SCHEMA
-# ================================
-
-@app.tool(
-    description="Validate document structure against knowledge base schema and provide formatting guidance",
-    tags={"elasticsearch", "validation", "document", "schema"}
-)
-async def validate_document_schema(
-    document: Annotated[Dict[str, Any], Field(description="Document object to validate against knowledge base schema format")]
-) -> str:
-    """Validate document structure against knowledge base schema."""
-    try:
-        # Perform validation
-        validate_document_structure(document)
-        
-        # If we get here, validation passed
-        result_message = "✅ **Document Validation Passed!**\n\n"
-        result_message += "📋 **Document Structure**: Valid knowledge base format\n"
-        
-        # Show document summary
-        if 'title' in document:
-            result_message += f"📝 **Title**: {document['title']}\n"
-        if 'summary' in document:
-            result_message += f"📄 **Summary**: {document['summary'][:100]}{'...' if len(document.get('summary', '')) > 100 else ''}\n"
-        
-        # Show structure details
-        result_message += f"\n📊 **Structure Analysis**:\n"
-        result_message += f"   📝 **Fields Found**: {len(document)} total fields\n"
-        
-        # Core fields check
-        core_fields = ['title', 'content', 'summary', 'tags', 'priority']
-        found_core = [field for field in core_fields if field in document]
-        result_message += f"   ✅ **Core Fields**: {len(found_core)}/5 ({', '.join(found_core)})\n"
-        
-        # Optional fields check  
-        optional_fields = ['related', 'key_points', 'last_modified', 'source_type']
-        found_optional = [field for field in optional_fields if field in document]
-        if found_optional:
-            result_message += f"   📋 **Optional Fields**: {', '.join(found_optional)}\n"
-        
-        # Content analysis
-        if 'content' in document:
-            content_length = len(str(document['content']))
-            result_message += f"   📄 **Content Size**: {content_length:,} characters\n"
-            
-        if 'tags' in document:
-            tag_count = len(document['tags']) if isinstance(document['tags'], list) else 1
-            result_message += f"   🏷️ **Tags**: {tag_count} tags\n"
-        
-        result_message += f"\n🎯 **Next Steps**:\n"
-        result_message += f"   📝 **Ready to Index**: Use 'index_document' to store this document\n"
-        result_message += f"   🔍 **Searchable**: Document will be fully searchable after indexing\n"
-        result_message += f"   📊 **Governance**: Consider adding metadata for better organization\n"
-        
-        result_message += f"\n💡 **Quality Tips**:\n"
-        result_message += f"   ✅ Use descriptive titles for better searchability\n"
-        result_message += f"   ✅ Add relevant tags for categorization\n"
-        result_message += f"   ✅ Include summary for quick understanding\n"
-        result_message += f"   ✅ Set appropriate priority level"
-        
-        return result_message
-        
-    except DocumentValidationError as e:
-        return format_validation_error(e)
-    except Exception as e:
-        return f"❌ Validation error: {str(e)}"
-
-
-# ================================
 # CLI ENTRY POINT
 # ================================
 
 def cli_main():
     """CLI entry point for Elasticsearch Search FastMCP server."""
     print("🚀 Starting AgentKnowledgeMCP Elasticsearch Search FastMCP server...")
-    print("🔍 Tools: search, validate_document_schema")
-    print("🎯 Purpose: Document search and schema validation operations")
-    print("✅ Status: 2 Search & validation tools completed - Ready for production!")
+    print("🔍 Tools: search")
+    print("🎯 Purpose: Advanced document search operations")
+    print("✅ Status: 1 Search tool completed - Ready for production!")
+
+    app.run()
 
     app.run()
 
