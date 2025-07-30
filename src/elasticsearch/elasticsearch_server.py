@@ -27,6 +27,11 @@ from src.elasticsearch.elasticsearch_helper import (
     get_existing_document_ids,
     check_content_similarity_with_ai
 )
+from src.elasticsearch.elasticsearch_snapshot import (
+    create_snapshot_operation,
+    restore_snapshot_operation,
+    list_snapshots_operation
+)
 from src.config.config import load_config
 import hashlib
 import json
@@ -1804,12 +1809,88 @@ async def delete_index_metadata(
         return error_message
 
 
-# CLI entry point
+# ================================
+# TOOL 14: CREATE_SNAPSHOT
+# ================================
+
+@app.tool(
+    description="Create a snapshot (backup) of Elasticsearch indices with comprehensive options and repository management",
+    tags={"elasticsearch", "snapshot", "backup", "repository"}
+)
+async def create_snapshot(
+    snapshot_name: Annotated[str, Field(description="Name for the snapshot (must be unique)")],
+    repository: Annotated[str, Field(description="Repository name to store the snapshot")] = "backup_repository",
+    indices: Annotated[Optional[str], Field(description="Comma-separated list of indices to backup (default: all indices)")] = None,
+    ignore_unavailable: Annotated[bool, Field(description="Whether to ignore unavailable indices")] = True,
+    include_global_state: Annotated[bool, Field(description="Whether to include cluster global state")] = True,
+    wait_for_completion: Annotated[bool, Field(description="Whether to wait for snapshot completion")] = True,
+    description: Annotated[Optional[str], Field(description="Optional description for the snapshot")] = None
+) -> str:
+    """Create a snapshot (backup) of Elasticsearch indices."""
+    return await create_snapshot_operation(
+        snapshot_name=snapshot_name,
+        repository=repository,
+        indices=indices,
+        ignore_unavailable=ignore_unavailable,
+        include_global_state=include_global_state,
+        wait_for_completion=wait_for_completion,
+        description=description
+    )
+
+
+# ================================
+# TOOL 15: RESTORE_SNAPSHOT
+# ================================
+
+@app.tool(
+    description="Restore indices from an Elasticsearch snapshot with comprehensive options and conflict resolution",
+    tags={"elasticsearch", "snapshot", "restore", "rollback"}
+)
+async def restore_snapshot(
+    snapshot_name: Annotated[str, Field(description="Name of the snapshot to restore from")],
+    repository: Annotated[str, Field(description="Repository containing the snapshot")] = "backup_repository",
+    indices: Annotated[Optional[str], Field(description="Comma-separated list of indices to restore (default: all from snapshot)")] = None,
+    ignore_unavailable: Annotated[bool, Field(description="Whether to ignore unavailable indices")] = True,
+    include_global_state: Annotated[bool, Field(description="Whether to restore cluster global state")] = False,
+    wait_for_completion: Annotated[bool, Field(description="Whether to wait for restore completion")] = True,
+    rename_pattern: Annotated[Optional[str], Field(description="Pattern to rename restored indices (e.g., 'restored_%s')")] = None,
+    index_settings: Annotated[Optional[str], Field(description="JSON string of index settings to override")] = None
+) -> str:
+    """Restore indices from an Elasticsearch snapshot."""
+    return await restore_snapshot_operation(
+        snapshot_name=snapshot_name,
+        repository=repository,
+        indices=indices,
+        ignore_unavailable=ignore_unavailable,
+        include_global_state=include_global_state,
+        wait_for_completion=wait_for_completion,
+        rename_pattern=rename_pattern,
+        index_settings=index_settings
+    )
+
+# ================================
+# TOOL 16: LIST_SNAPSHOTS
+# ================================
+
+@app.tool(
+    description="List all snapshots in an Elasticsearch repository with detailed information and status",
+    tags={"elasticsearch", "snapshot", "list", "repository"}
+)
+async def list_snapshots(
+    repository: Annotated[str, Field(description="Repository name to list snapshots from")] = "backup_repository",
+    verbose: Annotated[bool, Field(description="Whether to show detailed information for each snapshot")] = True
+) -> str:
+    """List all snapshots in an Elasticsearch repository."""
+    return await list_snapshots_operation(
+        repository=repository,
+        verbose=verbose
+    )
+
 def cli_main():
     """CLI entry point for Elasticsearch FastMCP server."""
-    print("🚀 Starting AgentKnowledgeMCP Elasticsearch FastMCP server...")
-    print("🔍 Tools: search, index_document, delete_document, get_document, list_indices, create_index, delete_index, batch_index_directory, validate_document_schema, create_document_template, create_index_metadata, update_index_metadata, delete_index_metadata")
-    print("✅ Status: All 13 Elasticsearch tools completed with Index Metadata Management - Ready for production!")
+    print("�🚀 Starting AgentKnowledgeMCP Elasticsearch FastMCP server...")
+    print("🔍 Tools: search, index_document, delete_document, get_document, list_indices, create_index, delete_index, batch_index_directory, validate_document_schema, create_document_template, create_index_metadata, update_index_metadata, delete_index_metadata, create_snapshot, restore_snapshot, list_snapshots")
+    print("✅ Status: All 16 Elasticsearch tools completed with Snapshot Management - Ready for production!")
 
     app.run()
 
