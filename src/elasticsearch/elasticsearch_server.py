@@ -1732,9 +1732,76 @@ async def delete_index_metadata(
     index_name: Annotated[str, Field(description="Name of the index to remove metadata for")]
 ) -> str:
     """Delete metadata documentation for an Elasticsearch index."""
-    return await delete_index_metadata_operation(
-        index_name=index_name
-    )
+    try:
+        es = get_es_client()
+        metadata_index = "index_metadata"
+        
+        # Search for existing metadata
+        search_body = {
+            "query": {
+                "term": {
+                    "index_name.keyword": index_name
+                }
+            },
+            "size": 1
+        }
+        
+        existing_result = es.search(index=metadata_index, body=search_body)
+        
+        if existing_result['hits']['total']['value'] == 0:
+            return (f"⚠️ No metadata found for index '{index_name}'!\n\n" +
+                   f"📋 **Status**: Index metadata does not exist\n" +
+                   f"   ✅ **Good**: No cleanup required for metadata\n" +
+                   f"   🔧 **Safe**: You can proceed with 'delete_index' if needed\n" +
+                   f"   🔍 **Check**: Use 'list_indices' to see all documented indices\n\n" +
+                   f"💡 **This is Normal If**:\n" +
+                   f"   • Index was created before metadata system was implemented\n" +
+                   f"   • Index was created without using 'create_index_metadata' first\n" +
+                   f"   • Metadata was already deleted in a previous cleanup")
+        
+        # Get existing document details before deletion
+        existing_doc = existing_result['hits']['hits'][0]
+        existing_id = existing_doc['_id']
+        existing_data = existing_doc['_source']
+        
+        # Delete the metadata document
+        result = es.delete(index=metadata_index, id=existing_id)
+        
+        return (f"✅ Index metadata deleted successfully!\n\n" +
+               f"🗑️ **Deleted Metadata for '{index_name}'**:\n" +
+               f"   📋 Document ID: {existing_id}\n" +
+               f"   📝 Description: {existing_data.get('description', 'No description')}\n" +
+               f"   🎯 Purpose: {existing_data.get('purpose', 'No purpose')}\n" +
+               f"   📂 Data Types: {', '.join(existing_data.get('data_types', [])) if existing_data.get('data_types') else 'None'}\n" +
+               f"   👤 Created By: {existing_data.get('created_by', 'Unknown')}\n" +
+               f"   📅 Created: {existing_data.get('created_date', 'Unknown')}\n\n" +
+               f"✅ **Cleanup Complete**:\n" +
+               f"   🗑️ Metadata documentation removed from registry\n" +
+               f"   🔧 You can now safely use 'delete_index' to remove the actual index\n" +
+               f"   📊 Use 'list_indices' to verify metadata removal\n\n" +
+               f"🎯 **Next Steps**:\n" +
+               f"   1. Proceed with 'delete_index {index_name}' to remove the actual index\n" +
+               f"   2. Or use 'create_index_metadata' if you want to re-document this index\n" +
+               f"   3. Clean up any related indices mentioned in metadata\n\n" +
+               f"⚠️ **Important**: This only deleted the documentation, not the actual index")
+        
+    except Exception as e:
+        error_message = "❌ Failed to delete index metadata:\n\n"
+        
+        error_str = str(e).lower()
+        if "connection" in error_str or "refused" in error_str:
+            error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
+            error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
+            error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
+        elif ("not_found" in error_str or "not found" in error_str) and "index" in error_str:
+            error_message += f"📁 **Index Error**: Metadata index 'index_metadata' does not exist\n"
+            error_message += f"📍 The metadata system has not been initialized\n"
+            error_message += f"💡 This means no metadata exists to delete - you can proceed safely\n\n"
+        else:
+            error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
+        
+        error_message += f"🔍 **Technical Details**: {str(e)}"
+        return error_message
 
 
 # ================================
@@ -1985,7 +2052,8 @@ async def restore_snapshot(
                 return (f"❌ Invalid JSON in index_settings parameter!\n\n" +
                        f"📋 **JSON Error**: Cannot parse index settings\n" +
                        f"📍 **Provided**: {index_settings}\n" +
-                       "💡 **Example**: '{\"number_of_replicas\": 0, \"refresh_interval\": \"30s\"}'")
+                       f"💡 **Example**: '{\"number_of_replicas\": 0, \"refresh_interval\": \"30s\"}'")
+        
         # Check for potential conflicts (existing indices)
         conflicts = []
         if indices_list and indices_list != ["all"]:
