@@ -10,13 +10,13 @@ from datetime import datetime
 from fastmcp import FastMCP, Context
 from pydantic import Field
 
-from src.elasticsearch.elasticsearch_client import get_es_client
-from src.elasticsearch.document_schema import (
+from ..elasticsearch_client import get_es_client
+from ..document_schema import (
     validate_document_structure,
     DocumentValidationError,
     format_validation_error
 )
-from src.elasticsearch.elasticsearch_helper import (
+from ..elasticsearch_helper import (
     generate_smart_metadata, 
     generate_fallback_metadata,
     generate_smart_doc_id,
@@ -24,7 +24,7 @@ from src.elasticsearch.elasticsearch_helper import (
     get_existing_document_ids,
     check_content_similarity_with_ai
 )
-from src.config.config import load_config
+from ...config.config import load_config
 import hashlib
 import json
 import re

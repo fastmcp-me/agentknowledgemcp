@@ -20,23 +20,14 @@ from mcp.types import TextContent
 
 # Import shared components
 try:
-    from ..elasticsearch.elasticsearch_client import get_es_client
-    from ..elasticsearch.document_schema import validate_document_structure, DocumentValidationError
-    from ..elasticsearch.elasticsearch_helper import (
-        generate_smart_metadata,
-        create_doc_template_base
-    )
+    from ..elasticsearch_client import get_es_client
+    from ..document_schema import validate_document_structure, DocumentValidationError
+    from ..elasticsearch_helper import generate_smart_metadata
 except ImportError:
     # Fallback for direct execution
-    import sys
-    import os
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from elasticsearch.elasticsearch_client import get_es_client
-    from elasticsearch.document_schema import validate_document_structure, DocumentValidationError
-    from elasticsearch.elasticsearch_helper import (
-        generate_smart_metadata,
-        create_doc_template_base
-    )
+    from ..elasticsearch_client import get_es_client
+    from ..document_schema import validate_document_structure, DocumentValidationError
+    from ..elasticsearch_helper import generate_smart_metadata
 
 # Create FastMCP application
 app = FastMCP("elasticsearch-batch")

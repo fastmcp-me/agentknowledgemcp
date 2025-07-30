@@ -10,12 +10,12 @@ from datetime import datetime
 from fastmcp import FastMCP, Context
 from pydantic import Field
 
-from src.elasticsearch.elasticsearch_client import get_es_client
-from src.elasticsearch.elasticsearch_helper import (
+from ..elasticsearch_client import get_es_client
+from ..elasticsearch_helper import (
     parse_time_parameters,
     analyze_search_results_for_reorganization
 )
-from src.config.config import load_config
+from ...config.config import load_config
 
 # Create FastMCP app
 app = FastMCP(

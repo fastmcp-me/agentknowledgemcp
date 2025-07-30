@@ -10,7 +10,7 @@ from datetime import datetime
 from fastmcp import FastMCP, Context
 from pydantic import Field
 
-from src.elasticsearch.elasticsearch_client import get_es_client
+from ..elasticsearch_client import get_es_client
 
 # Create FastMCP app for snapshots
 app = FastMCP(
