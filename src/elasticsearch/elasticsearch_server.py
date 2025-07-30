@@ -27,18 +27,6 @@ from src.elasticsearch.elasticsearch_helper import (
     get_existing_document_ids,
     check_content_similarity_with_ai
 )
-from src.elasticsearch.elasticsearch_snapshot import (
-    create_snapshot_operation,
-    restore_snapshot_operation,
-    list_snapshots_operation
-)
-from src.elasticsearch.elasticsearch_document import (
-    index_document_operation,
-    delete_document_operation,
-    get_document_operation,
-    validate_document_schema_operation,
-    create_document_template_operation
-)
 from src.config.config import load_config
 import hashlib
 import json
@@ -304,16 +292,200 @@ async def index_document(
     ctx: Context = None
 ) -> str:
     """Index a document into Elasticsearch with smart duplicate prevention."""
-    return await index_document_operation(
-        index=index,
-        document=document,
-        doc_id=doc_id,
-        validate_schema=validate_schema,
-        check_duplicates=check_duplicates,
-        force_index=force_index,
-        use_ai_similarity=use_ai_similarity,
-        ctx=ctx
-    )
+    try:
+        es = get_es_client()
+
+        # Smart duplicate checking if enabled
+        if check_duplicates and not force_index:
+            title = document.get('title', '')
+            content = document.get('content', '')
+            
+            if title:
+                # First check simple title duplicates
+                dup_check = check_title_duplicates(es, index, title)
+                if dup_check['found']:
+                    duplicates_info = "\n".join([
+                        f"   📄 {dup['title']} (ID: {dup['id']})\n      📝 {dup['summary']}\n      📅 {dup['last_modified']}"
+                        for dup in dup_check['duplicates'][:3]
+                    ])
+                    
+                    # Use AI similarity analysis if enabled and content is substantial
+                    if use_ai_similarity and content and len(content) > 200 and ctx:
+                        try:
+                            ai_analysis = await check_content_similarity_with_ai(es, index, title, content, ctx)
+                            
+                            action = ai_analysis.get('action', 'CREATE')
+                            confidence = ai_analysis.get('confidence', 0.5)
+                            reasoning = ai_analysis.get('reasoning', 'AI analysis completed')
+                            target_doc = ai_analysis.get('target_document_id', '')
+                            
+                            ai_message = f"\n\n🤖 **AI Content Analysis** (Confidence: {confidence:.0%}):\n"
+                            ai_message += f"   🎯 **Recommended Action**: {action}\n"
+                            ai_message += f"   💭 **AI Reasoning**: {reasoning}\n"
+                            
+                            if action == "UPDATE" and target_doc:
+                                ai_message += f"   📄 **Target Document**: {target_doc}\n"
+                                ai_message += f"   💡 **Suggestion**: Update existing document instead of creating new one\n"
+                                
+                            elif action == "DELETE":
+                                ai_message += f"   🗑️ **AI Recommendation**: Existing content is superior, consider not creating this document\n"
+                                
+                            elif action == "MERGE" and target_doc:
+                                ai_message += f"   🔄 **Merge Target**: {target_doc}\n"
+                                ai_message += f"   📝 **Strategy**: {ai_analysis.get('merge_strategy', 'Combine unique information from both documents')}\n"
+                                
+                            elif action == "CREATE":
+                                ai_message += f"   ✅ **AI Approval**: Content is sufficiently unique to create new document\n"
+                                # If AI says CREATE, allow automatic indexing
+                                pass
+                            
+                            # Show similar documents found by AI
+                            similar_docs = ai_analysis.get('similar_docs', [])
+                            if similar_docs:
+                                ai_message += f"\n   📋 **Similar Documents Analyzed**:\n"
+                                for i, doc in enumerate(similar_docs[:2], 1):
+                                    ai_message += f"      {i}. {doc['title']} (Score: {doc.get('elasticsearch_score', 0):.1f})\n"
+                            
+                            # If AI recommends CREATE with high confidence, proceed automatically
+                            if action == "CREATE" and confidence > 0.8:
+                                # Continue with indexing - don't return early
+                                pass
+                            else:
+                                # Return AI analysis for user review
+                                return (f"⚠️ **Potential Duplicates Found** - {dup_check['count']} similar document(s):\n\n" +
+                                       f"{duplicates_info}\n" +
+                                       f"{ai_message}\n\n" +
+                                       f"🤔 **What would you like to do?**\n" +
+                                       f"   1️⃣ **FOLLOW AI RECOMMENDATION**: {action} as suggested by AI\n" +
+                                       f"   2️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
+                                       f"   3️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
+                                       f"   4️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
+                                       f"💡 **AI Recommendation**: {reasoning}\n" +
+                                       f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
+                                       f"⚡ **To force indexing**: Call again with force_index=True")
+                        
+                        except Exception as ai_error:
+                            # Fallback to simple duplicate check if AI fails
+                            return (f"⚠️ **Potential Duplicates Found** - {dup_check['count']} similar document(s):\n\n" +
+                                   f"{duplicates_info}\n\n" +
+                                   f"⚠️ **AI Analysis Failed**: {str(ai_error)}\n\n" +
+                                   f"🤔 **What would you like to do?**\n" +
+                                   f"   1️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
+                                   f"   2️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
+                                   f"   3️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
+                                   f"💡 **Recommendation**: Update existing documents to prevent knowledge base bloat\n" +
+                                   f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
+                                   f"⚡ **To force indexing**: Call again with force_index=True")
+                    
+                    else:
+                        # Simple duplicate check without AI
+                        return (f"⚠️ **Potential Duplicates Found** - {dup_check['count']} similar document(s):\n\n" +
+                               f"{duplicates_info}\n\n" +
+                               f"🤔 **What would you like to do?**\n" +
+                               f"   1️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
+                               f"   2️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
+                               f"   3️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
+                               f"💡 **Recommendation**: Update existing documents to prevent knowledge base bloat\n" +
+                               f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
+                               f"⚡ **To force indexing**: Call again with force_index=True")
+
+        # Generate smart document ID if not provided
+        if not doc_id:
+            existing_ids = get_existing_document_ids(es, index)
+            doc_id = generate_smart_doc_id(
+                document.get('title', 'untitled'), 
+                document.get('content', ''), 
+                existing_ids
+            )
+            document['id'] = doc_id  # Ensure document has the ID
+
+        # Validate document structure if requested
+        if validate_schema:
+            try:
+                # Check if this looks like a knowledge base document
+                if isinstance(document, dict) and "id" in document and "title" in document:
+                    validated_doc = validate_document_structure(document)
+                    document = validated_doc
+
+                    # Use the document ID from the validated document if not provided earlier
+                    if not doc_id:
+                        doc_id = document.get("id")
+
+                else:
+                    # For non-knowledge base documents, still validate with strict mode if enabled
+                    validated_doc = validate_document_structure(document, is_knowledge_doc=False)
+                    document = validated_doc
+            except DocumentValidationError as e:
+                return f"❌ Validation failed:\n\n{format_validation_error(e)}"
+            except Exception as e:
+                return f"❌ Validation error: {str(e)}"
+
+        # Index the document
+        result = es.index(index=index, id=doc_id, body=document)
+
+        success_message = f"✅ Document indexed successfully:\n\n{json.dumps(result, indent=2, ensure_ascii=False)}"
+        
+        # Add smart guidance based on indexing result
+        if result.get('result') == 'created':
+            success_message += f"\n\n🎉 **New Document Created**:\n"
+            success_message += f"   📄 **Document ID**: {doc_id}\n"
+            success_message += f"   🆔 **ID Strategy**: {'User-provided' if 'doc_id' in locals() and doc_id else 'Smart-generated'}\n"
+            if check_duplicates:
+                success_message += f"   ✅ **Duplicate Check**: Passed - no similar titles found\n"
+        else:
+            success_message += f"\n\n🔄 **Document Updated**:\n"
+            success_message += f"   📄 **Document ID**: {doc_id}\n"
+            success_message += f"   ⚡ **Action**: Replaced existing document with same ID\n"
+
+        success_message += (f"\n\n💡 **Smart Duplicate Prevention Active**:\n" +
+                          f"   🔍 **Auto-Check**: {'Enabled' if check_duplicates else 'Disabled'} - searches for similar titles\n" +
+                          f"   🤖 **AI Analysis**: {'Enabled' if use_ai_similarity else 'Disabled'} - intelligent content similarity detection\n" +
+                          f"   🆔 **Smart IDs**: Auto-generated from title with collision detection\n" +
+                          f"   ⚡ **Force Option**: Use force_index=True to bypass duplicate warnings\n" +
+                          f"   🔄 **Update Recommended**: Modify existing documents instead of creating duplicates\n\n" +
+                          f"🤝 **Best Practices**:\n" +
+                          f"   • Search before creating: 'search(index=\"{index}\", query=\"your topic\")'\n" +
+                          f"   • Update existing documents when possible\n" +
+                          f"   • Use descriptive titles for better smart ID generation\n" +
+                          f"   • AI will analyze content similarity for intelligent recommendations\n" +
+                          f"   • Set force_index=True only when content is truly unique")
+
+        return success_message
+
+    except Exception as e:
+        # Provide detailed error messages for different types of Elasticsearch errors
+        error_message = "❌ Document indexing failed:\n\n"
+
+        error_str = str(e).lower()
+        if "connection" in error_str or "refused" in error_str:
+            error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
+            error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
+            error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
+        elif ("index" in error_str and "not found" in error_str) or "index_not_found_exception" in error_str:
+            error_message += f"📁 **Index Error**: Index '{index}' does not exist\n"
+            error_message += f"📍 The target index has not been created yet\n"
+            error_message += f"💡 **Suggestions for agents**:\n"
+            error_message += f"   1. Use 'create_index' tool to create the index first\n"
+            error_message += f"   2. Use 'list_indices' to see available indices\n"
+            error_message += f"   3. Check the correct index name for your data type\n\n"
+        elif "mapping" in error_str or "field" in error_str:
+            error_message += f"🗂️ **Mapping Error**: Document structure conflicts with index mapping\n"
+            error_message += f"📍 Document fields don't match the expected index schema\n"
+            error_message += f"💡 Try: Adjust document structure or update index mapping\n\n"
+        elif "version" in error_str or "conflict" in error_str:
+            error_message += f"⚡ **Version Conflict**: Document already exists with different version\n"
+            error_message += f"📍 Another process modified this document simultaneously\n"
+            error_message += f"💡 Try: Use 'get_document' first, then update with latest version\n\n"
+        elif "timeout" in error_str:
+            error_message += "⏱️ **Timeout Error**: Indexing operation timed out\n"
+            error_message += f"📍 Document may be too large or index overloaded\n"
+            error_message += f"💡 Try: Reduce document size or retry later\n\n"
+        else:
+            error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
+
+        error_message += f"🔍 **Technical Details**: {str(e)}"
+
+        return error_message
 
 
 # ================================
@@ -329,10 +501,38 @@ async def delete_document(
     doc_id: Annotated[str, Field(description="Document ID to delete from the index")]
 ) -> str:
     """Delete a document from Elasticsearch index."""
-    return await delete_document_operation(
-        index=index,
-        doc_id=doc_id
-    )
+    try:
+        es = get_es_client()
+
+        result = es.delete(index=index, id=doc_id)
+
+        return f"✅ Document deleted successfully:\n\n{json.dumps(result, indent=2, ensure_ascii=False)}"
+
+    except Exception as e:
+        # Provide detailed error messages for different types of Elasticsearch errors
+        error_message = "❌ Failed to delete document:\n\n"
+
+        error_str = str(e).lower()
+        if "connection" in error_str or "refused" in error_str:
+            error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
+            error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
+            error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
+        elif ("not_found" in error_str or "not found" in error_str or "does not exist" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
+            # Check if it's specifically an index not found error
+            if ("index" in error_str and ("not found" in error_str or "not_found" in error_str or "does not exist" in error_str)) or "index_not_found_exception" in error_str or "no such index" in error_str:
+                error_message += f"📁 **Index Not Found**: Index '{index}' does not exist\n"
+                error_message += f"📍 The target index has not been created yet\n"
+                error_message += f"💡 Try: Use 'list_indices' to see available indices\n\n"
+            else:
+                error_message += f"📄 **Document Not Found**: Document ID '{doc_id}' does not exist\n"
+                error_message += f"📍 Cannot delete a document that doesn't exist\n"
+                error_message += f"💡 Try: Check document ID or use 'search' to find documents\n\n"
+        else:
+            error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
+
+        error_message += f"🔍 **Technical Details**: {str(e)}"
+
+        return error_message
 
 
 # ================================
@@ -798,9 +998,23 @@ async def validate_document_schema(
     document: Annotated[Dict[str, Any], Field(description="Document object to validate against knowledge base schema format")]
 ) -> str:
     """Validate document structure against knowledge base schema standards."""
-    return await validate_document_schema_operation(
-        document=document
-    )
+    try:
+        validated_doc = validate_document_structure(document)
+
+        return (f"✅ Document validation successful!\n\n" +
+               f"Validated document:\n{json.dumps(validated_doc, indent=2, ensure_ascii=False)}\n\n" +
+               f"Document is ready to be indexed.\n\n" +
+               f"🚨 **RECOMMENDED: Check for Duplicates First**:\n" +
+               f"   🔍 **Use index_document**: Built-in AI-powered duplicate detection\n" +
+               f"   🔄 **Update instead of duplicate**: Modify existing documents when possible\n" +
+               f"   📏 **Content length check**: If < 1000 chars, store in 'content' field directly\n" +
+               f"   📁 **File creation**: Only for truly long content that needs separate storage\n" +
+               f"   🎯 **Quality over quantity**: Prevent knowledge base bloat through smart reuse")
+
+    except DocumentValidationError as e:
+        return format_validation_error(e)
+    except Exception as e:
+        return f"❌ Validation error: {str(e)}"
 
 
 # ================================
@@ -1151,18 +1365,79 @@ async def create_document_template(
     ctx: Context = None
 ) -> str:
     """Create a properly structured document template for knowledge base indexing with AI-generated metadata."""
-    return await create_document_template_operation(
-        title=title,
-        content=content,
-        priority=priority,
-        source_type=source_type,
-        tags=tags,
-        summary=summary,
-        key_points=key_points,
-        related=related,
-        use_ai_enhancement=use_ai_enhancement,
-        ctx=ctx
-    )
+    try:
+        # Initialize metadata
+        final_tags = list(tags)  # Copy manual tags
+        final_key_points = list(key_points)  # Copy manual key points
+        
+        # Use AI enhancement if requested and content is provided
+        if use_ai_enhancement and content.strip() and ctx:
+            try:
+                await ctx.info("🤖 Generating intelligent metadata and smart content using AI...")
+                ai_metadata = await generate_smart_metadata(title, content, ctx)
+                
+                # Merge AI-generated tags with manual tags
+                ai_tags = ai_metadata.get("tags", [])
+                for tag in ai_tags:
+                    if tag not in final_tags:
+                        final_tags.append(tag)
+                
+                # Merge AI-generated key points with manual points
+                ai_key_points = ai_metadata.get("key_points", [])
+                for point in ai_key_points:
+                    if point not in final_key_points:
+                        final_key_points.append(point)
+                
+                # Use AI-generated smart summary if available
+                ai_summary = ai_metadata.get("smart_summary", "")
+                if ai_summary and not summary:
+                    summary = ai_summary
+                
+                # Use AI-enhanced content if available and better
+                ai_enhanced_content = ai_metadata.get("enhanced_content", "")
+                if ai_enhanced_content and len(ai_enhanced_content) > len(content) * 0.8:
+                    content = ai_enhanced_content
+                        
+                await ctx.info(f"✅ AI generated {len(ai_tags)} tags, {len(ai_key_points)} key points, smart summary, and enhanced content")
+                
+            except Exception as e:
+                await ctx.warning(f"AI enhancement failed: {str(e)}, using manual metadata only")
+        
+        # Generate auto-summary if not provided and content is available
+        if not summary and content.strip():
+            if len(content) > 200:
+                summary = content[:200].strip() + "..."
+            else:
+                summary = content.strip()
+
+        template = create_doc_template_base(
+            title=title,
+            priority=priority,
+            source_type=source_type,
+            tags=final_tags,
+            summary=summary,
+            key_points=final_key_points,
+            related=related
+        )
+
+        ai_info = ""
+        if use_ai_enhancement and ctx:
+            ai_info = f"\n🤖 **AI Enhancement Used**: Generated {len(final_tags)} total tags and {len(final_key_points)} total key points\n"
+
+        return (f"✅ Document template created successfully with AI-enhanced metadata!\n\n" +
+               f"{json.dumps(template, indent=2, ensure_ascii=False)}\n" +
+               ai_info +
+               f"\nThis template can be used with the 'index_document' tool.\n\n" +
+               f"⚠️ **CRITICAL: Search Before Creating - Avoid Duplicates**:\n" +
+               f"   🔍 **STEP 1**: Use 'search' tool to check if similar content already exists\n" +
+               f"   🔄 **STEP 2**: If found, UPDATE existing document instead of creating new one\n" +
+               f"   📝 **STEP 3**: For SHORT content (< 1000 chars): Add directly to 'content' field\n" +
+               f"   📁 **STEP 4**: For LONG content: Create file only when truly necessary\n" +
+               f"   🧹 **STEP 5**: Clean up outdated documents regularly to maintain quality\n" +
+               f"   🎯 **Remember**: Knowledge base quality > quantity - avoid bloat!")
+
+    except Exception as e:
+        return f"❌ Failed to create document template: {str(e)}"
 
 
 # ================================
@@ -1457,76 +1732,9 @@ async def delete_index_metadata(
     index_name: Annotated[str, Field(description="Name of the index to remove metadata for")]
 ) -> str:
     """Delete metadata documentation for an Elasticsearch index."""
-    try:
-        es = get_es_client()
-        metadata_index = "index_metadata"
-        
-        # Search for existing metadata
-        search_body = {
-            "query": {
-                "term": {
-                    "index_name.keyword": index_name
-                }
-            },
-            "size": 1
-        }
-        
-        existing_result = es.search(index=metadata_index, body=search_body)
-        
-        if existing_result['hits']['total']['value'] == 0:
-            return (f"⚠️ No metadata found for index '{index_name}'!\n\n" +
-                   f"📋 **Status**: Index metadata does not exist\n" +
-                   f"   ✅ **Good**: No cleanup required for metadata\n" +
-                   f"   🔧 **Safe**: You can proceed with 'delete_index' if needed\n" +
-                   f"   🔍 **Check**: Use 'list_indices' to see all documented indices\n\n" +
-                   f"💡 **This is Normal If**:\n" +
-                   f"   • Index was created before metadata system was implemented\n" +
-                   f"   • Index was created without using 'create_index_metadata' first\n" +
-                   f"   • Metadata was already deleted in a previous cleanup")
-        
-        # Get existing document details before deletion
-        existing_doc = existing_result['hits']['hits'][0]
-        existing_id = existing_doc['_id']
-        existing_data = existing_doc['_source']
-        
-        # Delete the metadata document
-        result = es.delete(index=metadata_index, id=existing_id)
-        
-        return (f"✅ Index metadata deleted successfully!\n\n" +
-               f"🗑️ **Deleted Metadata for '{index_name}'**:\n" +
-               f"   📋 Document ID: {existing_id}\n" +
-               f"   📝 Description: {existing_data.get('description', 'No description')}\n" +
-               f"   🎯 Purpose: {existing_data.get('purpose', 'No purpose')}\n" +
-               f"   📂 Data Types: {', '.join(existing_data.get('data_types', [])) if existing_data.get('data_types') else 'None'}\n" +
-               f"   👤 Created By: {existing_data.get('created_by', 'Unknown')}\n" +
-               f"   📅 Created: {existing_data.get('created_date', 'Unknown')}\n\n" +
-               f"✅ **Cleanup Complete**:\n" +
-               f"   🗑️ Metadata documentation removed from registry\n" +
-               f"   🔧 You can now safely use 'delete_index' to remove the actual index\n" +
-               f"   📊 Use 'list_indices' to verify metadata removal\n\n" +
-               f"🎯 **Next Steps**:\n" +
-               f"   1. Proceed with 'delete_index {index_name}' to remove the actual index\n" +
-               f"   2. Or use 'create_index_metadata' if you want to re-document this index\n" +
-               f"   3. Clean up any related indices mentioned in metadata\n\n" +
-               f"⚠️ **Important**: This only deleted the documentation, not the actual index")
-        
-    except Exception as e:
-        error_message = "❌ Failed to delete index metadata:\n\n"
-        
-        error_str = str(e).lower()
-        if "connection" in error_str or "refused" in error_str:
-            error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
-            error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
-            error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
-        elif ("not_found" in error_str or "not found" in error_str) and "index" in error_str:
-            error_message += f"📁 **Index Error**: Metadata index 'index_metadata' does not exist\n"
-            error_message += f"📍 The metadata system has not been initialized\n"
-            error_message += f"💡 This means no metadata exists to delete - you can proceed safely\n\n"
-        else:
-            error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
-        
-        error_message += f"🔍 **Technical Details**: {str(e)}"
-        return error_message
+    return await delete_index_metadata_operation(
+        index_name=index_name
+    )
 
 
 # ================================
@@ -1547,15 +1755,156 @@ async def create_snapshot(
     description: Annotated[Optional[str], Field(description="Optional description for the snapshot")] = None
 ) -> str:
     """Create a snapshot (backup) of Elasticsearch indices."""
-    return await create_snapshot_operation(
-        snapshot_name=snapshot_name,
-        repository=repository,
-        indices=indices,
-        ignore_unavailable=ignore_unavailable,
-        include_global_state=include_global_state,
-        wait_for_completion=wait_for_completion,
-        description=description
-    )
+    try:
+        es = get_es_client()
+        
+        # Check if repository exists, create if not
+        try:
+            repo_info = es.snapshot.get_repository(repository=repository)
+        except:
+            # Repository doesn't exist, create default file system repository
+            repo_body = {
+                "type": "fs",
+                "settings": {
+                    "location": f"/usr/share/elasticsearch/snapshots/{repository}",
+                    "compress": True
+                }
+            }
+            try:
+                es.snapshot.create_repository(repository=repository, body=repo_body)
+                repo_created = True
+            except Exception as repo_error:
+                return (f"❌ Failed to create snapshot repository:\n\n" +
+                       f"🔧 **Repository Error**: Cannot create repository '{repository}'\n" +
+                       f"📍 **Issue**: {str(repo_error)}\n\n" +
+                       f"💡 **Common Solutions**:\n" +
+                       f"   1. Ensure Elasticsearch has write permissions to snapshot directory\n" +
+                       f"   2. Add 'path.repo: [\"/usr/share/elasticsearch/snapshots\"]' to elasticsearch.yml\n" +
+                       f"   3. Restart Elasticsearch after configuration change\n" +
+                       f"   4. Or use existing repository name\n\n" +
+                       f"🔍 **Technical Details**: {str(repo_error)}")
+        else:
+            repo_created = False
+        
+        # Parse indices parameter
+        if indices:
+            indices_list = [idx.strip() for idx in indices.split(',')]
+            indices_param = ','.join(indices_list)
+        else:
+            indices_param = "*"  # All indices
+            indices_list = ["*"]
+        
+        # Create snapshot metadata
+        snapshot_body = {
+            "indices": indices_param,
+            "ignore_unavailable": ignore_unavailable,
+            "include_global_state": include_global_state
+        }
+        
+        if description:
+            snapshot_body["metadata"] = {
+                "description": description,
+                "created_by": "AgentKnowledgeMCP",
+                "created_at": datetime.now().isoformat()
+            }
+        
+        # Create the snapshot
+        snapshot_result = es.snapshot.create(
+            repository=repository,
+            snapshot=snapshot_name,
+            body=snapshot_body,
+            wait_for_completion=wait_for_completion
+        )
+        
+        # Format response based on completion
+        if wait_for_completion:
+            snapshot_info = snapshot_result.get('snapshot', {})
+            state = snapshot_info.get('state', 'UNKNOWN')
+            
+            if state == 'SUCCESS':
+                status_emoji = "✅"
+                status_msg = "Successfully completed"
+            elif state == 'PARTIAL':
+                status_emoji = "⚠️"
+                status_msg = "Partially completed with some issues"
+            elif state == 'FAILED':
+                status_emoji = "❌"
+                status_msg = "Failed to complete"
+            else:
+                status_emoji = "🔄"
+                status_msg = f"Status: {state}"
+            
+            result_message = (f"{status_emoji} Snapshot '{snapshot_name}' {status_msg}!\n\n" +
+                            f"📸 **Snapshot Details**:\n" +
+                            f"   📂 Repository: {repository}\n" +
+                            f"   📋 Name: {snapshot_name}\n" +
+                            f"   📊 State: {state}\n" +
+                            f"   📦 Indices: {', '.join(indices_list)}\n" +
+                            f"   🌐 Global State: {'Included' if include_global_state else 'Excluded'}\n")
+            
+            if snapshot_info.get('shards'):
+                shards = snapshot_info['shards']
+                result_message += (f"   🔢 Shards: {shards.get('total', 0)} total, " +
+                                 f"{shards.get('successful', 0)} successful, " +
+                                 f"{shards.get('failed', 0)} failed\n")
+            
+            if snapshot_info.get('start_time_in_millis') and snapshot_info.get('end_time_in_millis'):
+                duration = (snapshot_info['end_time_in_millis'] - snapshot_info['start_time_in_millis']) / 1000
+                result_message += f"   ⏱️ Duration: {duration:.2f} seconds\n"
+            
+            if description:
+                result_message += f"   📝 Description: {description}\n"
+                
+        else:
+            result_message = (f"🔄 Snapshot '{snapshot_name}' started!\n\n" +
+                            f"📸 **Snapshot Details**:\n" +
+                            f"   📂 Repository: {repository}\n" +
+                            f"   📋 Name: {snapshot_name}\n" +
+                            f"   📊 Status: Running in background\n" +
+                            f"   📦 Indices: {', '.join(indices_list)}\n" +
+                            f"   🌐 Global State: {'Included' if include_global_state else 'Excluded'}\n")
+        
+        if repo_created:
+            result_message += f"\n🆕 **Repository Created**: Created new repository '{repository}'\n"
+        
+        result_message += (f"\n✅ **Success Actions**:\n" +
+                         f"   📸 Snapshot backup is {'completed' if wait_for_completion else 'in progress'}\n" +
+                         f"   🔍 Use 'list_snapshots' to view all snapshots\n" +
+                         f"   🔄 Use 'restore_snapshot' to restore from this backup\n" +
+                         f"   📊 Check snapshot status with repository '{repository}'\n\n" +
+                         f"💾 **Backup Strategy**:\n" +
+                         f"   🕒 Regular snapshots help protect against data loss\n" +
+                         f"   🏷️ Use descriptive snapshot names with dates\n" +
+                         f"   📂 Monitor repository storage space\n" +
+                         f"   🧹 Clean up old snapshots periodically")
+        
+        return result_message
+        
+    except Exception as e:
+        error_message = "❌ Failed to create snapshot:\n\n"
+        
+        error_str = str(e).lower()
+        if "connection" in error_str or "refused" in error_str:
+            error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
+            error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
+            error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
+        elif "repository" in error_str and ("not found" in error_str or "missing" in error_str):
+            error_message += f"📂 **Repository Error**: Repository '{repository}' not found or misconfigured\n"
+            error_message += f"📍 Check repository configuration and permissions\n"
+            error_message += f"💡 Try: Use different repository name or check path.repo settings\n\n"
+        elif "invalid_snapshot_name" in error_str:
+            error_message += f"🏷️ **Naming Error**: Invalid snapshot name '{snapshot_name}'\n"
+            error_message += f"📍 Snapshot names must be lowercase and cannot contain certain characters\n"
+            error_message += f"💡 Try: Use alphanumeric characters and hyphens only\n\n"
+        elif "already_exists" in error_str:
+            error_message += f"📋 **Conflict Error**: Snapshot '{snapshot_name}' already exists\n"
+            error_message += f"📍 Each snapshot must have a unique name within the repository\n"
+            error_message += f"💡 Try: Use different snapshot name or delete existing snapshot\n\n"
+        else:
+            error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
+        
+        error_message += f"🔍 **Technical Details**: {str(e)}"
+        return error_message
 
 
 # ================================
@@ -1577,16 +1926,182 @@ async def restore_snapshot(
     index_settings: Annotated[Optional[str], Field(description="JSON string of index settings to override")] = None
 ) -> str:
     """Restore indices from an Elasticsearch snapshot."""
-    return await restore_snapshot_operation(
-        snapshot_name=snapshot_name,
-        repository=repository,
-        indices=indices,
-        ignore_unavailable=ignore_unavailable,
-        include_global_state=include_global_state,
-        wait_for_completion=wait_for_completion,
-        rename_pattern=rename_pattern,
-        index_settings=index_settings
-    )
+    try:
+        es = get_es_client()
+        
+        # Verify repository exists
+        try:
+            repo_info = es.snapshot.get_repository(repository=repository)
+        except:
+            return (f"❌ Repository '{repository}' not found!\n\n" +
+                   f"📂 **Repository Error**: Cannot access snapshot repository\n" +
+                   f"📍 **Available Actions**:\n" +
+                   f"   1. Check repository name spelling\n" +
+                   f"   2. Use 'create_snapshot' to create repository first\n" +
+                   f"   3. Verify Elasticsearch path.repo configuration\n\n" +
+                   f"💡 **Tip**: Repositories must be configured before accessing snapshots")
+        
+        # Verify snapshot exists
+        try:
+            snapshot_info = es.snapshot.get(repository=repository, snapshot=snapshot_name)
+        except:
+            return (f"❌ Snapshot '{snapshot_name}' not found in repository '{repository}'!\n\n" +
+                   f"📸 **Snapshot Error**: Cannot find the specified snapshot\n" +
+                   f"📍 **Possible Issues**:\n" +
+                   f"   1. Snapshot name is incorrect\n" +
+                   f"   2. Snapshot was deleted or corrupted\n" +
+                   f"   3. Repository path has changed\n\n" +
+                   f"🔍 **Next Steps**:\n" +
+                   f"   • Use 'list_snapshots' to see available snapshots\n" +
+                   f"   • Check repository configuration and permissions\n" +
+                   f"   • Verify backup storage accessibility")
+        
+        # Parse indices parameter
+        if indices:
+            indices_list = [idx.strip() for idx in indices.split(',')]
+            indices_param = ','.join(indices_list)
+        else:
+            indices_param = None  # Restore all indices from snapshot
+            indices_list = ["all"]
+        
+        # Build restore body
+        restore_body = {
+            "ignore_unavailable": ignore_unavailable,
+            "include_global_state": include_global_state
+        }
+        
+        if indices_param:
+            restore_body["indices"] = indices_param
+        
+        if rename_pattern:
+            restore_body["rename_pattern"] = rename_pattern
+            restore_body["rename_replacement"] = rename_pattern
+        
+        if index_settings:
+            try:
+                settings_dict = json.loads(index_settings)
+                restore_body["index_settings"] = settings_dict
+            except json.JSONDecodeError:
+                return (f"❌ Invalid JSON in index_settings parameter!\n\n" +
+                       f"📋 **JSON Error**: Cannot parse index settings\n" +
+                       f"📍 **Provided**: {index_settings}\n" +
+                       "💡 **Example**: '{\"number_of_replicas\": 0, \"refresh_interval\": \"30s\"}'")
+        # Check for potential conflicts (existing indices)
+        conflicts = []
+        if indices_list and indices_list != ["all"]:
+            for index_name in indices_list:
+                if rename_pattern:
+                    # If renaming, check the new name
+                    new_name = rename_pattern.replace('%s', index_name)
+                    try:
+                        es.indices.get(index=new_name)
+                        conflicts.append(f"{index_name} -> {new_name}")
+                    except:
+                        pass  # Index doesn't exist, no conflict
+                else:
+                    # Direct restore, check original name
+                    try:
+                        es.indices.get(index=index_name)
+                        conflicts.append(index_name)
+                    except:
+                        pass  # Index doesn't exist, no conflict
+        
+        # Warn about conflicts
+        conflict_warning = ""
+        if conflicts and not rename_pattern:
+            conflict_warning = (f"\n⚠️ **Warning - Existing Indices Will Be Overwritten**:\n" +
+                              f"   📋 Conflicting indices: {', '.join(conflicts)}\n" +
+                              f"   🔄 These indices will be closed and replaced\n" +
+                              f"   💡 Consider using rename_pattern to avoid conflicts\n\n")
+        
+        # Execute restore
+        restore_result = es.snapshot.restore(
+            repository=repository,
+            snapshot=snapshot_name,
+            body=restore_body,
+            wait_for_completion=wait_for_completion
+        )
+        
+        # Get snapshot details for reporting
+        snapshot_details = snapshot_info['snapshots'][0] if snapshot_info.get('snapshots') else {}
+        snapshot_state = snapshot_details.get('state', 'UNKNOWN')
+        
+        # Format response based on completion
+        if wait_for_completion:
+            restore_info = restore_result.get('snapshot', {})
+            shards_info = restore_info.get('shards', {})
+            
+            result_message = (f"✅ Snapshot '{snapshot_name}' restored successfully!\n\n" +
+                            f"🔄 **Restore Details**:\n" +
+                            f"   📂 Repository: {repository}\n" +
+                            f"   📸 Snapshot: {snapshot_name}\n" +
+                            f"   📊 Snapshot State: {snapshot_state}\n" +
+                            f"   📦 Restored Indices: {', '.join(indices_list)}\n" +
+                            f"   🌐 Global State: {'Restored' if include_global_state else 'Skipped'}\n")
+            
+            if rename_pattern:
+                result_message += f"   🏷️ Rename Pattern: {rename_pattern}\n"
+            
+            if shards_info:
+                result_message += (f"   🔢 Shards: {shards_info.get('total', 0)} total, " +
+                                 f"{shards_info.get('successful', 0)} successful, " +
+                                 f"{shards_info.get('failed', 0)} failed\n")
+            
+        else:
+            result_message = (f"🔄 Snapshot restore started!\n\n" +
+                            f"🔄 **Restore Details**:\n" +
+                            f"   📂 Repository: {repository}\n" +
+                            f"   📸 Snapshot: {snapshot_name}\n" +
+                            f"   📊 Status: Running in background\n" +
+                            f"   📦 Indices: {', '.join(indices_list)}\n" +
+                            f"   🌐 Global State: {'Included' if include_global_state else 'Excluded'}\n")
+        
+        if conflict_warning:
+            result_message += conflict_warning
+        
+        result_message += (f"\n✅ **Restore Complete**:\n" +
+                         f"   🔄 Data has been {'restored' if wait_for_completion else 'restore started'}\n" +
+                         f"   🔍 Use 'list_indices' to verify restored indices\n" +
+                         f"   📊 Check cluster health and index status\n" +
+                         f"   🧪 Test restored data integrity\n\n" +
+                         f"📋 **Post-Restore Checklist**:\n" +
+                         f"   ✅ Verify all expected indices are present\n" +
+                         f"   ✅ Check document counts match expectations\n" +
+                         f"   ✅ Test search functionality on restored data\n" +
+                         f"   ✅ Monitor cluster performance after restore")
+        
+        return result_message
+        
+    except Exception as e:
+        error_message = "❌ Failed to restore snapshot:\n\n"
+        
+        error_str = str(e).lower()
+        if "connection" in error_str or "refused" in error_str:
+            error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
+            error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
+            error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
+        elif "repository" in error_str and ("not found" in error_str or "missing" in error_str):
+            error_message += f"📂 **Repository Error**: Repository '{repository}' not found\n"
+            error_message += f"📍 Check repository configuration and permissions\n"
+            error_message += f"💡 Try: Create repository first or check path.repo settings\n\n"
+        elif "snapshot" in error_str and ("not found" in error_str or "missing" in error_str):
+            error_message += f"📸 **Snapshot Error**: Snapshot '{snapshot_name}' not found\n"
+            error_message += f"📍 Check snapshot name and repository\n"
+            error_message += f"💡 Try: Use 'list_snapshots' to see available snapshots\n\n"
+        elif "index_not_found" in error_str:
+            error_message += f"📋 **Index Error**: Some indices from snapshot no longer exist\n"
+            error_message += f"📍 Original indices may have been deleted\n"
+            error_message += f"💡 Try: Use ignore_unavailable=true or specify different indices\n\n"
+        elif "already_exists" in error_str or "conflict" in error_str:
+            error_message += f"🔄 **Conflict Error**: Cannot restore over existing indices\n"
+            error_message += f"📍 Target indices already exist and are open\n"
+            error_message += f"💡 Try: Use rename_pattern or close/delete conflicting indices\n\n"
+        else:
+            error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
+        
+        error_message += f"🔍 **Technical Details**: {str(e)}"
+        return error_message
+
 
 # ================================
 # TOOL 16: LIST_SNAPSHOTS
@@ -1601,11 +2116,154 @@ async def list_snapshots(
     verbose: Annotated[bool, Field(description="Whether to show detailed information for each snapshot")] = True
 ) -> str:
     """List all snapshots in an Elasticsearch repository."""
-    return await list_snapshots_operation(
-        repository=repository,
-        verbose=verbose
-    )
+    try:
+        es = get_es_client()
+        
+        # Check if repository exists
+        try:
+            repo_info = es.snapshot.get_repository(repository=repository)
+        except:
+            return (f"❌ Repository '{repository}' not found!\n\n" +
+                   f"� **Repository Error**: Cannot access snapshot repository\n" +
+                   f"📍 **Possible Issues**:\n" +
+                   f"   1. Repository name is incorrect\n" +
+                   f"   2. Repository was not created yet\n" +
+                   f"   3. Elasticsearch path.repo configuration issue\n\n" +
+                   f"💡 **Solutions**:\n" +
+                   f"   • Use 'create_snapshot' to create repository\n" +
+                   f"   • Check Elasticsearch configuration\n" +
+                   f"   • Verify repository permissions")
+        
+        # Get repository details
+        repo_details = repo_info.get(repository, {})
+        repo_type = repo_details.get('type', 'unknown')
+        repo_settings = repo_details.get('settings', {})
+        
+        # List all snapshots
+        try:
+            snapshots_result = es.snapshot.get(repository=repository, snapshot="_all")
+            snapshots = snapshots_result.get('snapshots', [])
+        except:
+            snapshots = []
+        
+        if not snapshots:
+            return (f"📋 No snapshots found in repository '{repository}'\n\n" +
+                   f"📂 **Repository Information**:\n" +
+                   f"   📋 Name: {repository}\n" +
+                   f"   📊 Type: {repo_type}\n" +
+                   f"   📍 Location: {repo_settings.get('location', 'Not specified')}\n" +
+                   f"   📸 Snapshots: 0\n\n" +
+                   f"💡 **Next Steps**:\n" +
+                   f"   • Use 'create_snapshot' to create your first backup\n" +
+                   f"   • Regular snapshots help protect against data loss\n" +
+                   f"   • Consider automated snapshot scheduling")
+        
+        # Sort snapshots by start time (newest first)
+        snapshots.sort(key=lambda x: x.get('start_time_in_millis', 0), reverse=True)
+        
+        result_message = f"📸 Found {len(snapshots)} snapshot(s) in repository '{repository}'\n\n"
+        
+        # Repository information
+        result_message += (f"📂 **Repository Information**:\n" +
+                         f"   📋 Name: {repository}\n" +
+                         f"   📊 Type: {repo_type}\n" +
+                         f"   📍 Location: {repo_settings.get('location', 'Not specified')}\n" +
+                         f"   📸 Total Snapshots: {len(snapshots)}\n\n")
+        
+        # List snapshots
+        result_message += f"📋 **Available Snapshots**:\n\n"
+        
+        for i, snapshot in enumerate(snapshots, 1):
+            name = snapshot.get('snapshot', 'Unknown')
+            state = snapshot.get('state', 'UNKNOWN')
+            
+            # Status emoji based on state
+            if state == 'SUCCESS':
+                status_emoji = "✅"
+            elif state == 'PARTIAL':
+                status_emoji = "⚠️"
+            elif state == 'FAILED':
+                status_emoji = "❌"
+            elif state == 'IN_PROGRESS':
+                status_emoji = "🔄"
+            else:
+                status_emoji = "❓"
+            
+            result_message += f"{status_emoji} **{i}. {name}**\n"
+            result_message += f"   📊 State: {state}\n"
+            
+            if verbose:
+                # Detailed information
+                indices = snapshot.get('indices', [])
+                result_message += f"   📦 Indices: {len(indices)} ({', '.join(indices[:3])}{'...' if len(indices) > 3 else ''})\n"
+                
+                # Timestamps
+                if snapshot.get('start_time'):
+                    result_message += f"   🕒 Started: {snapshot['start_time']}\n"
+                if snapshot.get('end_time'):
+                    result_message += f"   🕒 Completed: {snapshot['end_time']}\n"
+                
+                # Duration
+                if snapshot.get('start_time_in_millis') and snapshot.get('end_time_in_millis'):
+                    duration = (snapshot['end_time_in_millis'] - snapshot['start_time_in_millis']) / 1000
+                    result_message += f"   ⏱️ Duration: {duration:.2f} seconds\n"
+                
+                # Shards info
+                if snapshot.get('shards'):
+                    shards = snapshot['shards']
+                    total = shards.get('total', 0)
+                    successful = shards.get('successful', 0)
+                    failed = shards.get('failed', 0)
+                    result_message += f"   🔢 Shards: {successful}/{total} successful"
+                    if failed > 0:
+                        result_message += f" ({failed} failed)"
+                    result_message += "\n"
+                
+                # Metadata
+                metadata = snapshot.get('metadata', {})
+                if metadata.get('description'):
+                    result_message += f"   📝 Description: {metadata['description']}\n"
+                
+                # Global state
+                include_global_state = snapshot.get('include_global_state', False)
+                result_message += f"   🌐 Global State: {'Included' if include_global_state else 'Excluded'}\n"
+                
+            result_message += "\n"
+        
+        # Usage instructions
+        result_message += (f"🔧 **Usage Instructions**:\n" +
+                         f"   • Use 'restore_snapshot <name>' to restore from any snapshot\n" +
+                         f"   • Use 'create_snapshot <name>' to create new backups\n" +
+                         f"   • Monitor storage space in repository location\n" +
+                         f"   • Clean up old snapshots periodically\n\n" +
+                         f"💾 **Backup Best Practices**:\n" +
+                         f"   ✅ Regular automated snapshots (daily/weekly)\n" +
+                         f"   ✅ Test restore procedures periodically\n" +
+                         f"   ✅ Monitor snapshot success/failure status\n" +
+                         f"   ✅ Keep snapshots in multiple locations if possible")
+        
+        return result_message
+        
+    except Exception as e:
+        error_message = "❌ Failed to list snapshots:\n\n"
+        
+        error_str = str(e).lower()
+        if "connection" in error_str or "refused" in error_str:
+            error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
+            error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
+            error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
+        elif "repository" in error_str and ("not found" in error_str or "missing" in error_str):
+            error_message += f"📂 **Repository Error**: Repository '{repository}' not found\n"
+            error_message += f"📍 Check repository configuration and permissions\n"
+            error_message += f"💡 Try: Create repository first using 'create_snapshot'\n\n"
+        else:
+            error_message += f"⚠️ **Unknown Error**: {str(e)}\n\n"
+        
+        error_message += f"🔍 **Technical Details**: {str(e)}"
+        return error_message
 
+
+# CLI entry point
 def cli_main():
     """CLI entry point for Elasticsearch FastMCP server."""
     print("�🚀 Starting AgentKnowledgeMCP Elasticsearch FastMCP server...")
