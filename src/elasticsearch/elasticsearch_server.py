@@ -2051,8 +2051,7 @@ async def restore_snapshot(
             except json.JSONDecodeError:
                 return (f"❌ Invalid JSON in index_settings parameter!\n\n" +
                        f"📋 **JSON Error**: Cannot parse index settings\n" +
-                       f"📍 **Provided**: {index_settings}\n" +
-                       f"💡 **Example**: '{\"number_of_replicas\": 0, \"refresh_interval\": \"30s\"}'")
+                       f"📍 **Provided**: {index_settings}\n")
         
         # Check for potential conflicts (existing indices)
         conflicts = []
