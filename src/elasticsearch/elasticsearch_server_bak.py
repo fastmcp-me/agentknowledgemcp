@@ -27,11 +27,6 @@ from src.elasticsearch.elasticsearch_helper import (
     get_existing_document_ids,
     check_content_similarity_with_ai
 )
-from src.elasticsearch.elasticsearch_snapshot import (
-    create_snapshot_operation,
-    restore_snapshot_operation,
-    list_snapshots_operation
-)
 from src.config.config import load_config
 import hashlib
 import json
@@ -55,16 +50,14 @@ app = FastMCP(
     tags={"elasticsearch", "search", "query"}
 )
 async def search(
-        index: Annotated[str, Field(description="Name of the Elasticsearch index to search")],
-        query: Annotated[str, Field(description="Search query text to find matching documents")],
-        size: Annotated[int, Field(description="Maximum number of results to return", ge=1, le=1000)] = 10,
-        fields: Annotated[
-            Optional[List[str]], Field(description="Specific fields to include in search results")] = None,
-        date_from: Annotated[Optional[str], Field(description="Start date filter in ISO format (YYYY-MM-DD)")] = None,
-        date_to: Annotated[Optional[str], Field(description="End date filter in ISO format (YYYY-MM-DD)")] = None,
-        time_period: Annotated[
-            Optional[str], Field(description="Predefined time period filter (e.g., '7d', '1m', '1y')")] = None,
-        sort_by_time: Annotated[str, Field(description="Sort order by timestamp", pattern="^(asc|desc)$")] = "desc"
+    index: Annotated[str, Field(description="Name of the Elasticsearch index to search")],
+    query: Annotated[str, Field(description="Search query text to find matching documents")],
+    size: Annotated[int, Field(description="Maximum number of results to return", ge=1, le=1000)] = 10,
+    fields: Annotated[Optional[List[str]], Field(description="Specific fields to include in search results")] = None,
+    date_from: Annotated[Optional[str], Field(description="Start date filter in ISO format (YYYY-MM-DD)")] = None,
+    date_to: Annotated[Optional[str], Field(description="End date filter in ISO format (YYYY-MM-DD)")] = None,
+    time_period: Annotated[Optional[str], Field(description="Predefined time period filter (e.g., '7d', '1m', '1y')")] = None,
+    sort_by_time: Annotated[str, Field(description="Sort order by timestamp", pattern="^(asc|desc)$")] = "desc"
 ) -> str:
     """Search documents in Elasticsearch index with optional time-based filtering."""
     try:
@@ -83,8 +76,7 @@ async def search(
                             {
                                 "multi_match": {
                                     "query": query,
-                                    "fields": ["title^3", "summary^2", "content", "tags^2", "features^2",
-                                               "tech_stack^2"]
+                                    "fields": ["title^3", "summary^2", "content", "tags^2", "features^2", "tech_stack^2"]
                                 }
                             }
                         ],
@@ -160,41 +152,41 @@ async def search(
             time_suggestions = ""
             if time_filter:
                 time_suggestions = (
-                        f"\n\n⏰ **Time Filter Suggestions**:\n" +
-                        f"   • Try broader time range (expand dates or use 'month'/'year')\n" +
-                        f"   • Remove time filters to search all documents\n" +
-                        f"   • Check if documents exist in the specified time period\n" +
-                        f"   • Use relative dates like '30d' or '6m' for wider ranges\n"
+                    f"\n\n⏰ **Time Filter Suggestions**:\n" +
+                    f"   • Try broader time range (expand dates or use 'month'/'year')\n" +
+                    f"   • Remove time filters to search all documents\n" +
+                    f"   • Check if documents exist in the specified time period\n" +
+                    f"   • Use relative dates like '30d' or '6m' for wider ranges\n"
                 )
 
             return (f"🔍 No results found for '{query}' in index '{index}'{time_filter_desc}\n\n" +
-                    f"💡 **Search Optimization Suggestions for Agents**:\n\n" +
-                    f"📂 **Try Other Indices**:\n" +
-                    f"   • Use 'list_indices' tool to see all available indices\n" +
-                    f"   • Search the same query in different indices\n" +
-                    f"   • Content might be stored in a different index\n" +
-                    f"   • Check indices with similar names or purposes\n\n" +
-                    f"🎯 **Try Different Keywords**:\n" +
-                    f"   • Use synonyms and related terms\n" +
-                    f"   • Try shorter, more general keywords\n" +
-                    f"   • Break complex queries into simpler parts\n" +
-                    f"   • Use different language variations if applicable\n\n" +
-                    f"📅 **Consider Recency**:\n" +
-                    f"   • Recent documents may use different terminology\n" +
-                    f"   • Try searching with current date/time related terms\n" +
-                    f"   • Look for latest trends or recent updates\n" +
-                    f"   • Use time_period='month' or 'year' for broader time searches\n\n" +
-                    f"🤝 **Ask User for Help**:\n" +
-                    f"   • Request user to suggest related keywords\n" +
-                    f"   • Ask about specific topics or domains they're interested in\n" +
-                    f"   • Get context about what they're trying to find\n" +
-                    f"   • Ask for alternative ways to describe their query\n\n" +
-                    f"🔧 **Technical Tips**:\n" +
-                    f"   • Use broader search terms first, then narrow down\n" +
-                    f"   • Check for typos in search terms\n" +
-                    f"   • Consider partial word matches\n" +
-                    f"   • Try fuzzy matching or wildcard searches" +
-                    time_suggestions)
+                   f"💡 **Search Optimization Suggestions for Agents**:\n\n" +
+                   f"📂 **Try Other Indices**:\n" +
+                   f"   • Use 'list_indices' tool to see all available indices\n" +
+                   f"   • Search the same query in different indices\n" +
+                   f"   • Content might be stored in a different index\n" +
+                   f"   • Check indices with similar names or purposes\n\n" +
+                   f"🎯 **Try Different Keywords**:\n" +
+                   f"   • Use synonyms and related terms\n" +
+                   f"   • Try shorter, more general keywords\n" +
+                   f"   • Break complex queries into simpler parts\n" +
+                   f"   • Use different language variations if applicable\n\n" +
+                   f"📅 **Consider Recency**:\n" +
+                   f"   • Recent documents may use different terminology\n" +
+                   f"   • Try searching with current date/time related terms\n" +
+                   f"   • Look for latest trends or recent updates\n" +
+                   f"   • Use time_period='month' or 'year' for broader time searches\n\n" +
+                   f"🤝 **Ask User for Help**:\n" +
+                   f"   • Request user to suggest related keywords\n" +
+                   f"   • Ask about specific topics or domains they're interested in\n" +
+                   f"   • Get context about what they're trying to find\n" +
+                   f"   • Ask for alternative ways to describe their query\n\n" +
+                   f"🔧 **Technical Tips**:\n" +
+                   f"   • Use broader search terms first, then narrow down\n" +
+                   f"   • Check for typos in search terms\n" +
+                   f"   • Consider partial word matches\n" +
+                   f"   • Try fuzzy matching or wildcard searches" +
+                   time_suggestions)
 
         # Add detailed reorganization analysis for too many results
         reorganization_analysis = analyze_search_results_for_reorganization(formatted_results, query, total_results)
@@ -211,44 +203,43 @@ async def search(
         # Limited results guidance (1-3 matches)
         if total_results > 0 and total_results <= 3:
             guidance_messages += (f"💡 **Limited Results Found** ({total_results} matches):\n" +
-                                  f"   📂 **Check Other Indices**: Use 'list_indices' tool to see all available indices\n" +
-                                  f"   🔍 **Search elsewhere**: Try the same query in different indices\n" +
-                                  f"   🎯 **Expand keywords**: Try broader or alternative keywords for more results\n" +
-                                  f"   🤝 **Ask user**: Request related terms or different perspectives\n" +
-                                  f"   📊 **Results info**: Sorted by relevance first, then by recency" +
-                                  (
-                                      f"\n   ⏰ **Time range**: Consider broader time range if using time filters" if time_filter else "") +
-                                  f"\n\n")
+                                f"   📂 **Check Other Indices**: Use 'list_indices' tool to see all available indices\n" +
+                                f"   🔍 **Search elsewhere**: Try the same query in different indices\n" +
+                                f"   🎯 **Expand keywords**: Try broader or alternative keywords for more results\n" +
+                                f"   🤝 **Ask user**: Request related terms or different perspectives\n" +
+                                f"   📊 **Results info**: Sorted by relevance first, then by recency" +
+                                (f"\n   ⏰ **Time range**: Consider broader time range if using time filters" if time_filter else "") +
+                                f"\n\n")
 
         # Too many results guidance (15+ matches)
         if total_results > 15:
             guidance_messages += (f"🧹 **Too Many Results Found** ({total_results} matches):\n" +
-                                  f"   📊 **Consider Knowledge Base Reorganization**:\n" +
-                                  f"      • Ask user: 'Would you like to organize the knowledge base better?'\n" +
-                                  f"      • List key topics found in search results\n" +
-                                  f"      • Ask user to confirm which topics to consolidate/update/delete\n" +
-                                  f"      • Suggest merging similar documents into comprehensive ones\n" +
-                                  f"      • Propose archiving outdated/redundant information\n" +
-                                  f"   🎯 **User Collaboration Steps**:\n" +
-                                  f"      1. 'I found {total_results} documents about this topic'\n" +
-                                  f"      2. 'Would you like me to help organize them better?'\n" +
-                                  f"      3. List main themes/topics from results\n" +
-                                  f"      4. Get user confirmation for reorganization plan\n" +
-                                  f"      5. Execute: consolidate, update, or delete as agreed\n" +
-                                  f"   💡 **Quality Goals**: Fewer, better organized, comprehensive documents" +
-                                  (f"\n   • Consider narrower time range to reduce results" if time_filter else "") +
-                                  f"\n\n")
+                                f"   📊 **Consider Knowledge Base Reorganization**:\n" +
+                                f"      • Ask user: 'Would you like to organize the knowledge base better?'\n" +
+                                f"      • List key topics found in search results\n" +
+                                f"      • Ask user to confirm which topics to consolidate/update/delete\n" +
+                                f"      • Suggest merging similar documents into comprehensive ones\n" +
+                                f"      • Propose archiving outdated/redundant information\n" +
+                                f"   🎯 **User Collaboration Steps**:\n" +
+                                f"      1. 'I found {total_results} documents about this topic'\n" +
+                                f"      2. 'Would you like me to help organize them better?'\n" +
+                                f"      3. List main themes/topics from results\n" +
+                                f"      4. Get user confirmation for reorganization plan\n" +
+                                f"      5. Execute: consolidate, update, or delete as agreed\n" +
+                                f"   💡 **Quality Goals**: Fewer, better organized, comprehensive documents" +
+                                (f"\n   • Consider narrower time range to reduce results" if time_filter else "") +
+                                f"\n\n")
 
         # Add reorganization analysis if present
         if reorganization_analysis:
             guidance_messages += reorganization_analysis + "\n\n"
 
         return (guidance_messages +
-                f"Search results for '{query}' in index '{index}'{time_filter_desc} ({sort_desc}):\n\n" +
-                json.dumps({
-                    "total": total_results,
-                    "results": formatted_results
-                }, indent=2, ensure_ascii=False))
+               f"Search results for '{query}' in index '{index}'{time_filter_desc} ({sort_desc}):\n\n" +
+               json.dumps({
+                   "total": total_results,
+                   "results": formatted_results
+               }, indent=2, ensure_ascii=False))
     except Exception as e:
         # Provide detailed error messages for different types of Elasticsearch errors
         error_message = "❌ Search failed:\n\n"
@@ -258,8 +249,7 @@ async def search(
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
             error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
             error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
-        elif (
-                "index" in error_str and "not found" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
+        elif ("index" in error_str and "not found" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
             error_message += f"📁 **Index Error**: Index '{index}' does not exist\n"
             error_message += f"📍 The search index has not been created yet\n"
             error_message += f"💡 **Suggestions for agents**:\n"
@@ -292,19 +282,14 @@ async def search(
     tags={"elasticsearch", "index", "document", "validation", "duplicate-prevention"}
 )
 async def index_document(
-        index: Annotated[str, Field(description="Name of the Elasticsearch index to store the document")],
-        document: Annotated[Dict[str, Any], Field(description="Document data to index as JSON object")],
-        doc_id: Annotated[Optional[str], Field(
-            description="Optional document ID - if not provided, smart ID will be generated")] = None,
-        validate_schema: Annotated[
-            bool, Field(description="Whether to validate document structure for knowledge base format")] = True,
-        check_duplicates: Annotated[
-            bool, Field(description="Check for existing documents with similar title before indexing")] = True,
-        force_index: Annotated[
-            bool, Field(description="Force indexing even if potential duplicates are found")] = False,
-        use_ai_similarity: Annotated[bool, Field(
-            description="Use AI to analyze content similarity and provide intelligent recommendations")] = True,
-        ctx: Context = None
+    index: Annotated[str, Field(description="Name of the Elasticsearch index to store the document")],
+    document: Annotated[Dict[str, Any], Field(description="Document data to index as JSON object")],
+    doc_id: Annotated[Optional[str], Field(description="Optional document ID - if not provided, smart ID will be generated")] = None,
+    validate_schema: Annotated[bool, Field(description="Whether to validate document structure for knowledge base format")] = True,
+    check_duplicates: Annotated[bool, Field(description="Check for existing documents with similar title before indexing")] = True,
+    force_index: Annotated[bool, Field(description="Force indexing even if potential duplicates are found")] = False,
+    use_ai_similarity: Annotated[bool, Field(description="Use AI to analyze content similarity and provide intelligent recommendations")] = True,
+    ctx: Context = None
 ) -> str:
     """Index a document into Elasticsearch with smart duplicate prevention."""
     try:
@@ -367,44 +352,42 @@ async def index_document(
                                 pass
                             else:
                                 # Return AI analysis for user review
-                                return (
-                                            f"⚠️ **Potential Duplicates Found** - {dup_check['count']} similar document(s):\n\n" +
-                                            f"{duplicates_info}\n" +
-                                            f"{ai_message}\n\n" +
-                                            f"🤔 **What would you like to do?**\n" +
-                                            f"   1️⃣ **FOLLOW AI RECOMMENDATION**: {action} as suggested by AI\n" +
-                                            f"   2️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
-                                            f"   3️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
-                                            f"   4️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
-                                            f"💡 **AI Recommendation**: {reasoning}\n" +
-                                            f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
-                                            f"⚡ **To force indexing**: Call again with force_index=True")
+                                return (f"⚠️ **Potential Duplicates Found** - {dup_check['count']} similar document(s):\n\n" +
+                                       f"{duplicates_info}\n" +
+                                       f"{ai_message}\n\n" +
+                                       f"🤔 **What would you like to do?**\n" +
+                                       f"   1️⃣ **FOLLOW AI RECOMMENDATION**: {action} as suggested by AI\n" +
+                                       f"   2️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
+                                       f"   3️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
+                                       f"   4️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
+                                       f"💡 **AI Recommendation**: {reasoning}\n" +
+                                       f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
+                                       f"⚡ **To force indexing**: Call again with force_index=True")
 
                         except Exception as ai_error:
                             # Fallback to simple duplicate check if AI fails
-                            return (
-                                        f"⚠️ **Potential Duplicates Found** - {dup_check['count']} similar document(s):\n\n" +
-                                        f"{duplicates_info}\n\n" +
-                                        f"⚠️ **AI Analysis Failed**: {str(ai_error)}\n\n" +
-                                        f"🤔 **What would you like to do?**\n" +
-                                        f"   1️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
-                                        f"   2️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
-                                        f"   3️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
-                                        f"💡 **Recommendation**: Update existing documents to prevent knowledge base bloat\n" +
-                                        f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
-                                        f"⚡ **To force indexing**: Call again with force_index=True")
+                            return (f"⚠️ **Potential Duplicates Found** - {dup_check['count']} similar document(s):\n\n" +
+                                   f"{duplicates_info}\n\n" +
+                                   f"⚠️ **AI Analysis Failed**: {str(ai_error)}\n\n" +
+                                   f"🤔 **What would you like to do?**\n" +
+                                   f"   1️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
+                                   f"   2️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
+                                   f"   3️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
+                                   f"💡 **Recommendation**: Update existing documents to prevent knowledge base bloat\n" +
+                                   f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
+                                   f"⚡ **To force indexing**: Call again with force_index=True")
 
                     else:
                         # Simple duplicate check without AI
                         return (f"⚠️ **Potential Duplicates Found** - {dup_check['count']} similar document(s):\n\n" +
-                                f"{duplicates_info}\n\n" +
-                                f"🤔 **What would you like to do?**\n" +
-                                f"   1️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
-                                f"   2️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
-                                f"   3️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
-                                f"💡 **Recommendation**: Update existing documents to prevent knowledge base bloat\n" +
-                                f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
-                                f"⚡ **To force indexing**: Call again with force_index=True")
+                               f"{duplicates_info}\n\n" +
+                               f"🤔 **What would you like to do?**\n" +
+                               f"   1️⃣ **UPDATE existing document**: Modify one of the above instead\n" +
+                               f"   2️⃣ **SEARCH for more**: Use search tool to find all related content\n" +
+                               f"   3️⃣ **FORCE CREATE anyway**: Set force_index=True if this is truly unique\n\n" +
+                               f"💡 **Recommendation**: Update existing documents to prevent knowledge base bloat\n" +
+                               f"🔍 **Next Step**: Search for '{title}' to see all related documents\n\n" +
+                               f"⚡ **To force indexing**: Call again with force_index=True")
 
         # Generate smart document ID if not provided
         if not doc_id:
@@ -455,17 +438,17 @@ async def index_document(
             success_message += f"   ⚡ **Action**: Replaced existing document with same ID\n"
 
         success_message += (f"\n\n💡 **Smart Duplicate Prevention Active**:\n" +
-                            f"   🔍 **Auto-Check**: {'Enabled' if check_duplicates else 'Disabled'} - searches for similar titles\n" +
-                            f"   🤖 **AI Analysis**: {'Enabled' if use_ai_similarity else 'Disabled'} - intelligent content similarity detection\n" +
-                            f"   🆔 **Smart IDs**: Auto-generated from title with collision detection\n" +
-                            f"   ⚡ **Force Option**: Use force_index=True to bypass duplicate warnings\n" +
-                            f"   🔄 **Update Recommended**: Modify existing documents instead of creating duplicates\n\n" +
-                            f"🤝 **Best Practices**:\n" +
-                            f"   • Search before creating: 'search(index=\"{index}\", query=\"your topic\")'\n" +
-                            f"   • Update existing documents when possible\n" +
-                            f"   • Use descriptive titles for better smart ID generation\n" +
-                            f"   • AI will analyze content similarity for intelligent recommendations\n" +
-                            f"   • Set force_index=True only when content is truly unique")
+                          f"   🔍 **Auto-Check**: {'Enabled' if check_duplicates else 'Disabled'} - searches for similar titles\n" +
+                          f"   🤖 **AI Analysis**: {'Enabled' if use_ai_similarity else 'Disabled'} - intelligent content similarity detection\n" +
+                          f"   🆔 **Smart IDs**: Auto-generated from title with collision detection\n" +
+                          f"   ⚡ **Force Option**: Use force_index=True to bypass duplicate warnings\n" +
+                          f"   🔄 **Update Recommended**: Modify existing documents instead of creating duplicates\n\n" +
+                          f"🤝 **Best Practices**:\n" +
+                          f"   • Search before creating: 'search(index=\"{index}\", query=\"your topic\")'\n" +
+                          f"   • Update existing documents when possible\n" +
+                          f"   • Use descriptive titles for better smart ID generation\n" +
+                          f"   • AI will analyze content similarity for intelligent recommendations\n" +
+                          f"   • Set force_index=True only when content is truly unique")
 
         return success_message
 
@@ -514,8 +497,8 @@ async def index_document(
     tags={"elasticsearch", "delete", "document"}
 )
 async def delete_document(
-        index: Annotated[str, Field(description="Name of the Elasticsearch index containing the document")],
-        doc_id: Annotated[str, Field(description="Document ID to delete from the index")]
+    index: Annotated[str, Field(description="Name of the Elasticsearch index containing the document")],
+    doc_id: Annotated[str, Field(description="Document ID to delete from the index")]
 ) -> str:
     """Delete a document from Elasticsearch index."""
     try:
@@ -534,11 +517,9 @@ async def delete_document(
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
             error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
             error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
-        elif (
-                "not_found" in error_str or "not found" in error_str or "does not exist" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
+        elif ("not_found" in error_str or "not found" in error_str or "does not exist" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
             # Check if it's specifically an index not found error
-            if ("index" in error_str and (
-                    "not found" in error_str or "not_found" in error_str or "does not exist" in error_str)) or "index_not_found_exception" in error_str or "no such index" in error_str:
+            if ("index" in error_str and ("not found" in error_str or "not_found" in error_str or "does not exist" in error_str)) or "index_not_found_exception" in error_str or "no such index" in error_str:
                 error_message += f"📁 **Index Not Found**: Index '{index}' does not exist\n"
                 error_message += f"📍 The target index has not been created yet\n"
                 error_message += f"💡 Try: Use 'list_indices' to see available indices\n\n"
@@ -563,8 +544,8 @@ async def delete_document(
     tags={"elasticsearch", "get", "document", "retrieve"}
 )
 async def get_document(
-        index: Annotated[str, Field(description="Name of the Elasticsearch index containing the document")],
-        doc_id: Annotated[str, Field(description="Document ID to retrieve from the index")]
+    index: Annotated[str, Field(description="Name of the Elasticsearch index containing the document")],
+    doc_id: Annotated[str, Field(description="Document ID to retrieve from the index")]
 ) -> str:
     """Retrieve a specific document from Elasticsearch index."""
     try:
@@ -583,8 +564,7 @@ async def get_document(
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
             error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
             error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
-        elif (
-                "not_found" in error_str or "not found" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
+        elif ("not_found" in error_str or "not found" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
             if "index" in error_str or "index_not_found_exception" in error_str or "no such index" in error_str:
                 error_message += f"📁 **Index Not Found**: Index '{index}' does not exist\n"
                 error_message += f"📍 The target index has not been created yet\n"
@@ -779,11 +759,9 @@ async def list_indices() -> str:
     tags={"elasticsearch", "create", "index", "mapping"}
 )
 async def create_index(
-        index: Annotated[str, Field(description="Name of the new Elasticsearch index to create")],
-        mapping: Annotated[
-            Dict[str, Any], Field(description="Index mapping configuration defining field types and properties")],
-        settings: Annotated[Optional[Dict[str, Any]], Field(
-            description="Optional index settings for shards, replicas, analysis, etc.")] = None
+    index: Annotated[str, Field(description="Name of the new Elasticsearch index to create")],
+    mapping: Annotated[Dict[str, Any], Field(description="Index mapping configuration defining field types and properties")],
+    settings: Annotated[Optional[Dict[str, Any]], Field(description="Optional index settings for shards, replicas, analysis, etc.")] = None
 ) -> str:
     """Create a new Elasticsearch index with mapping and optional settings."""
     try:
@@ -798,18 +776,18 @@ async def create_index(
             result = es.indices.create(index=index, body=body)
 
             return (f"✅ Index metadata system initialized successfully!\n\n" +
-                    f"📋 **Metadata Index Created**: {index}\n" +
-                    f"🔧 **System Status**: Index metadata management now active\n" +
-                    f"✅ **Next Steps**:\n" +
-                    f"   1. Use 'create_index_metadata' to document your indices\n" +
-                    f"   2. Then use 'create_index' to create actual indices\n" +
-                    f"   3. Use 'list_indices' to see metadata integration\n\n" +
-                    f"🎯 **Benefits Unlocked**:\n" +
-                    f"   • Index governance and documentation enforcement\n" +
-                    f"   • Enhanced index listing with descriptions\n" +
-                    f"   • Proper cleanup workflows for index deletion\n" +
-                    f"   • Team collaboration through shared index understanding\n\n" +
-                    f"📋 **Technical Details**:\n{json.dumps(result, indent=2, ensure_ascii=False)}")
+                   f"📋 **Metadata Index Created**: {index}\n" +
+                   f"🔧 **System Status**: Index metadata management now active\n" +
+                   f"✅ **Next Steps**:\n" +
+                   f"   1. Use 'create_index_metadata' to document your indices\n" +
+                   f"   2. Then use 'create_index' to create actual indices\n" +
+                   f"   3. Use 'list_indices' to see metadata integration\n\n" +
+                   f"🎯 **Benefits Unlocked**:\n" +
+                   f"   • Index governance and documentation enforcement\n" +
+                   f"   • Enhanced index listing with descriptions\n" +
+                   f"   • Proper cleanup workflows for index deletion\n" +
+                   f"   • Team collaboration through shared index understanding\n\n" +
+                   f"📋 **Technical Details**:\n{json.dumps(result, indent=2, ensure_ascii=False)}")
 
         # Check if metadata document exists for this index
         metadata_index = "index_metadata"
@@ -828,51 +806,51 @@ async def create_index(
 
             if metadata_result['hits']['total']['value'] == 0:
                 return (f"❌ Index creation blocked - Missing metadata documentation!\n\n" +
-                        f"🚨 **MANDATORY: Create Index Metadata First**:\n" +
-                        f"   📋 **Required Action**: Before creating index '{index}', you must document it\n" +
-                        f"   🔧 **Use This Tool**: Call 'create_index_metadata' tool first\n" +
-                        f"   📝 **Required Information**:\n" +
-                        f"      • Index purpose and description\n" +
-                        f"      • Data types and content it will store\n" +
-                        f"      • Usage patterns and access frequency\n" +
-                        f"      • Retention policies and lifecycle\n" +
-                        f"      • Related indices and dependencies\n\n" +
-                        f"💡 **Workflow**:\n" +
-                        f"   1. Call 'create_index_metadata' with index name and description\n" +
-                        f"   2. Then call 'create_index' again to create the actual index\n" +
-                        f"   3. This ensures proper documentation and governance\n\n" +
-                        f"🎯 **Why This Matters**:\n" +
-                        f"   • Prevents orphaned indices without documentation\n" +
-                        f"   • Ensures team understands index purpose\n" +
-                        f"   • Facilitates better index management and cleanup\n" +
-                        f"   • Provides context for future maintenance")
+                       f"🚨 **MANDATORY: Create Index Metadata First**:\n" +
+                       f"   📋 **Required Action**: Before creating index '{index}', you must document it\n" +
+                       f"   🔧 **Use This Tool**: Call 'create_index_metadata' tool first\n" +
+                       f"   📝 **Required Information**:\n" +
+                       f"      • Index purpose and description\n" +
+                       f"      • Data types and content it will store\n" +
+                       f"      • Usage patterns and access frequency\n" +
+                       f"      • Retention policies and lifecycle\n" +
+                       f"      • Related indices and dependencies\n\n" +
+                       f"💡 **Workflow**:\n" +
+                       f"   1. Call 'create_index_metadata' with index name and description\n" +
+                       f"   2. Then call 'create_index' again to create the actual index\n" +
+                       f"   3. This ensures proper documentation and governance\n\n" +
+                       f"🎯 **Why This Matters**:\n" +
+                       f"   • Prevents orphaned indices without documentation\n" +
+                       f"   • Ensures team understands index purpose\n" +
+                       f"   • Facilitates better index management and cleanup\n" +
+                       f"   • Provides context for future maintenance")
 
         except Exception as metadata_error:
             # If metadata index doesn't exist, that's also a problem
             if "index_not_found" in str(metadata_error).lower():
                 return (f"❌ Index creation blocked - Metadata system not initialized!\n\n" +
-                        f"🚨 **SETUP REQUIRED**: Index metadata system needs initialization\n" +
-                        f"   📋 **Step 1**: Create metadata index first using 'create_index' with name 'index_metadata'\n" +
-                        f"   📝 **Step 2**: Use this mapping for metadata index:\n" +
-                        f"```json\n" +
-                        f"{{\n" +
-                        f"  \"properties\": {{\n" +
-                        f"    \"index_name\": {{\"type\": \"keyword\"}},\n" +
-                        f"    \"description\": {{\"type\": \"text\"}},\n" +
-                        f"    \"purpose\": {{\"type\": \"text\"}},\n" +
-                        f"    \"data_types\": {{\"type\": \"keyword\"}},\n" +
-                        f"    \"created_by\": {{\"type\": \"keyword\"}},\n" +
-                        f"    \"created_date\": {{\"type\": \"date\"}},\n" +
-                        f"    \"usage_pattern\": {{\"type\": \"keyword\"}},\n" +
-                        f"    \"retention_policy\": {{\"type\": \"text\"}},\n" +
-                        f"    \"related_indices\": {{\"type\": \"keyword\"}},\n" +
-                        f"    \"tags\": {{\"type\": \"keyword\"}}\n" +
-                        f"  }}\n" +
-                        f"}}\n" +
-                        f"```\n" +
-                        f"   🔧 **Step 3**: Then use 'create_index_metadata' to document your index\n" +
-                        f"   ✅ **Step 4**: Finally create your actual index\n\n" +
-                        f"💡 **This is a one-time setup** - once metadata index exists, normal workflow applies")
+                       f"🚨 **SETUP REQUIRED**: Index metadata system needs initialization\n" +
+                       f"   📋 **Step 1**: Create metadata index first using 'create_index' with name 'index_metadata'\n" +
+                       f"   📝 **Step 2**: Use this mapping for metadata index:\n" +
+                       f"```json\n" +
+                       f"{{\n" +
+                       f"  \"properties\": {{\n" +
+                       f"    \"index_name\": {{\"type\": \"keyword\"}},\n" +
+                       f"    \"description\": {{\"type\": \"text\"}},\n" +
+                       f"    \"purpose\": {{\"type\": \"text\"}},\n" +
+                       f"    \"data_types\": {{\"type\": \"keyword\"}},\n" +
+                       f"    \"created_by\": {{\"type\": \"keyword\"}},\n" +
+                       f"    \"created_date\": {{\"type\": \"date\"}},\n" +
+                       f"    \"usage_pattern\": {{\"type\": \"keyword\"}},\n" +
+                       f"    \"retention_policy\": {{\"type\": \"text\"}},\n" +
+                       f"    \"related_indices\": {{\"type\": \"keyword\"}},\n" +
+                       f"    \"tags\": {{\"type\": \"keyword\"}}\n" +
+                       f"  }}\n" +
+                       f"}}\n" +
+                       f"```\n" +
+                       f"   🔧 **Step 3**: Then use 'create_index_metadata' to document your index\n" +
+                       f"   ✅ **Step 4**: Finally create your actual index\n\n" +
+                       f"💡 **This is a one-time setup** - once metadata index exists, normal workflow applies")
 
         # If we get here, metadata exists - proceed with index creation
         body = {"mappings": mapping}
@@ -921,7 +899,7 @@ async def create_index(
     tags={"elasticsearch", "delete", "index", "destructive"}
 )
 async def delete_index(
-        index: Annotated[str, Field(description="Name of the Elasticsearch index to delete")]
+    index: Annotated[str, Field(description="Name of the Elasticsearch index to delete")]
 ) -> str:
     """Delete an Elasticsearch index permanently."""
     try:
@@ -948,24 +926,24 @@ async def delete_index(
                 metadata_source = metadata_doc['_source']
 
                 return (f"❌ Index deletion blocked - Metadata cleanup required!\n\n" +
-                        f"🚨 **MANDATORY: Remove Index Metadata First**:\n" +
-                        f"   📋 **Found Metadata Document**: {metadata_id}\n" +
-                        f"   📝 **Index Description**: {metadata_source.get('description', 'No description')}\n" +
-                        f"   🔧 **Required Action**: Delete metadata document before removing index\n\n" +
-                        f"💡 **Cleanup Workflow**:\n" +
-                        f"   1. Call 'delete_index_metadata' with index name '{index}'\n" +
-                        f"   2. Then call 'delete_index' again to remove the actual index\n" +
-                        f"   3. This ensures proper cleanup and audit trail\n\n" +
-                        f"📊 **Metadata Details**:\n" +
-                        f"   • Purpose: {metadata_source.get('purpose', 'Not specified')}\n" +
-                        f"   • Data Types: {', '.join(metadata_source.get('data_types', []))}\n" +
-                        f"   • Created: {metadata_source.get('created_date', 'Unknown')}\n" +
-                        f"   • Usage: {metadata_source.get('usage_pattern', 'Not specified')}\n\n" +
-                        f"🎯 **Why This Matters**:\n" +
-                        f"   • Maintains clean metadata registry\n" +
-                        f"   • Prevents orphaned documentation\n" +
-                        f"   • Ensures proper audit trail for deletions\n" +
-                        f"   • Confirms intentional removal with full context")
+                       f"🚨 **MANDATORY: Remove Index Metadata First**:\n" +
+                       f"   📋 **Found Metadata Document**: {metadata_id}\n" +
+                       f"   📝 **Index Description**: {metadata_source.get('description', 'No description')}\n" +
+                       f"   🔧 **Required Action**: Delete metadata document before removing index\n\n" +
+                       f"💡 **Cleanup Workflow**:\n" +
+                       f"   1. Call 'delete_index_metadata' with index name '{index}'\n" +
+                       f"   2. Then call 'delete_index' again to remove the actual index\n" +
+                       f"   3. This ensures proper cleanup and audit trail\n\n" +
+                       f"📊 **Metadata Details**:\n" +
+                       f"   • Purpose: {metadata_source.get('purpose', 'Not specified')}\n" +
+                       f"   • Data Types: {', '.join(metadata_source.get('data_types', []))}\n" +
+                       f"   • Created: {metadata_source.get('created_date', 'Unknown')}\n" +
+                       f"   • Usage: {metadata_source.get('usage_pattern', 'Not specified')}\n\n" +
+                       f"🎯 **Why This Matters**:\n" +
+                       f"   • Maintains clean metadata registry\n" +
+                       f"   • Prevents orphaned documentation\n" +
+                       f"   • Ensures proper audit trail for deletions\n" +
+                       f"   • Confirms intentional removal with full context")
 
         except Exception as metadata_error:
             # If metadata index doesn't exist, warn but allow deletion
@@ -974,10 +952,10 @@ async def delete_index(
                 result = es.indices.delete(index=index)
 
                 return (f"⚠️ Index '{index}' deleted but metadata system is missing:\n\n" +
-                        f"{json.dumps(result, indent=2, ensure_ascii=False)}\n\n" +
-                        f"🚨 **Warning**: No metadata tracking system found\n" +
-                        f"   📋 Consider setting up 'index_metadata' index for better governance\n" +
-                        f"   💡 Use 'create_index_metadata' tool for future index documentation")
+                       f"{json.dumps(result, indent=2, ensure_ascii=False)}\n\n" +
+                       f"🚨 **Warning**: No metadata tracking system found\n" +
+                       f"   📋 Consider setting up 'index_metadata' index for better governance\n" +
+                       f"   💡 Use 'create_index_metadata' tool for future index documentation")
 
         # If we get here, no metadata found - proceed with deletion
         result = es.indices.delete(index=index)
@@ -993,8 +971,7 @@ async def delete_index(
             error_message += "🔌 **Connection Error**: Cannot connect to Elasticsearch server\n"
             error_message += f"📍 Check if Elasticsearch is running at the configured address\n"
             error_message += f"💡 Try: Use 'setup_elasticsearch' tool to start Elasticsearch\n\n"
-        elif (
-                "not_found" in error_str or "not found" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
+        elif ("not_found" in error_str or "not found" in error_str) or "index_not_found_exception" in error_str or "no such index" in error_str:
             error_message += f"📁 **Index Not Found**: Index '{index}' does not exist\n"
             error_message += f"📍 Cannot delete an index that doesn't exist\n"
             error_message += f"💡 Try: Use 'list_indices' to see available indices\n\n"
@@ -1009,7 +986,6 @@ async def delete_index(
 
         return error_message
 
-
 # ================================
 # TOOL 8: VALIDATE_DOCUMENT_SCHEMA
 # ================================
@@ -1019,22 +995,21 @@ async def delete_index(
     tags={"elasticsearch", "validation", "document", "schema"}
 )
 async def validate_document_schema(
-        document: Annotated[
-            Dict[str, Any], Field(description="Document object to validate against knowledge base schema format")]
+    document: Annotated[Dict[str, Any], Field(description="Document object to validate against knowledge base schema format")]
 ) -> str:
     """Validate document structure against knowledge base schema standards."""
     try:
         validated_doc = validate_document_structure(document)
 
         return (f"✅ Document validation successful!\n\n" +
-                f"Validated document:\n{json.dumps(validated_doc, indent=2, ensure_ascii=False)}\n\n" +
-                f"Document is ready to be indexed.\n\n" +
-                f"🚨 **RECOMMENDED: Check for Duplicates First**:\n" +
-                f"   🔍 **Use index_document**: Built-in AI-powered duplicate detection\n" +
-                f"   🔄 **Update instead of duplicate**: Modify existing documents when possible\n" +
-                f"   📏 **Content length check**: If < 1000 chars, store in 'content' field directly\n" +
-                f"   📁 **File creation**: Only for truly long content that needs separate storage\n" +
-                f"   🎯 **Quality over quantity**: Prevent knowledge base bloat through smart reuse")
+               f"Validated document:\n{json.dumps(validated_doc, indent=2, ensure_ascii=False)}\n\n" +
+               f"Document is ready to be indexed.\n\n" +
+               f"🚨 **RECOMMENDED: Check for Duplicates First**:\n" +
+               f"   🔍 **Use index_document**: Built-in AI-powered duplicate detection\n" +
+               f"   🔄 **Update instead of duplicate**: Modify existing documents when possible\n" +
+               f"   📏 **Content length check**: If < 1000 chars, store in 'content' field directly\n" +
+               f"   📁 **File creation**: Only for truly long content that needs separate storage\n" +
+               f"   🎯 **Quality over quantity**: Prevent knowledge base bloat through smart reuse")
 
     except DocumentValidationError as e:
         return format_validation_error(e)
@@ -1051,20 +1026,15 @@ async def validate_document_schema(
     tags={"elasticsearch", "batch", "directory", "index", "bulk", "ai-enhanced"}
 )
 async def batch_index_directory(
-        index: Annotated[str, Field(description="Name of the Elasticsearch index to store the documents")],
-        directory_path: Annotated[str, Field(description="Path to directory containing documents to index")],
-        file_pattern: Annotated[str, Field(description="File pattern to match (e.g., '*.md', '*.txt', '*')")] = "*.md",
-        validate_schema: Annotated[
-            bool, Field(description="Whether to validate document structure for knowledge base format")] = True,
-        recursive: Annotated[bool, Field(description="Whether to search subdirectories recursively")] = True,
-        skip_existing: Annotated[
-            bool, Field(description="Skip files that already exist in index (check by filename)")] = False,
-        max_file_size: Annotated[
-            int, Field(description="Maximum file size in bytes to process", ge=1, le=10485760)] = 1048576,
-        # 1MB default
-        use_ai_enhancement: Annotated[
-            bool, Field(description="Use AI to generate intelligent tags and key points for each document")] = True,
-        ctx: Context = None
+    index: Annotated[str, Field(description="Name of the Elasticsearch index to store the documents")],
+    directory_path: Annotated[str, Field(description="Path to directory containing documents to index")],
+    file_pattern: Annotated[str, Field(description="File pattern to match (e.g., '*.md', '*.txt', '*')")] = "*.md",
+    validate_schema: Annotated[bool, Field(description="Whether to validate document structure for knowledge base format")] = True,
+    recursive: Annotated[bool, Field(description="Whether to search subdirectories recursively")] = True,
+    skip_existing: Annotated[bool, Field(description="Skip files that already exist in index (check by filename)")] = False,
+    max_file_size: Annotated[int, Field(description="Maximum file size in bytes to process", ge=1, le=10485760)] = 1048576,  # 1MB default
+    use_ai_enhancement: Annotated[bool, Field(description="Use AI to generate intelligent tags and key points for each document")] = True,
+    ctx: Context = None
 ) -> str:
     """Batch index all documents from a directory into Elasticsearch."""
     try:
@@ -1383,21 +1353,16 @@ async def batch_index_directory(
     tags={"elasticsearch", "document", "template", "knowledge-base", "ai-enhanced"}
 )
 async def create_document_template(
-        title: Annotated[str, Field(description="Document title for the knowledge base entry")],
-        content: Annotated[str, Field(description="Document content for AI analysis and metadata generation")] = "",
-        priority: Annotated[
-            str, Field(description="Priority level for the document", pattern="^(high|medium|low)$")] = "medium",
-        source_type: Annotated[str, Field(description="Type of source content",
-                                          pattern="^(markdown|code|config|documentation|tutorial)$")] = "markdown",
-        tags: Annotated[
-            List[str], Field(description="Additional manual tags (will be merged with AI-generated tags)")] = [],
-        summary: Annotated[str, Field(description="Brief summary description of the document content")] = "",
-        key_points: Annotated[List[str], Field(
-            description="Additional manual key points (will be merged with AI-generated points)")] = [],
-        related: Annotated[List[str], Field(description="List of related document IDs or references")] = [],
-        use_ai_enhancement: Annotated[
-            bool, Field(description="Use AI to generate intelligent tags and key points")] = True,
-        ctx: Context = None
+    title: Annotated[str, Field(description="Document title for the knowledge base entry")],
+    content: Annotated[str, Field(description="Document content for AI analysis and metadata generation")] = "",
+    priority: Annotated[str, Field(description="Priority level for the document", pattern="^(high|medium|low)$")] = "medium",
+    source_type: Annotated[str, Field(description="Type of source content", pattern="^(markdown|code|config|documentation|tutorial)$")] = "markdown",
+    tags: Annotated[List[str], Field(description="Additional manual tags (will be merged with AI-generated tags)")] = [],
+    summary: Annotated[str, Field(description="Brief summary description of the document content")] = "",
+    key_points: Annotated[List[str], Field(description="Additional manual key points (will be merged with AI-generated points)")] = [],
+    related: Annotated[List[str], Field(description="List of related document IDs or references")] = [],
+    use_ai_enhancement: Annotated[bool, Field(description="Use AI to generate intelligent tags and key points")] = True,
+    ctx: Context = None
 ) -> str:
     """Create a properly structured document template for knowledge base indexing with AI-generated metadata."""
     try:
@@ -1433,8 +1398,7 @@ async def create_document_template(
                 if ai_enhanced_content and len(ai_enhanced_content) > len(content) * 0.8:
                     content = ai_enhanced_content
 
-                await ctx.info(
-                    f"✅ AI generated {len(ai_tags)} tags, {len(ai_key_points)} key points, smart summary, and enhanced content")
+                await ctx.info(f"✅ AI generated {len(ai_tags)} tags, {len(ai_key_points)} key points, smart summary, and enhanced content")
 
             except Exception as e:
                 await ctx.warning(f"AI enhancement failed: {str(e)}, using manual metadata only")
@@ -1461,16 +1425,16 @@ async def create_document_template(
             ai_info = f"\n🤖 **AI Enhancement Used**: Generated {len(final_tags)} total tags and {len(final_key_points)} total key points\n"
 
         return (f"✅ Document template created successfully with AI-enhanced metadata!\n\n" +
-                f"{json.dumps(template, indent=2, ensure_ascii=False)}\n" +
-                ai_info +
-                f"\nThis template can be used with the 'index_document' tool.\n\n" +
-                f"⚠️ **CRITICAL: Search Before Creating - Avoid Duplicates**:\n" +
-                f"   🔍 **STEP 1**: Use 'search' tool to check if similar content already exists\n" +
-                f"   🔄 **STEP 2**: If found, UPDATE existing document instead of creating new one\n" +
-                f"   📝 **STEP 3**: For SHORT content (< 1000 chars): Add directly to 'content' field\n" +
-                f"   📁 **STEP 4**: For LONG content: Create file only when truly necessary\n" +
-                f"   🧹 **STEP 5**: Clean up outdated documents regularly to maintain quality\n" +
-                f"   🎯 **Remember**: Knowledge base quality > quantity - avoid bloat!")
+               f"{json.dumps(template, indent=2, ensure_ascii=False)}\n" +
+               ai_info +
+               f"\nThis template can be used with the 'index_document' tool.\n\n" +
+               f"⚠️ **CRITICAL: Search Before Creating - Avoid Duplicates**:\n" +
+               f"   🔍 **STEP 1**: Use 'search' tool to check if similar content already exists\n" +
+               f"   🔄 **STEP 2**: If found, UPDATE existing document instead of creating new one\n" +
+               f"   📝 **STEP 3**: For SHORT content (< 1000 chars): Add directly to 'content' field\n" +
+               f"   📁 **STEP 4**: For LONG content: Create file only when truly necessary\n" +
+               f"   🧹 **STEP 5**: Clean up outdated documents regularly to maintain quality\n" +
+               f"   🎯 **Remember**: Knowledge base quality > quantity - avoid bloat!")
 
     except Exception as e:
         return f"❌ Failed to create document template: {str(e)}"
@@ -1485,18 +1449,15 @@ async def create_document_template(
     tags={"elasticsearch", "metadata", "documentation", "governance"}
 )
 async def create_index_metadata(
-        index_name: Annotated[str, Field(description="Name of the index to document")],
-        description: Annotated[str, Field(description="Detailed description of the index purpose and content")],
-        purpose: Annotated[str, Field(description="Primary purpose and use case for this index")],
-        data_types: Annotated[List[str], Field(
-            description="Types of data stored in this index (e.g., 'documents', 'logs', 'metrics')")] = [],
-        usage_pattern: Annotated[
-            str, Field(description="How the index is accessed (e.g., 'read-heavy', 'write-heavy', 'mixed')")] = "mixed",
-        retention_policy: Annotated[
-            str, Field(description="Data retention policy and lifecycle management")] = "No specific policy",
-        related_indices: Annotated[List[str], Field(description="Names of related or dependent indices")] = [],
-        tags: Annotated[List[str], Field(description="Tags for categorizing and organizing indices")] = [],
-        created_by: Annotated[str, Field(description="Team or person responsible for this index")] = "Unknown"
+    index_name: Annotated[str, Field(description="Name of the index to document")],
+    description: Annotated[str, Field(description="Detailed description of the index purpose and content")],
+    purpose: Annotated[str, Field(description="Primary purpose and use case for this index")],
+    data_types: Annotated[List[str], Field(description="Types of data stored in this index (e.g., 'documents', 'logs', 'metrics')")] = [],
+    usage_pattern: Annotated[str, Field(description="How the index is accessed (e.g., 'read-heavy', 'write-heavy', 'mixed')")] = "mixed",
+    retention_policy: Annotated[str, Field(description="Data retention policy and lifecycle management")] = "No specific policy",
+    related_indices: Annotated[List[str], Field(description="Names of related or dependent indices")] = [],
+    tags: Annotated[List[str], Field(description="Tags for categorizing and organizing indices")] = [],
+    created_by: Annotated[str, Field(description="Team or person responsible for this index")] = "Unknown"
 ) -> str:
     """Create comprehensive metadata documentation for an Elasticsearch index."""
     try:
@@ -1549,17 +1510,17 @@ async def create_index_metadata(
             existing_data = existing_doc['_source']
 
             return (f"⚠️ Index metadata already exists for '{index_name}'!\n\n" +
-                    f"📋 **Existing Metadata** (ID: {existing_id}):\n" +
-                    f"   📝 Description: {existing_data.get('description', 'No description')}\n" +
-                    f"   🎯 Purpose: {existing_data.get('purpose', 'No purpose')}\n" +
-                    f"   📂 Data Types: {', '.join(existing_data.get('data_types', []))}\n" +
-                    f"   👤 Created By: {existing_data.get('created_by', 'Unknown')}\n" +
-                    f"   📅 Created: {existing_data.get('created_date', 'Unknown')}\n\n" +
-                    f"💡 **Options**:\n" +
-                    f"   🔄 **Update**: Use 'update_index_metadata' to modify existing documentation\n" +
-                    f"   🗑️ **Replace**: Use 'delete_index_metadata' then 'create_index_metadata'\n" +
-                    f"   ✅ **Keep**: Current metadata is sufficient, proceed with 'create_index'\n\n" +
-                    f"🚨 **Note**: You can now create the index '{index_name}' since metadata exists")
+                   f"📋 **Existing Metadata** (ID: {existing_id}):\n" +
+                   f"   📝 Description: {existing_data.get('description', 'No description')}\n" +
+                   f"   🎯 Purpose: {existing_data.get('purpose', 'No purpose')}\n" +
+                   f"   📂 Data Types: {', '.join(existing_data.get('data_types', []))}\n" +
+                   f"   👤 Created By: {existing_data.get('created_by', 'Unknown')}\n" +
+                   f"   📅 Created: {existing_data.get('created_date', 'Unknown')}\n\n" +
+                   f"💡 **Options**:\n" +
+                   f"   🔄 **Update**: Use 'update_index_metadata' to modify existing documentation\n" +
+                   f"   🗑️ **Replace**: Use 'delete_index_metadata' then 'create_index_metadata'\n" +
+                   f"   ✅ **Keep**: Current metadata is sufficient, proceed with 'create_index'\n\n" +
+                   f"🚨 **Note**: You can now create the index '{index_name}' since metadata exists")
 
         # Create new metadata document
         current_time = datetime.now().isoformat()
@@ -1585,26 +1546,26 @@ async def create_index_metadata(
         result = es.index(index=metadata_index, id=metadata_id, body=metadata_doc)
 
         return (f"✅ Index metadata created successfully!\n\n" +
-                f"📋 **Metadata Details**:\n" +
-                f"   🎯 Index: {index_name}\n" +
-                f"   📝 Description: {description}\n" +
-                f"   🎯 Purpose: {purpose}\n" +
-                f"   📂 Data Types: {', '.join(data_types) if data_types else 'None specified'}\n" +
-                f"   🔄 Usage Pattern: {usage_pattern}\n" +
-                f"   📅 Retention: {retention_policy}\n" +
-                f"   🔗 Related Indices: {', '.join(related_indices) if related_indices else 'None'}\n" +
-                f"   🏷️ Tags: {', '.join(tags) if tags else 'None'}\n" +
-                f"   👤 Created By: {created_by}\n" +
-                f"   📅 Created: {current_time}\n\n" +
-                f"✅ **Next Steps**:\n" +
-                f"   🔧 You can now use 'create_index' to create the actual index '{index_name}'\n" +
-                f"   📊 Use 'list_indices' to see this metadata in the index listing\n" +
-                f"   🔄 Use 'update_index_metadata' if you need to modify this documentation\n\n" +
-                f"🎯 **Benefits Achieved**:\n" +
-                f"   • Index purpose is clearly documented\n" +
-                f"   • Team collaboration is improved through shared understanding\n" +
-                f"   • Future maintenance is simplified with proper context\n" +
-                f"   • Index governance and compliance are maintained")
+               f"📋 **Metadata Details**:\n" +
+               f"   🎯 Index: {index_name}\n" +
+               f"   📝 Description: {description}\n" +
+               f"   🎯 Purpose: {purpose}\n" +
+               f"   📂 Data Types: {', '.join(data_types) if data_types else 'None specified'}\n" +
+               f"   🔄 Usage Pattern: {usage_pattern}\n" +
+               f"   📅 Retention: {retention_policy}\n" +
+               f"   🔗 Related Indices: {', '.join(related_indices) if related_indices else 'None'}\n" +
+               f"   🏷️ Tags: {', '.join(tags) if tags else 'None'}\n" +
+               f"   👤 Created By: {created_by}\n" +
+               f"   📅 Created: {current_time}\n\n" +
+               f"✅ **Next Steps**:\n" +
+               f"   🔧 You can now use 'create_index' to create the actual index '{index_name}'\n" +
+               f"   📊 Use 'list_indices' to see this metadata in the index listing\n" +
+               f"   🔄 Use 'update_index_metadata' if you need to modify this documentation\n\n" +
+               f"🎯 **Benefits Achieved**:\n" +
+               f"   • Index purpose is clearly documented\n" +
+               f"   • Team collaboration is improved through shared understanding\n" +
+               f"   • Future maintenance is simplified with proper context\n" +
+               f"   • Index governance and compliance are maintained")
 
     except Exception as e:
         error_message = "❌ Failed to create index metadata:\n\n"
@@ -1630,18 +1591,15 @@ async def create_index_metadata(
     tags={"elasticsearch", "metadata", "update", "documentation"}
 )
 async def update_index_metadata(
-        index_name: Annotated[str, Field(description="Name of the index to update metadata for")],
-        description: Annotated[
-            Optional[str], Field(description="Updated description of the index purpose and content")] = None,
-        purpose: Annotated[Optional[str], Field(description="Updated primary purpose and use case")] = None,
-        data_types: Annotated[
-            Optional[List[str]], Field(description="Updated types of data stored in this index")] = None,
-        usage_pattern: Annotated[Optional[str], Field(description="Updated access pattern")] = None,
-        retention_policy: Annotated[Optional[str], Field(description="Updated data retention policy")] = None,
-        related_indices: Annotated[
-            Optional[List[str]], Field(description="Updated related or dependent indices")] = None,
-        tags: Annotated[Optional[List[str]], Field(description="Updated tags for categorization")] = None,
-        updated_by: Annotated[str, Field(description="Person or team making this update")] = "Unknown"
+    index_name: Annotated[str, Field(description="Name of the index to update metadata for")],
+    description: Annotated[Optional[str], Field(description="Updated description of the index purpose and content")] = None,
+    purpose: Annotated[Optional[str], Field(description="Updated primary purpose and use case")] = None,
+    data_types: Annotated[Optional[List[str]], Field(description="Updated types of data stored in this index")] = None,
+    usage_pattern: Annotated[Optional[str], Field(description="Updated access pattern")] = None,
+    retention_policy: Annotated[Optional[str], Field(description="Updated data retention policy")] = None,
+    related_indices: Annotated[Optional[List[str]], Field(description="Updated related or dependent indices")] = None,
+    tags: Annotated[Optional[List[str]], Field(description="Updated tags for categorization")] = None,
+    updated_by: Annotated[str, Field(description="Person or team making this update")] = "Unknown"
 ) -> str:
     """Update existing metadata documentation for an Elasticsearch index."""
     try:
@@ -1662,11 +1620,11 @@ async def update_index_metadata(
 
         if existing_result['hits']['total']['value'] == 0:
             return (f"❌ No metadata found for index '{index_name}'!\n\n" +
-                    f"🚨 **Missing Metadata**: Cannot update non-existent documentation\n" +
-                    f"   💡 **Solution**: Use 'create_index_metadata' to create documentation first\n" +
-                    f"   📋 **Required**: Provide description, purpose, and data types\n" +
-                    f"   ✅ **Then**: Use this update tool for future modifications\n\n" +
-                    f"🔍 **Alternative**: Use 'list_indices' to see all documented indices")
+                   f"🚨 **Missing Metadata**: Cannot update non-existent documentation\n" +
+                   f"   💡 **Solution**: Use 'create_index_metadata' to create documentation first\n" +
+                   f"   📋 **Required**: Provide description, purpose, and data types\n" +
+                   f"   ✅ **Then**: Use this update tool for future modifications\n\n" +
+                   f"🔍 **Alternative**: Use 'list_indices' to see all documented indices")
 
         # Get existing document
         existing_doc = existing_result['hits']['hits'][0]
@@ -1725,23 +1683,23 @@ async def update_index_metadata(
             changes_made.append(f"   🏷️ Tags: {old_tags or 'None'} → {new_tags}")
 
         return (f"✅ Index metadata updated successfully!\n\n" +
-                f"📋 **Updated Metadata for '{index_name}'**:\n" +
-                (f"🔄 **Changes Made**:\n" + '\n'.join(changes_made) + "\n\n" if changes_made else "") +
-                f"📊 **Current Metadata**:\n" +
-                f"   📝 Description: {updated_data.get('description', 'No description')}\n" +
-                f"   🎯 Purpose: {updated_data.get('purpose', 'No purpose')}\n" +
-                f"   📂 Data Types: {', '.join(updated_data.get('data_types', [])) if updated_data.get('data_types') else 'None'}\n" +
-                f"   🔄 Usage Pattern: {updated_data.get('usage_pattern', 'Unknown')}\n" +
-                f"   📅 Retention: {updated_data.get('retention_policy', 'Not specified')}\n" +
-                f"   🔗 Related Indices: {', '.join(updated_data.get('related_indices', [])) if updated_data.get('related_indices') else 'None'}\n" +
-                f"   🏷️ Tags: {', '.join(updated_data.get('tags', [])) if updated_data.get('tags') else 'None'}\n" +
-                f"   👤 Last Updated By: {updated_by}\n" +
-                f"   📅 Last Updated: {update_data['last_updated']}\n\n" +
-                f"✅ **Benefits**:\n" +
-                f"   • Index documentation stays current and accurate\n" +
-                f"   • Team has updated context for index usage\n" +
-                f"   • Change history is tracked with timestamps\n" +
-                f"   • Governance and compliance are maintained")
+               f"📋 **Updated Metadata for '{index_name}'**:\n" +
+               (f"🔄 **Changes Made**:\n" + '\n'.join(changes_made) + "\n\n" if changes_made else "") +
+               f"📊 **Current Metadata**:\n" +
+               f"   📝 Description: {updated_data.get('description', 'No description')}\n" +
+               f"   🎯 Purpose: {updated_data.get('purpose', 'No purpose')}\n" +
+               f"   📂 Data Types: {', '.join(updated_data.get('data_types', [])) if updated_data.get('data_types') else 'None'}\n" +
+               f"   🔄 Usage Pattern: {updated_data.get('usage_pattern', 'Unknown')}\n" +
+               f"   📅 Retention: {updated_data.get('retention_policy', 'Not specified')}\n" +
+               f"   🔗 Related Indices: {', '.join(updated_data.get('related_indices', [])) if updated_data.get('related_indices') else 'None'}\n" +
+               f"   🏷️ Tags: {', '.join(updated_data.get('tags', [])) if updated_data.get('tags') else 'None'}\n" +
+               f"   👤 Last Updated By: {updated_by}\n" +
+               f"   📅 Last Updated: {update_data['last_updated']}\n\n" +
+               f"✅ **Benefits**:\n" +
+               f"   • Index documentation stays current and accurate\n" +
+               f"   • Team has updated context for index usage\n" +
+               f"   • Change history is tracked with timestamps\n" +
+               f"   • Governance and compliance are maintained")
 
     except Exception as e:
         error_message = "❌ Failed to update index metadata:\n\n"
@@ -1771,7 +1729,7 @@ async def update_index_metadata(
     tags={"elasticsearch", "metadata", "delete", "cleanup"}
 )
 async def delete_index_metadata(
-        index_name: Annotated[str, Field(description="Name of the index to remove metadata for")]
+    index_name: Annotated[str, Field(description="Name of the index to remove metadata for")]
 ) -> str:
     """Delete metadata documentation for an Elasticsearch index."""
     try:
@@ -1792,14 +1750,14 @@ async def delete_index_metadata(
 
         if existing_result['hits']['total']['value'] == 0:
             return (f"⚠️ No metadata found for index '{index_name}'!\n\n" +
-                    f"📋 **Status**: Index metadata does not exist\n" +
-                    f"   ✅ **Good**: No cleanup required for metadata\n" +
-                    f"   🔧 **Safe**: You can proceed with 'delete_index' if needed\n" +
-                    f"   🔍 **Check**: Use 'list_indices' to see all documented indices\n\n" +
-                    f"💡 **This is Normal If**:\n" +
-                    f"   • Index was created before metadata system was implemented\n" +
-                    f"   • Index was created without using 'create_index_metadata' first\n" +
-                    f"   • Metadata was already deleted in a previous cleanup")
+                   f"📋 **Status**: Index metadata does not exist\n" +
+                   f"   ✅ **Good**: No cleanup required for metadata\n" +
+                   f"   🔧 **Safe**: You can proceed with 'delete_index' if needed\n" +
+                   f"   🔍 **Check**: Use 'list_indices' to see all documented indices\n\n" +
+                   f"💡 **This is Normal If**:\n" +
+                   f"   • Index was created before metadata system was implemented\n" +
+                   f"   • Index was created without using 'create_index_metadata' first\n" +
+                   f"   • Metadata was already deleted in a previous cleanup")
 
         # Get existing document details before deletion
         existing_doc = existing_result['hits']['hits'][0]
@@ -1810,22 +1768,22 @@ async def delete_index_metadata(
         result = es.delete(index=metadata_index, id=existing_id)
 
         return (f"✅ Index metadata deleted successfully!\n\n" +
-                f"🗑️ **Deleted Metadata for '{index_name}'**:\n" +
-                f"   📋 Document ID: {existing_id}\n" +
-                f"   📝 Description: {existing_data.get('description', 'No description')}\n" +
-                f"   🎯 Purpose: {existing_data.get('purpose', 'No purpose')}\n" +
-                f"   📂 Data Types: {', '.join(existing_data.get('data_types', [])) if existing_data.get('data_types') else 'None'}\n" +
-                f"   👤 Created By: {existing_data.get('created_by', 'Unknown')}\n" +
-                f"   📅 Created: {existing_data.get('created_date', 'Unknown')}\n\n" +
-                f"✅ **Cleanup Complete**:\n" +
-                f"   🗑️ Metadata documentation removed from registry\n" +
-                f"   🔧 You can now safely use 'delete_index' to remove the actual index\n" +
-                f"   📊 Use 'list_indices' to verify metadata removal\n\n" +
-                f"🎯 **Next Steps**:\n" +
-                f"   1. Proceed with 'delete_index {index_name}' to remove the actual index\n" +
-                f"   2. Or use 'create_index_metadata' if you want to re-document this index\n" +
-                f"   3. Clean up any related indices mentioned in metadata\n\n" +
-                f"⚠️ **Important**: This only deleted the documentation, not the actual index")
+               f"🗑️ **Deleted Metadata for '{index_name}'**:\n" +
+               f"   📋 Document ID: {existing_id}\n" +
+               f"   📝 Description: {existing_data.get('description', 'No description')}\n" +
+               f"   🎯 Purpose: {existing_data.get('purpose', 'No purpose')}\n" +
+               f"   📂 Data Types: {', '.join(existing_data.get('data_types', [])) if existing_data.get('data_types') else 'None'}\n" +
+               f"   👤 Created By: {existing_data.get('created_by', 'Unknown')}\n" +
+               f"   📅 Created: {existing_data.get('created_date', 'Unknown')}\n\n" +
+               f"✅ **Cleanup Complete**:\n" +
+               f"   🗑️ Metadata documentation removed from registry\n" +
+               f"   🔧 You can now safely use 'delete_index' to remove the actual index\n" +
+               f"   📊 Use 'list_indices' to verify metadata removal\n\n" +
+               f"🎯 **Next Steps**:\n" +
+               f"   1. Proceed with 'delete_index {index_name}' to remove the actual index\n" +
+               f"   2. Or use 'create_index_metadata' if you want to re-document this index\n" +
+               f"   3. Clean up any related indices mentioned in metadata\n\n" +
+               f"⚠️ **Important**: This only deleted the documentation, not the actual index")
 
     except Exception as e:
         error_message = "❌ Failed to delete index metadata:\n\n"
@@ -1846,97 +1804,14 @@ async def delete_index_metadata(
         return error_message
 
 
-# ================================
-# TOOL 14: CREATE_SNAPSHOT
-# ================================
-
-@app.tool(
-    description="Create a snapshot (backup) of Elasticsearch indices with comprehensive options and repository management",
-    tags={"elasticsearch", "snapshot", "backup", "repository"}
-)
-async def create_snapshot(
-        snapshot_name: Annotated[str, Field(description="Name for the snapshot (must be unique)")],
-        repository: Annotated[str, Field(description="Repository name to store the snapshot")] = "backup_repository",
-        indices: Annotated[Optional[str], Field(
-            description="Comma-separated list of indices to backup (default: all indices)")] = None,
-        ignore_unavailable: Annotated[bool, Field(description="Whether to ignore unavailable indices")] = True,
-        include_global_state: Annotated[bool, Field(description="Whether to include cluster global state")] = True,
-        wait_for_completion: Annotated[bool, Field(description="Whether to wait for snapshot completion")] = True,
-        description: Annotated[Optional[str], Field(description="Optional description for the snapshot")] = None
-) -> str:
-    """Create a snapshot (backup) of Elasticsearch indices."""
-    return await create_snapshot_operation(
-        snapshot_name=snapshot_name,
-        repository=repository,
-        indices=indices,
-        ignore_unavailable=ignore_unavailable,
-        include_global_state=include_global_state,
-        wait_for_completion=wait_for_completion,
-        description=description
-    )
-
-
-# ================================
-# TOOL 15: RESTORE_SNAPSHOT
-# ================================
-
-@app.tool(
-    description="Restore indices from an Elasticsearch snapshot with comprehensive options and conflict resolution",
-    tags={"elasticsearch", "snapshot", "restore", "rollback"}
-)
-async def restore_snapshot(
-        snapshot_name: Annotated[str, Field(description="Name of the snapshot to restore from")],
-        repository: Annotated[str, Field(description="Repository containing the snapshot")] = "backup_repository",
-        indices: Annotated[Optional[str], Field(
-            description="Comma-separated list of indices to restore (default: all from snapshot)")] = None,
-        ignore_unavailable: Annotated[bool, Field(description="Whether to ignore unavailable indices")] = True,
-        include_global_state: Annotated[bool, Field(description="Whether to restore cluster global state")] = False,
-        wait_for_completion: Annotated[bool, Field(description="Whether to wait for restore completion")] = True,
-        rename_pattern: Annotated[
-            Optional[str], Field(description="Pattern to rename restored indices (e.g., 'restored_%s')")] = None,
-        index_settings: Annotated[Optional[str], Field(description="JSON string of index settings to override")] = None
-) -> str:
-    """Restore indices from an Elasticsearch snapshot."""
-    return await restore_snapshot_operation(
-        snapshot_name=snapshot_name,
-        repository=repository,
-        indices=indices,
-        ignore_unavailable=ignore_unavailable,
-        include_global_state=include_global_state,
-        wait_for_completion=wait_for_completion,
-        rename_pattern=rename_pattern,
-        index_settings=index_settings
-    )
-
-
-# ================================
-# TOOL 16: LIST_SNAPSHOTS
-# ================================
-
-@app.tool(
-    description="List all snapshots in an Elasticsearch repository with detailed information and status",
-    tags={"elasticsearch", "snapshot", "list", "repository"}
-)
-async def list_snapshots(
-        repository: Annotated[str, Field(description="Repository name to list snapshots from")] = "backup_repository",
-        verbose: Annotated[bool, Field(description="Whether to show detailed information for each snapshot")] = True
-) -> str:
-    """List all snapshots in an Elasticsearch repository."""
-    return await list_snapshots_operation(
-        repository=repository,
-        verbose=verbose
-    )
-
-
+# CLI entry point
 def cli_main():
     """CLI entry point for Elasticsearch FastMCP server."""
-    print("�🚀 Starting AgentKnowledgeMCP Elasticsearch FastMCP server...")
-    print(
-        "🔍 Tools: search, index_document, delete_document, get_document, list_indices, create_index, delete_index, batch_index_directory, validate_document_schema, create_document_template, create_index_metadata, update_index_metadata, delete_index_metadata, create_snapshot, restore_snapshot, list_snapshots")
-    print("✅ Status: All 16 Elasticsearch tools completed with Snapshot Management - Ready for production!")
+    print("🚀 Starting AgentKnowledgeMCP Elasticsearch FastMCP server...")
+    print("🔍 Tools: search, index_document, delete_document, get_document, list_indices, create_index, delete_index, batch_index_directory, validate_document_schema, create_document_template, create_index_metadata, update_index_metadata, delete_index_metadata")
+    print("✅ Status: All 13 Elasticsearch tools completed with Index Metadata Management - Ready for production!")
 
     app.run()
-
 
 if __name__ == "__main__":
     cli_main()
