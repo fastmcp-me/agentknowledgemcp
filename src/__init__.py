@@ -4,7 +4,7 @@ from . import main_server
 
 """AgentKnowledgeMCP - Advanced Knowledge Management for AI Agents."""
 
-__version__ = "2.0.6"
+__version__ = "2.0.7"
 
 def main():
     """Main entry point for the package."""
