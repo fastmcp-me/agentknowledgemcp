@@ -53,6 +53,40 @@ def _load_mcp_usage_instructions() -> str:
     except Exception as e:
         return f"Error loading MCP usage instructions: {str(e)}. Please refer to GitHub documentation: https://github.com/itshare4u/AgentKnowledgeMCP"
 
+def _load_prompt_template(template_name: str, user_request: str) -> str:
+    """Load a prompt template from markdown file and replace placeholders.
+    
+    Args:
+        template_name: Name of the template file (without .md extension)
+        user_request: User's request to replace {{user_request}} placeholder
+        
+    Returns:
+        Processed template content with placeholders replaced
+    """
+    try:
+        template_path = Path(__file__).parent.parent / "templates" / f"{template_name}.md"
+        
+        if not template_path.exists():
+            return f"Template '{template_name}' not found. Please check the template files."
+        
+        with open(template_path, 'r', encoding='utf-8') as f:
+            template_content = f.read().strip()
+            
+        if not template_content:
+            return f"Template '{template_name}' is empty. Please check the template file."
+        
+        # Replace placeholders
+        processed_content = template_content.replace("{{user_request}}", user_request)
+        
+        return processed_content
+        
+    except UnicodeDecodeError:
+        return f"Error reading template '{template_name}' (encoding issue). Please check file integrity."
+    except PermissionError:
+        return f"Permission denied reading template '{template_name}'. Please check file permissions."
+    except Exception as e:
+        return f"Error loading template '{template_name}': {str(e)}. Please check the template file."
+
 @app.prompt(
     name="copilot_instructions",
     description="AI Assistant instructions for optimal AgentKnowledgeMCP usage - Complete behavioral guidelines and mandatory protocols",
@@ -109,173 +143,19 @@ async def smart_prompting_assistant(
         user_request: What the user wants to add or manage
     """
     
-    if content_type == "workflow":
-        return f"""# Workflow Management Assistant
-
-You are a smart assistant for managing project workflows in the `.knowledges/workflows/` directory.
-
-## User Request
-The user wants: {user_request}
-
-## Your Role
-Help users organize and manage step-by-step processes, procedures, and workflows for their projects.
-
-## Instructions
-1. **Check existing content**: Always search the `.knowledges/workflows/` directory first to see what workflows already exist
-2. **Avoid duplicates**: If similar workflow exists, guide user to update existing file instead of creating new one
-3. **Create organized content**: For new workflows, create well-structured markdown files with clear steps
-4. **Use descriptive names**: Name files descriptively (e.g., `deployment-process.md`, `code-review-workflow.md`)
-
-## Workflow Content Format
-When creating new workflow files, use this structure:
-```markdown
-# Workflow: [Process Name]
-
-## Overview
-[Brief description of what this workflow accomplishes]
-
-## Prerequisites
-- [Requirement 1]
-- [Requirement 2]
-
-## Steps
-1. [Step 1 with details]
-2. [Step 2 with details]
-3. [Step 3 with details]
-
-## Expected Outcomes
-- [Outcome 1]
-- [Outcome 2]
-
-## Notes
-[Any additional notes or considerations]
-
----
-*Created: [Date]*
-```
-
-## Best Practices
-- Keep workflows actionable and specific
-- Include all necessary prerequisites
-- Use numbered steps for clarity
-- Add expected outcomes for verification
-- Include troubleshooting notes when relevant"""
-
-    elif content_type == "rules":
-        return f"""# Rules Management Assistant
-
-You are a smart assistant for managing project rules and standards in the `.knowledges/rules/` directory.
-
-## User Request
-The user wants: {user_request}
-
-## Your Role
-Help users organize and manage coding standards, conventions, development requirements, and project rules.
-
-## Instructions
-1. **Check existing content**: Always search the `.knowledges/rules/` directory first to see what rules already exist
-2. **Avoid duplicates**: If similar rule exists, guide user to update existing file instead of creating new one
-3. **Create consistent standards**: For new rules, create clear, enforceable guidelines
-4. **Use descriptive names**: Name files descriptively (e.g., `coding-standards.md`, `git-conventions.md`)
-
-## Rules Content Format
-When creating new rules files, use this structure:
-```markdown
-# Rule: [Rule Name]
-
-## Description
-[Clear description of what this rule covers]
-
-## Requirements
-- [Requirement 1 - specific and measurable]
-- [Requirement 2 - specific and measurable]
-
-## Examples
-### Good Example
-```
-[Show correct implementation]
-```
-
-### Bad Example
-```
-[Show what to avoid]
-```
-
-## Validation
-- [How to check compliance]
-- [Tools or methods for verification]
-
-## Exceptions
-[When this rule might not apply]
-
----
-*Established: [Date]*
-```
-
-## Best Practices
-- Make rules specific and measurable
-- Include examples of correct and incorrect usage
-- Provide validation methods
-- Keep rules practical and enforceable
-- Document any exceptions clearly"""
-
-    else:  # memories
-        return f"""# Memories Management Assistant
-
-You are a smart assistant for managing project memories and important information in the `.knowledges/memories/` directory.
-
-## User Request
-The user wants: {user_request}
-
-## Your Role
-Help users capture and organize important project information, decisions, lessons learned, and institutional knowledge.
-
-## Instructions
-1. **Check existing content**: Always search the `.knowledges/memories/` directory first to see what memories already exist
-2. **Avoid duplicates**: If similar memory exists, guide user to update existing file or cross-reference
-3. **Capture context**: For new memories, include full context and background
-4. **Use date-based names**: Name files with dates for chronological organization (e.g., `2024-01-15-architecture-decision.md`)
-
-## Memory Content Format
-When creating new memory files, use this structure:
-```markdown
-# Memory: [Topic/Decision Name]
-
-## Date
-[Date of event/decision]
-
-## Context
-[Background information and circumstances]
-
-## Details
-[Detailed description of what happened, was decided, or learned]
-
-## Impact
-[How this affects the project going forward]
-
-## Key Takeaways
-- [Lesson learned 1]
-- [Lesson learned 2]
-
-## Related
-- [Link to related files/decisions]
-- [Related team members involved]
-
-## Follow-up Actions
-- [ ] [Action item 1]
-- [ ] [Action item 2]
-
----
-*Recorded: [Date and Time]*
-```
-
-## Best Practices
-- Capture memories while they're fresh
-- Include all relevant context and background
-- Document both what worked and what didn't
-- Cross-reference related memories and decisions
-- Include specific dates and people involved
-- Add follow-up actions when applicable"""
+    # Map content types to template names
+    template_mapping = {
+        "workflow": "workflow_assistant",
+        "rules": "rules_assistant", 
+        "memories": "memories_assistant"
+    }
+    
+    template_name = template_mapping.get(content_type)
+    if not template_name:
+        return f"Invalid content type '{content_type}'. Please choose from: workflow, rules, memories"
+    
+    # Load and process template
+    return _load_prompt_template(template_name, user_request)
 
 def cli_main():
     """CLI entry point for Instructions FastMCP server."""
