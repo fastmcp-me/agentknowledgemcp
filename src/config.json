@@ -16,20 +16,20 @@
   "document_schema": {
     "required_fields": [
       "id",
-      "title", 
+      "title",
       "summary",
       "content",
       "last_modified",
       "priority",
       "tags",
-      "related", 
+      "related",
       "source_type",
       "key_points"
     ],
     "field_types": {
       "id": "str",
       "title": "str",
-      "summary": "str", 
+      "summary": "str",
       "content": "str",
       "last_modified": "str",
       "priority": "str",
@@ -46,14 +46,14 @@
     "source_types": [
       "markdown",
       "code",
-      "config", 
+      "config",
       "documentation",
       "tutorial"
     ]
   },
   "server": {
     "name": "AgentKnowledgeMCP",
-    "version": "2.0.7"
+    "version": "2.1.0"
   },
   "confirmation": {
     "enabled": true,

@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-07-31
+
+### 🎯 New Features
+- **Smart Prompting Assistant**: Thêm prompt `smart_prompting_assistant` với khả năng quản lý workflows, rules, và memories trong thư mục `.knowledges`
+- **Template System**: Chuyển đổi từ hardcoded prompts sang external markdown templates với placeholder replacement
+- **External Template Files**: Tạo hệ thống template files trong `src/prompts/templates/` với 3 templates:
+  - `workflow_assistant.md` - Quản lý quy trình công việc
+  - `rules_assistant.md` - Quản lý tiêu chuẩn và quy tắc  
+  - `memories_assistant.md` - Quản lý thông tin và quyết định quan trọng
+
+### 🔧 Improvements
+- **Code Simplification**: Giảm complexity của `smart_prompting_assistant()` từ 150+ dòng xuống ~20 dòng
+- **Maintainability**: Template content có thể được chỉnh sửa mà không cần touch Python code
+- **User Experience**: Non-programmers có thể dễ dàng chỉnh sửa prompt templates
+- **Dynamic Loading**: Hệ thống load template động với placeholder `{{user_request}}` replacement
+- **Error Handling**: Cải thiện error handling cho template loading và validation
+
+### 📚 Documentation & Workflows
+- **Development Workflow**: Tạo workflow mới `development-without-restart.md` với hot-reloading setup
+- **Language Preference**: Ghi nhớ preference tiếng Việt của user trong knowledge base
+- **Template Documentation**: Đầy đủ documentation cho template system và usage
+
+### 🐛 Bug Fixes
+- **Syntax Errors**: Sửa lỗi emoji Unicode characters trong Python strings
+- **File Compilation**: Đảm bảo tất cả Python files compile thành công
+- **Import Issues**: Sửa lỗi import và module structure
+
+### ⚡ Technical Improvements
+- **Separation of Concerns**: Tách biệt content và logic trong prompt system
+- **Extensibility**: Dễ dàng thêm template types mới
+- **File Organization**: Cải thiện cấu trúc thư mục với dedicated templates directory
+- **Testing**: Thêm validation cho template files và placeholder functionality
+
 ## [2.0.7] - 2025-07-30
 
 ### ✅ Verified
