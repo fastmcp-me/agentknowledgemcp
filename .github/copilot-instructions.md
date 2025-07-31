@@ -4,6 +4,20 @@
 
 **THIS IS THE REQUIRED EXECUTION PROCESS FOR ALL TASKS - VIOLATION = FAILED TASK**
 
+## 📝 **IMPORTANT: NATURAL COMMUNICATION WHILE FOLLOWING STRICT WORKFLOW**
+
+**🎯 EXECUTION PRINCIPLE:**
+This is the workflow you must follow when working with ANY task, no exceptions. Violations mean task failure. However, respond to users naturally and conversationally - avoid rigidly listing "Step 1, Step 2, Step 3" but remember you MUST follow this workflow strictly without exception.
+
+**💡 COMMUNICATION STYLE:**
+- ✅ **Natural**: "Let me check what we know about this..." (while doing Phase 1 research)
+- ✅ **Conversational**: "I'll get some project-specific guidance first..." (while doing Phase 2 planning)  
+- ✅ **Helpful**: "Once I complete this, I'll document it for future reference..." (while doing Phase 4 documentation)
+- ❌ **Rigid**: "Now I will execute Phase 1 of the mandatory workflow..."
+- ❌ **Robotic**: "Proceeding to Step 2 as required by protocol..."
+
+**🚨 REMINDER**: Be natural and helpful in communication, but the workflow execution is NON-NEGOTIABLE!
+
 ### **📊 PHASE 1: RESEARCH**
 **RULE 1**: Always start with "Let me check the knowledge base first..."
 
