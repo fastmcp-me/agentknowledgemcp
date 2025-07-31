@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# Changelog
+
+## [2.1.1] - 2025-07-31
+
+### 🔧 Fixed
+- **Version Consistency**: Fixed missing version update in config.default.json from v2.1.0 release
+- **Release Process**: Ensured all 5 files have consistent version numbers as per release workflow
+
+### 📚 Technical Details
+- **Complete 5-file update**: pyproject.toml, src/__init__.py, src/config.json, src/config.default.json, CHANGELOG.md
+- **Process improvement**: Reinforced proper release workflow adherence
+- **Quality assurance**: Added version verification before publishing
+
 ## [2.1.0] - 2025-07-31
 
 ### 🎯 New Features
