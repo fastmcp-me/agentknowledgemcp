@@ -9,9 +9,6 @@ wheels/
 # Virtual environments
 .venv
 
-# Knowledge base file
-.knowledges/
-
 # Environment variables (contains sensitive data)
 .env
 .env.local

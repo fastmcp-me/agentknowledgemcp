@@ -6,14 +6,17 @@ from pathlib import Path
 from typing import Annotated
 import json
 
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 from pydantic import Field
+
+# Import our smart prompting tool
+from .ask_mcp_advance import ask_mcp_advance
 
 # Create FastMCP app for prompt guidance and resource access
 app = FastMCP(
     name="AgentKnowledgeMCP-Prompts",
     version="1.0.0",
-    instructions="Simple prompt server that returns AgentKnowledgeMCP comprehensive usage guide content for LLM assistance"
+    instructions="Prompt server with comprehensive MCP usage guides and smart prompting capabilities"
 )
 
 def _load_mcp_usage_instructions() -> str:
@@ -114,6 +117,30 @@ These are the complete behavioral guidelines and mandatory protocols for AI assi
 
 
 # ================================
+# SMART PROMPTING TOOL
+# ================================
+
+@app.tool(
+    name="ask_mcp_advance", 
+    description="Advanced project guidance using AI-filtered knowledge from .knowledges directory",
+    tags={"smart-prompting", "guidance", "ai-filtered", "project-knowledge"}
+)
+async def smart_prompting_tool(
+    intended_action: Annotated[str, Field(description="What you intend to do (e.g., 'implement feature', 'fix bug', 'deploy')")],
+    task_description: Annotated[str, Field(description="Detailed description of the specific task")],
+    ctx: Context,
+    scope: Annotated[str, Field(description="Scope of guidance needed", default="project")] = "project"
+) -> str:
+    """
+    Get AI-filtered guidance based on project-specific workflows, rules, and memories.
+    
+    This tool loads knowledge from the .knowledges directory in your VS Code workspace
+    and provides contextual guidance using AI synthesis.
+    """
+    return await ask_mcp_advance(intended_action, task_description, ctx, scope)
+
+
+# ================================
 # CLI ENTRY POINT
 # ================================
 def cli_main():
@@ -122,7 +149,9 @@ def cli_main():
     print("📝 Available prompts:")
     print("  • mcp_usage_guide - Comprehensive usage guide with scenarios and tutorials")
     print("  • copilot_instructions - AI assistant behavioral guidelines and protocols")
-    print("✨ Returns complete guidance content for optimal MCP server usage")
+    print("🛠️ Available tools:")
+    print("  • ask_mcp_advance - Smart prompting with AI-filtered project knowledge")
+    print("✨ Provides complete guidance and project-specific smart prompting capabilities")
 
     app.run()
 
