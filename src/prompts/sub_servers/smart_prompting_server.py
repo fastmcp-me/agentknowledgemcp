@@ -1,18 +1,27 @@
+#!/usr/bin/env python3
 """
-ask_mcp_advance: Smart prompting tool for project-specific guidance
+Smart Prompting Sub-Server - FastMCP Implementation
+Provides AI-filtered project guidance using .knowledges directory.
 
-This tool implements the smart prompting architecture discussed in the project,
-providing AI-filtered guidance based on project-specific workflows, rules, and memories
-stored in the .knowledges directory.
+This server implements the smart prompting architecture for project-specific guidance,
+loading workflows, rules, and memories from the .knowledges directory and providing
+AI-synthesized recommendations.
 """
 
 import asyncio
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Annotated
 import os
 
-from fastmcp import Context
+from fastmcp import FastMCP, Context
+from pydantic import Field
 
+# Create FastMCP application for smart prompting
+app = FastMCP(
+    name="AgentKnowledgeMCP-SmartPrompting",
+    version="1.0.0",
+    instructions="Smart prompting server providing AI-filtered project guidance from .knowledges directory"
+)
 
 async def load_knowledges_content(knowledges_dir: Path, scope: str = "project") -> str:
     """
@@ -62,11 +71,20 @@ async def load_knowledges_content(knowledges_dir: Path, scope: str = "project") 
     return "\n".join(content_sections)
 
 
+# ================================
+# SMART PROMPTING TOOL
+# ================================
+
+@app.tool(
+    name="ask_mcp_advance", 
+    description="Advanced project guidance using AI-filtered knowledge from .knowledges directory",
+    tags={"smart-prompting", "guidance", "ai-filtered", "project-knowledge"}
+)
 async def ask_mcp_advance(
-    intended_action: str,
-    task_description: str,
+    intended_action: Annotated[str, Field(description="What you intend to do (e.g., 'implement feature', 'fix bug', 'deploy')")],
+    task_description: Annotated[str, Field(description="Detailed description of the specific task")],
     ctx: Context,
-    scope: str = "project"
+    scope: Annotated[str, Field(description="Scope of guidance needed", default="project")] = "project"
 ) -> str:
     """
     Advanced MCP guidance tool that loads project-specific workflows, rules, and memories
@@ -91,7 +109,7 @@ Please ensure:
 2. VS Code MCP extension is properly configured
 3. The workspace has root access permissions"""
 
-        workspace_root = Path(roots[0])  # First root is typically the main workspace
+        workspace_root = Path(str(roots[0]))  # Convert Root object to string then to Path
         knowledges_dir = workspace_root / ".knowledges"
         
         await ctx.info(f"Checking for knowledge in: {knowledges_dir}")
@@ -175,5 +193,17 @@ Please check:
 4. MCP Context availability"""
 
 
-# Tool registration will be handled by the main server
-# This file provides the implementation function
+# ================================
+# CLI ENTRY POINT
+# ================================
+def cli_main():
+    """CLI entry point for Smart Prompting FastMCP server."""
+    print("🧠 Starting AgentKnowledgeMCP Smart Prompting FastMCP server...")
+    print("🛠️ Available tools:")
+    print("  • ask_mcp_advance - AI-filtered project guidance from .knowledges directory")
+    print("✨ Provides intelligent project-specific recommendations and best practices")
+
+    app.run()
+
+if __name__ == "__main__":
+    cli_main()
