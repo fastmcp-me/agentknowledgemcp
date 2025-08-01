@@ -76,14 +76,7 @@ async def copilot_instructions() -> str:
     instructions_content = _load_copilot_instructions()
     
     # Return the content with additional context
-    return f"""# AI Assistant Instructions for AgentKnowledgeMCP
-
-These are the complete behavioral guidelines and mandatory protocols for AI assistants working with AgentKnowledgeMCP:
-
-{instructions_content}
-
-**Usage Note**: These instructions establish the behavioral framework that AI assistants should follow when working with the AgentKnowledgeMCP system to ensure optimal knowledge management and user interaction."""
-
+    return instructions_content
 @app.prompt(
     name="smart_prompting_assistant",
     description="Smart prompting assistant for managing project workflows, rules, and memories in .knowledges directory",
