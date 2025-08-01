@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # Changelog
 
+## [2.1.2] - 2025-08-01
+
+### ✨ Enhanced
+- **Template System**: Updated all knowledge base templates (workflows, rules, memories) with improved structure
+- **Cross-Reference Support**: Added anchor links and References sections for better knowledge linking
+- **Tool Naming**: Renamed `ask_mcp_advance` to `ask_mcp_advice` for proper English grammar
+- **Single File Architecture**: Enforced strict single-file structure for each knowledge type
+
+### 🔧 Technical Improvements
+- **Templates**: Workflows use pseudocode structure with BEGIN/END, IF/ELSE, WHILE, WHEN
+- **IDs**: Added unique IDs (RULE_001, MEM_001, WF_001) to all knowledge elements
+- **Links**: Implemented markdown anchor links for cross-referencing between knowledge types
+- **Consistency**: All documentation and code updated to use correct tool naming
+
 ## [2.1.1] - 2025-07-31
 
 ### 🔧 Fixed
