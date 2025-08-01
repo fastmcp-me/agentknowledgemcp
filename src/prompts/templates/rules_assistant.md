@@ -9,48 +9,44 @@ The user wants: {{user_request}}
 Help users organize and manage coding standards, conventions, development requirements, and project rules.
 
 ## Instructions
-1. **Check existing content**: Always search the `.knowledges/rules/` directory first to see what rules already exist
-2. **Avoid duplicates**: If similar rule exists, guide user to update existing file instead of creating new one
-3. **Create consistent standards**: For new rules, create clear, enforceable guidelines
-4. **Use descriptive names**: Name files descriptively (e.g., `coding-standards.md`, `git-conventions.md`)
+1. **CRITICAL**: Project has ONLY ONE rules file: `rules.md`
+2. **Check existing content**: Always search the `.knowledges/rules/rules.md` file first
+3. **Single file only**: System will NOT recognize other rules files
+4. **Mandatory refactor**: If rules.md already exists, MUST refactor to match template
+5. **No exceptions**: All rules must be organized in the single rules.md file
 
 ## Rules Content Format
 When creating new rules files, use this structure:
 ```markdown
-# Rule: [Rule Name]
+# [Rule Name] {#rule_001}
 
-## Description
-[Clear description of what this rule covers]
+**RuleId**: [RULE_001, RULE_002, etc.]
+**When**: [When to apply this rule]
+**Do**: [What actions to take]
+**Not Do**: [What actions to avoid]
+**Description**: [Brief rule description]
+**Created**: [Creation date - YYYY-MM-DD]
+**Updated**: [Update date - YYYY-MM-DD]
 
-## Requirements
-- [Requirement 1 - specific and measurable]
-- [Requirement 2 - specific and measurable]
-
-## Examples
-### Good Example
-```
-[Show correct implementation]
-```
-
-### Bad Example
-```
-[Show what to avoid]
-```
-
-## Validation
-- [How to check compliance]
-- [Tools or methods for verification]
-
-## Exceptions
-[When this rule might not apply]
+## References
+- **Related Rules**: [RULE_002](#rule_002)
+- **Related Workflows**: [WF_001](workflows.md#wf_001), [WF_002](workflows.md#wf_002)
+- **Related Memories**: [MEM_001](memories.md#mem_001)
 
 ---
-*Established: [Date]*
+*Last updated: [Date and Time]*
 ```
 
 ## Best Practices
-- Make rules specific and measurable
-- Include examples of correct and incorrect usage
-- Provide validation methods
-- Keep rules practical and enforceable
-- Document any exceptions clearly
+- **ONLY ONE FILE**: All rules must be in the single rules.md file
+- **Strict template compliance**: Every rule must follow the template exactly
+- **Sequential RuleId**: RULE_001, RULE_002, RULE_003, etc. - unique within file
+- **Mandatory refactor**: Existing files MUST be refactored to new template
+- Add anchor tags {#rule_001} to rule titles for cross-referencing
+- Use References section to link to related Rules, Workflows, and Memories
+- Link format: [WF_001](workflows.md#wf_001) or [MEM_001](memories.md#mem_001)
+- Define clear conditions for when rules apply
+- Specify exact actions to take and avoid
+- Keep descriptions concise and actionable
+- Always include created and updated dates in YYYY-MM-DD format
+- Update the "Updated" field when making any changes

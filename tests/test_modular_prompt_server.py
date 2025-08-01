@@ -52,20 +52,20 @@ class TestModularPromptServer:
             
             print(f"🛠️ Available tools: {tool_names}")
             
-            # Verify ask_mcp_advance tool is available from smart prompting sub server
-            assert "ask_mcp_advance" in tool_names, "ask_mcp_advance tool should be mounted from smart prompting sub server"
+            # Verify ask_mcp_advice tool is available from smart prompting sub server
+            assert "ask_mcp_advice" in tool_names, "ask_mcp_advice tool should be mounted from smart prompting sub server"
             
             # Test tool call (this will test the VS Code integration path)
             try:
-                result = await client.call_tool("ask_mcp_advance", {
+                result = await client.call_tool("ask_mcp_advice", {
                     "intended_action": "test server functionality",
                     "task_description": "Testing the modular prompt server architecture"
                 })
-                print(f"✅ ask_mcp_advance tool result: {result.data[:100]}...")
+                print(f"✅ ask_mcp_advice tool result: {result.data[:100]}...")
                 assert result.data is not None, "Tool should return some response"
             except Exception as e:
                 # Expected to fail without VS Code workspace - that's okay for this test
-                print(f"ℹ️ ask_mcp_advance failed as expected without VS Code workspace: {str(e)[:100]}...")
+                print(f"ℹ️ ask_mcp_advice failed as expected without VS Code workspace: {str(e)[:100]}...")
                 assert "workspace root" in str(e).lower() or "error" in str(e).lower() or "list roots" in str(e).lower()
 
     @pytest.mark.asyncio
@@ -103,11 +103,11 @@ class TestModularPromptServer:
             
             print(f"🧠 Smart prompting tools: {tool_names}")
             assert len(tool_names) == 1, "Smart prompting server should have exactly 1 tool"
-            assert "ask_mcp_advance" in tool_names, "Should have ask_mcp_advance tool"
+            assert "ask_mcp_advice" in tool_names, "Should have ask_mcp_advice tool"
             
             # Test isolated tool call
             try:
-                result = await client.call_tool("ask_mcp_advance", {
+                result = await client.call_tool("ask_mcp_advice", {
                     "intended_action": "test isolation",
                     "task_description": "Testing smart prompting server in isolation"
                 })

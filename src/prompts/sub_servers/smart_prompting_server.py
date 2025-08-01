@@ -133,11 +133,11 @@ async def load_knowledges_content(knowledges_dir: Path, scope: str = "project") 
 # ================================
 
 @app.tool(
-    name="ask_mcp_advance", 
+    name="ask_mcp_advice", 
     description="Advanced project guidance using AI-filtered knowledge from .knowledges directory",
     tags={"smart-prompting", "guidance", "ai-filtered", "project-knowledge"}
 )
-async def ask_mcp_advance(
+async def ask_mcp_advice(
     intended_action: Annotated[str, Field(description="What you intend to do (e.g., 'implement feature', 'fix bug', 'deploy')")],
     task_description: Annotated[str, Field(description="Detailed description of the specific task")],
     ctx: Context,
@@ -255,7 +255,7 @@ Focus on actionable guidance that incorporates the project's established pattern
 *Generated from project-specific workflows, rules, and memories with file citations for precise reference*"""
 
     except Exception as e:
-        await ctx.error(f"Error in ask_mcp_advance: {str(e)}")
+        await ctx.error(f"Error in ask_mcp_advice: {str(e)}")
         return f"""❌ **Error generating guidance**: {str(e)}
 
 Please check:
@@ -272,7 +272,7 @@ def cli_main():
     """CLI entry point for Smart Prompting FastMCP server."""
     print("🧠 Starting AgentKnowledgeMCP Smart Prompting FastMCP server...")
     print("🛠️ Available tools:")
-    print("  • ask_mcp_advance - AI-filtered project guidance from .knowledges directory")
+    print("  • ask_mcp_advice - AI-filtered project guidance from .knowledges directory")
     print("✨ Provides intelligent project-specific recommendations and best practices")
 
     app.run()

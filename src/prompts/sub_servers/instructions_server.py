@@ -30,29 +30,6 @@ def _load_copilot_instructions() -> str:
     except Exception as e:
         return f"Error loading copilot instructions: {str(e)}. Please refer to GitHub documentation: https://github.com/itshare4u/AgentKnowledgeMCP"
 
-def _load_mcp_usage_instructions() -> str:
-    """Load the MCP usage instructions for comprehensive guidance."""
-    try:
-        instructions_path = Path(__file__).parent.parent.parent / "resources" / "mcp_usage_instructions.md"
-        
-        if not instructions_path.exists():
-            return "MCP usage instructions not found. Please refer to the GitHub repository: https://github.com/itshare4u/AgentKnowledgeMCP"
-        
-        with open(instructions_path, 'r', encoding='utf-8') as f:
-            content = f.read().strip()
-            
-        if not content:
-            return "MCP usage instructions file is empty. Please check the installation or refer to online documentation."
-            
-        return content
-        
-    except UnicodeDecodeError:
-        return "Error reading MCP usage instructions (encoding issue). Please reinstall AgentKnowledgeMCP or check file integrity."
-    except PermissionError:
-        return "Permission denied reading MCP usage instructions. Please check file permissions for the AgentKnowledgeMCP installation."
-    except Exception as e:
-        return f"Error loading MCP usage instructions: {str(e)}. Please refer to GitHub documentation: https://github.com/itshare4u/AgentKnowledgeMCP"
-
 def _load_prompt_template(template_name: str, user_request: str) -> str:
     """Load a prompt template from markdown file and replace placeholders.
     
@@ -99,34 +76,7 @@ async def copilot_instructions() -> str:
     instructions_content = _load_copilot_instructions()
     
     # Return the content with additional context
-    return f"""# AI Assistant Instructions for AgentKnowledgeMCP
-
-These are the complete behavioral guidelines and mandatory protocols for AI assistants working with AgentKnowledgeMCP:
-
-{instructions_content}
-
-**Usage Note**: These instructions establish the behavioral framework that AI assistants should follow when working with the AgentKnowledgeMCP system to ensure optimal knowledge management and user interaction."""
-
-@app.prompt(
-    name="mcp_usage_guide", 
-    description="Comprehensive usage guide with scenarios and tutorials for AgentKnowledgeMCP",
-    tags={"usage", "guide", "tutorial", "scenarios", "comprehensive", "help"}
-)
-async def mcp_usage_guide() -> str:
-    """Return comprehensive usage guide with scenarios and tutorials for AgentKnowledgeMCP."""
-    
-    # Load the usage instructions content
-    usage_content = _load_mcp_usage_instructions()
-    
-    # Return the content with helpful context
-    return f"""# AgentKnowledgeMCP Comprehensive Usage Guide
-
-This guide provides complete scenarios, tutorials, and best practices for using AgentKnowledgeMCP effectively:
-
-{usage_content}
-
-**Pro Tip**: This guide contains real-world scenarios and step-by-step tutorials. Use it to understand how to leverage AgentKnowledgeMCP's full potential in your workflow."""
-
+    return instructions_content
 @app.prompt(
     name="smart_prompting_assistant",
     description="Smart prompting assistant for managing project workflows, rules, and memories in .knowledges directory",
