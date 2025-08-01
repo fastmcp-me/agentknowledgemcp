@@ -112,7 +112,7 @@ This is the workflow you must follow when working with ANY task, no exceptions. 
 ### **🔄 PHASE 5: CONTINUATION**
 **RULE 5**: Get direction for next steps
 
-**⚠️ CRITICAL REQUIREMENT: MUST CALL `index_document` TOOL TO GET DIRECTION FOR NEXT STEPS**
+**⚠️ CRITICAL REQUIREMENT: MUST CALL `ask_user_advice` TOOL TO GET DIRECTION FOR NEXT STEPS**
 
 **Required Actions:**
 ```
