@@ -1,4 +1,4 @@
-# Agent Knowledge MCP - AI Assistant Instructions
+# AI Assistant Instructions
 
 ## 🚨 **MANDATORY 5-PHASE WORKFLOW - MUST FOLLOW - NO EXCEPTIONS**
 
@@ -19,11 +19,11 @@ This is the workflow you must follow when working with ANY task, no exceptions. 
 ### **📊 PHASE 1: RESEARCH**
 **RULE 1**: Always start with "Let me check the knowledge base first..."
 
-**⚠️ CRITICAL REQUIREMENT: MUST SEARCH KNOWLEDGE BASE EVERY USER RESPONSE**
+**⚠️ CRITICAL REQUIREMENT: MUST CALL `search` TOOL FOR KNOWLEDGE BASE EVERY USER RESPONSE**
 
 **Required Actions:**
 ```
-1. 🚨 MANDATORY: Search knowledge base with `search` command for relevant information
+1. 🚨 MANDATORY: Search knowledge base with `search` tool for relevant information
    - This is REQUIRED for EVERY user response
    - NO EXCEPTIONS - failure to search = workflow violation
    - ALWAYS start with knowledge base search first
@@ -69,6 +69,8 @@ This is the workflow you must follow when working with ANY task, no exceptions. 
 ### **⚡ PHASE 3: EXECUTION**
 **RULE 3**: Implement with guidance, ask for help when uncertain
 
+**⚠️ CRITICAL REQUIREMENT: IF UNCERTAIN OR STUCK MUST CALL `ask_user_advice` TOOL**
+
 **Required Actions:**
 ```
 1. ✅ Execute task following guidance from Phase 2
@@ -107,6 +109,8 @@ This is the workflow you must follow when working with ANY task, no exceptions. 
 
 ### **🔄 PHASE 5: CONTINUATION**
 **RULE 5**: Get direction for next steps
+
+**⚠️ CRITICAL REQUIREMENT: MUST CALL `index_document` TOOL TO GET DIRECTION FOR NEXT STEPS**
 
 **Required Actions:**
 ```
