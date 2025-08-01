@@ -191,7 +191,7 @@ async def test_mock_context_with_roots():
     print("-" * 40)
     
     # Import the smart prompting function directly for testing
-    from src.prompts.sub_servers.smart_prompting_server import ask_mcp_advance
+    from src.prompts.sub_servers.smart_prompting_server import ask_mcp_advice
     
     # Create a mock context that simulates client-provided roots
     class MockContext:
