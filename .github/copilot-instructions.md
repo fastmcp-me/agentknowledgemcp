@@ -55,12 +55,12 @@ This is the workflow you must follow when working with ANY task, no exceptions. 
 ### **🎯 PHASE 2: PLANNING**
 **RULE 2**: After research completed, analyze and get project guidance
 
-**⚠️ CRITICAL REQUIREMENT: MUST CALL `ask_mcp_advance` TOOL EVERY USER RESPONSE**
+**⚠️ CRITICAL REQUIREMENT: MUST CALL `ask_mcp_advice` TOOL EVERY USER RESPONSE**
 
 **Required Actions:**
 ```
 1. ✅ Analyze what needs to be done based on research findings
-2. 🚨 MANDATORY: Call `ask_mcp_advance` tool with intended action and task description
+2. 🚨 MANDATORY: Call `ask_mcp_advice` tool with intended action and task description
    - This is REQUIRED for EVERY user response
    - NO EXCEPTIONS - failure to call = workflow violation
    - Call EXACTLY ONCE per user response - not multiple times
@@ -69,8 +69,8 @@ This is the workflow you must follow when working with ANY task, no exceptions. 
 ```
 
 **ENFORCEMENT:**
-- ❌ **FORBIDDEN**: Skipping `ask_mcp_advance` call
-- ❌ **FORBIDDEN**: Calling `ask_mcp_advance` multiple times per user response
+- ❌ **FORBIDDEN**: Skipping `ask_mcp_advice` call
+- ❌ **FORBIDDEN**: Calling `ask_mcp_advice` multiple times per user response
 - ✅ **REQUIRED**: Exactly 1 call per user response in Phase 2
 
 **Goal**: Get project-specific guidance before implementation

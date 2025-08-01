@@ -8,7 +8,7 @@ Modular Architecture:
 - Unified interface for all prompt-related tools
 
 Sub-servers:
-- smart_prompting_server.py: 1 tool (ask_mcp_advance) for AI-filtered project guidance
+- smart_prompting_server.py: 1 tool (ask_mcp_advice) for AI-filtered project guidance
 - instructions_server.py: 2 prompts (mcp_usage_guide, copilot_instructions) for guidance documentation
 """
 
@@ -32,7 +32,7 @@ app = FastMCP(
 print("🏗️ Mounting Prompt sub-servers...")
 
 # Mount smart prompting sub-server
-app.mount(smart_prompting_app)     # 1 tool: ask_mcp_advance for AI-filtered guidance
+app.mount(smart_prompting_app)     # 1 tool: ask_mcp_advice for AI-filtered guidance
 
 # Mount instructions sub-server  
 app.mount(instructions_app)        # 2 prompts: mcp_usage_guide, copilot_instructions
@@ -50,7 +50,7 @@ def cli_main():
     print("  • mcp_usage_guide - Comprehensive usage guide with scenarios and tutorials")
     print("  • copilot_instructions - AI assistant behavioral guidelines and protocols")
     print("🛠️ Available tools (via sub-servers):")
-    print("  • ask_mcp_advance - Smart prompting with AI-filtered project knowledge")
+    print("  • ask_mcp_advice - Smart prompting with AI-filtered project knowledge")
     print("✨ Provides complete guidance and modular smart prompting capabilities")
 
     app.run()

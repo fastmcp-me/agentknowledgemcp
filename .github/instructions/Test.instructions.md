@@ -25,9 +25,9 @@
 **Required Actions:**
 ```
 1. ✅ Analyze what needs to be done based on research findings
-2. ✅ MANDATORY: Call `ask_mcp_advance` with intended action and task description
+2. ✅ MANDATORY: Call `ask_mcp_advice` with intended action and task description
 3. ✅ Use returned guidance to inform approach
-4. ✅ ONLY call ask_mcp_advance ONCE - do not call again for same task
+4. ✅ ONLY call ask_mcp_advice ONCE - do not call again for same task
 ```
 
 **Goal**: Get project-specific guidance before implementation
