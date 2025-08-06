@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # Changelog
 
+## [2.1.4] - 2025-08-06
+
+### 🐛 Fixed
+- **Critical Bug**: Fixed metadata search in `create_index` tool failing to find existing metadata
+- **Elasticsearch Query**: Removed incorrect `.keyword` suffix from `index_name` field search
+- **Root Cause**: Field `index_name` is already type `keyword`, so `.keyword` suffix was causing search failures
+- **Impact**: Index creation now works properly when metadata documentation exists
+- **Testing**: Verified fix with test index creation after metadata setup
+
+### 📋 Technical Details
+- **File**: `src/elasticsearch/sub_servers/elasticsearch_index.py`
+- **Change**: Line 59 - Changed `index_name.keyword` to `index_name` in search query
+- **Resolution**: Metadata synchronization issue between creation and retrieval resolved
+
 ## [2.1.3] - 2025-08-01
 
 ### ✨ Enhanced
