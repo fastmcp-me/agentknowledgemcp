@@ -63,7 +63,7 @@ async def create_index(
             search_body = {
                 "query": {
                     "term": {
-                        "index_name.keyword": index
+                        "index_name": index
                     }
                 },
                 "size": 1

@@ -1,6 +1,6 @@
 [project]
 name = "agent-knowledge-mcp"
-version = "2.1.2"
+version = "2.1.4"
 description = "AgentKnowledgeMCP - Advanced Knowledge Management for AI Agents"
 readme = "README.md"
 requires-python = ">=3.10"

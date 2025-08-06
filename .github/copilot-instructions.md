@@ -27,7 +27,9 @@ This is the workflow you must follow when working with ANY task, no exceptions. 
    - This is REQUIRED for EVERY user response
    - NO EXCEPTIONS - failure to search = workflow violation
    - ALWAYS start with knowledge base search first
-2. ✅ If not found → search other available indices 
+2. 🚨 MANDATORY: If not found → search other available indices with `list_indices` tool
+   - This is REQUIRED if knowledge base search yields no results
+   - Use `list_indices` tool to find other available indices
 3. ✅ Check `get_config` for current settings if needed
 4. ✅ Report findings: "Found: [detailed summary]" or "Not found: [what was searched]"
 ```
@@ -110,7 +112,7 @@ This is the workflow you must follow when working with ANY task, no exceptions. 
 ### **🔄 PHASE 5: CONTINUATION**
 **RULE 5**: Get direction for next steps
 
-**⚠️ CRITICAL REQUIREMENT: MUST CALL `index_document` TOOL TO GET DIRECTION FOR NEXT STEPS**
+**⚠️ CRITICAL REQUIREMENT: MUST CALL `ask_user_advice` TOOL TO GET DIRECTION FOR NEXT STEPS**
 
 **Required Actions:**
 ```
