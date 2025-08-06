@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # Changelog
 
+## [2.2.0] - 2025-08-06
+
+### ✨ Enhanced
+- **Tool Parameter Descriptions**: Significantly improved `index_document` tool parameter descriptions to prevent LLM validation errors
+- **Workflow Guidance**: Added comprehensive workflow reminders and recommendations in tool descriptions
+- **Force Index Guidance**: Enhanced `force_index` parameter with intelligent usage tips to avoid multiple tool calls
+- **Document Template Integration**: Added prominent reminders to use `create_document_template` tool first
+- **AI Enhancement Notes**: Included workflow guidance for better LLM-tool interaction
+
+### 📋 Technical Details
+- **File**: `src/elasticsearch/sub_servers/elasticsearch_document.py`
+- **Enhanced Parameters**: Added detailed field specifications for document parameter (Dict[str, Any] → explicit field descriptions)
+- **Workflow Integration**: Added "💡 RECOMMENDED" and "💡 TIP" guidance throughout tool descriptions
+- **Testing**: Comprehensive testing confirmed all enhancements work correctly after server restart
+
+### 🔧 Project Standards
+- **RULE_001**: Created server restart requirement rule for proper testing workflow
+- **Documentation**: Added `.knowledges/rules/rules.md` with server restart standards
+- **Version Consistency**: Updated all version numbers across project files
+
+### 🎯 Impact
+- **Reduced LLM Errors**: Clear parameter descriptions prevent missing field validation errors
+- **Improved Workflow**: Enhanced guidance leads to better document creation practices
+- **Better User Experience**: More intuitive tool usage with embedded workflow recommendations
+
 ## [2.1.4] - 2025-08-06
 
 ### 🐛 Fixed

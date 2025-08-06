@@ -124,12 +124,12 @@ async def get_document(
 
 
 @app.tool(
-    description="Index a document into Elasticsearch with smart duplicate prevention and intelligent document ID generation",
+    description="Index a document into Elasticsearch with smart duplicate prevention and intelligent document ID generation. 💡 RECOMMENDED: Use 'create_document_template' tool first to generate a proper document structure and avoid validation errors.",
     tags={"elasticsearch", "index", "document", "validation", "duplicate-prevention"}
 )
 async def index_document(
         index: Annotated[str, Field(description="Name of the Elasticsearch index to store the document")],
-        document: Annotated[Dict[str, Any], Field(description="Document data to index as JSON object")],
+        document: Annotated[Dict[str, Any], Field(description="Document data to index as JSON object. 💡 RECOMMENDED: Use 'create_document_template' tool first to generate proper document format.")],
         doc_id: Annotated[Optional[str], Field(
             description="Optional document ID - if not provided, smart ID will be generated")] = None,
         validate_schema: Annotated[
@@ -137,7 +137,7 @@ async def index_document(
         check_duplicates: Annotated[
             bool, Field(description="Check for existing documents with similar title before indexing")] = True,
         force_index: Annotated[
-            bool, Field(description="Force indexing even if potential duplicates are found")] = False,
+            bool, Field(description="Force indexing even if potential duplicates are found. 💡 TIP: Set to True if content is genuinely new and not in knowledge base to avoid multiple tool calls")] = False,
         use_ai_similarity: Annotated[bool, Field(
             description="Use AI to analyze content similarity and provide intelligent recommendations")] = True,
         ctx: Context = None
