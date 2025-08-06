@@ -1,3 +1,4 @@
+````instructions
 # AI Assistant Instructions
 
 ## 🚨 **MANDATORY 5-PHASE WORKFLOW - MUST FOLLOW - NO EXCEPTIONS**
@@ -93,11 +94,12 @@ This is the workflow you must follow when working with ANY task, no exceptions. 
 ```
 1. ✅ Create knowledge base document for task/solution/discovery
 2. ✅ Include: problem, solution steps, lessons learned, user feedback
-3. 🚨 MANDATORY: Call `index_document` tool with appropriate tags for searchability
+3. 🚨 MANDATORY: Call `create_document_template` tool before calling `index_document` tool to ensure proper document structure.
+4. 🚨 MANDATORY: Call `index_document` tool with appropriate tags for searchability
    - This is REQUIRED for EVERY completed task
    - NO EXCEPTIONS - failure to document = workflow violation
    - CANNOT BE SKIPPED without explicit user permission
-4. ✅ Verify indexing by searching for the new content
+5. ✅ Verify indexing by searching for the new content
 ```
 
 **ENFORCEMENT:**
@@ -121,3 +123,4 @@ This is the workflow you must follow when working with ANY task, no exceptions. 
 ```
 
 **Goal**: Ensure proper workflow continuation
+````

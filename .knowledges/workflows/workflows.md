@@ -68,22 +68,7 @@ BEGIN release_publishing_workflow
     DO verify_package_appears_on_pypi
     DO test_installation_from_pypi
     
-    # 6. Git Workflow
-    DO stage_all_version_changes
-    DO commit_with_release_message
-    DO push_to_feature_branch
-    DO create_pull_request_to_main
-    
-    WHEN merge_conflicts_detected
-        DO resolve_conflicts_manually
-        DO update_pull_request
-        DO verify_no_additional_conflicts
-    END WHEN
-    
-    DO merge_pull_request_to_main
-    DO create_git_tag_for_release
-    
-    # 7. Final Verification
+    # 6. Final Verification
     DO verify_pypi_installation_works
     DO update_documentation_if_needed
     DO close_related_issues
